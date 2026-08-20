@@ -1,6 +1,23 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import {
+  getStats,
+  listCourses,
+  createCourse,
+  updateCourse,
+  setCourseArchived,
+  listStudents,
+  getStudent,
+  createStudent,
+  updateStudent,
+  updateStudentStatus,
+  addStudentGrade,
+  saveGrades,
+  uploadFile,
+  previewUpload,
+  confirmUpload,
+} from '../api/index.js';
 
 export function useAppLogic() {
   // === STATE DEFINITIONS & HOOKS ===
@@ -89,9 +106,9 @@ export function useAppLogic() {
   const fetchData = async () => {
     try {
       const [statRes, courseRes, studentRes] = await Promise.all([
-        fetch('http://localhost:8000/api/stats/'),
-        fetch('http://localhost:8000/api/courses/'),
-        fetch('http://localhost:8000/api/students/')
+        getStats(),
+        listCourses(),
+        listStudents()
       ]);
       setStats(await statRes.json());
       setCoursesData(await courseRes.json());
@@ -107,7 +124,7 @@ export function useAppLogic() {
 
   const fetchStudentTranscript = async (student_id) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/students/${student_id}`);
+      const res = await getStudent(student_id);
       const data = await res.json();
       setSelectedStudent(data);
     } catch (e) {
@@ -123,11 +140,7 @@ export function useAppLogic() {
     const rowDataArray = [];
     gridReference.current.api.forEachNode(node => rowDataArray.push(node.data));
     try {
-      const res = await fetch('http://localhost:8000/api/grades/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(rowDataArray)
-      });
+      const res = await saveGrades(rowDataArray);
       if (res.ok) {
         setToast({ open: true, message: 'Database updated successfully!', severity: 'success' });
         fetchData();
@@ -240,8 +253,6 @@ export function useAppLogic() {
     if (!validateStudentForm()) return;
     
     const isEdit = studentFormMode === 'edit';
-    const url = isEdit ? `http://localhost:8000/api/students/${studentForm.student_id}` : 'http://localhost:8000/api/students/';
-    const method = isEdit ? 'PUT' : 'POST';
     
     const payload = {
       student_id: parseInt(studentForm.student_id),
@@ -253,15 +264,10 @@ export function useAppLogic() {
     if (isEdit) payload.version = editStudentVersion;
 
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer sse-staff-token'
-        },
-        body: JSON.stringify(payload)
-      });
-      
+      const res = isEdit
+        ? await updateStudent(studentForm.student_id, payload)
+        : await createStudent(payload);
+
       if (res.ok) {
         setToast({ open: true, message: isEdit ? 'Student profile updated' : 'Student profile created', severity: 'success' });
         setStudentFormOpen(false);
@@ -318,8 +324,6 @@ export function useAppLogic() {
     if (!validateCourseForm()) return;
     
     const isEdit = courseFormMode === 'edit';
-    const url = isEdit ? `http://localhost:8000/api/courses/${courseForm.course_id}` : 'http://localhost:8000/api/courses/';
-    const method = isEdit ? 'PUT' : 'POST';
     
     const payload = {
       course_id: courseForm.course_id,
@@ -332,15 +336,10 @@ export function useAppLogic() {
     if (isEdit) payload.version = editCourseVersion;
 
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer sse-staff-token'
-        },
-        body: JSON.stringify(payload)
-      });
-      
+      const res = isEdit
+        ? await updateCourse(courseForm.course_id, payload)
+        : await createCourse(payload);
+
       if (res.ok) {
         setToast({ open: true, message: `Course successfully ${isEdit ? 'updated' : 'created'}`, severity: 'success' });
         setCourseFormOpen(false);
@@ -371,10 +370,7 @@ export function useAppLogic() {
     formData.append('course', uploadForm.course);
 
     try {
-      const res = await fetch('http://localhost:8000/api/upload/', {
-        method: 'POST',
-        body: formData
-      });
+      const res = await uploadFile(formData);
       if (res.ok) {
         const data = await res.json();
         setToast({ open: true, message: 'Excel file uploaded and processed successfully!', severity: 'success' });
@@ -392,10 +388,9 @@ export function useAppLogic() {
 
   const updateStudentProgram = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/students/${selectedStudent.student_id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ program: selectedStudent.program, version: selectedStudent.version })
+      const res = await updateStudent(selectedStudent.student_id, {
+        program: selectedStudent.program,
+        version: selectedStudent.version
       });
       if (res.ok) {
         setToast({ open: true, message: 'Student program updated successfully!', severity: 'success' });
@@ -410,11 +405,7 @@ export function useAppLogic() {
 
   const handleArchiveCourse = async (course_id, is_archived) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/courses/${course_id}/archive`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_archived })
-      });
+      const res = await setCourseArchived(course_id, { is_archived });
       if (res.ok) {
         setToast({ open: true, message: is_archived ? 'Course archived successfully!' : 'Course restored successfully!', severity: 'success' });
         setSelectedCourse(null);
@@ -427,11 +418,7 @@ export function useAppLogic() {
 
   const handleStudentStatus = async (student_id, status) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/students/${student_id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
-      });
+      const res = await updateStudentStatus(student_id, { status });
       if (res.ok) {
         setToast({ open: true, message: `Student marked as ${status}!`, severity: 'success' });
         setSelectedStudent(null);
@@ -448,11 +435,7 @@ export function useAppLogic() {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:8000/api/students/${selectedStudent.student_id}/grades`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(addGradeForm)
-      });
+      const res = await addStudentGrade(selectedStudent.student_id, addGradeForm);
       if (res.ok) {
         setToast({ open: true, message: 'Grade added successfully!', severity: 'success' });
         setAddGradeDialogOpen(false);
@@ -504,10 +487,7 @@ export function useAppLogic() {
     formData.append('nameSplitRule', nameSplitRule);
     
     try {
-      const res = await fetch('http://localhost:8000/api/upload/preview/', {
-        method: 'POST',
-        body: formData
-      });
+      const res = await previewUpload(formData);
       const data = await res.json();
       if (res.ok) {
         setPreviewData(data.preview_data);
@@ -543,11 +523,7 @@ export function useAppLogic() {
     };
 
     try {
-      const res = await fetch('http://localhost:8000/api/upload/confirm/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const res = await confirmUpload(payload);
       const data = await res.json();
       if (res.ok) {
         setToast({ open: true, message: data.message || 'Upload successful!', severity: 'success' });

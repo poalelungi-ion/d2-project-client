@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AgGridReact } from 'ag-grid-react';
+import { getStudent } from '../../api/index.js';
 import { Download as DownloadIcon } from '@mui/icons-material';
 import { 
   Box, Typography, Grid, Card, CardContent, Button, TextField, 
@@ -506,9 +507,7 @@ export const BatchUploadWizard = (props) => {
   const fetchAnalyticsStudentTranscript = async (student) => {
     setAnalyticsStudent(student);
     try {
-      const res = await fetch(`http://localhost:8000/api/students/${student.student_id}`, {
-        headers: { 'Authorization': 'Bearer sse-staff-token' }
-      });
+      const res = await getStudent(student.student_id, { auth: true });
       if (res.ok) {
         const data = await res.json();
         setAnalyticsStudentTranscript(data.transcript || []);

@@ -1,8 +1,9 @@
 /**
  * Application Constants
+ *
+ * The backend's address is deliberately not here: it lives in
+ * src/api/client.js, the only module that talks to the API.
  */
-export const API_BASE_URL = 'http://localhost:8000/api';
-
 export const STEPS = ['Upload file', 'Course', 'Map columns', 'Review & fix', 'Done'];
 
 export const TABS = [
