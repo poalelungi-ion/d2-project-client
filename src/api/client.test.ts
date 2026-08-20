@@ -4,16 +4,24 @@
  * the backend's verify_token dependency requires.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { API_BASE_URL } from './client.js';
-import { listCourses, createCourse, updateCourse, setCourseArchived } from './courses.js';
-import { listStudents, getStudent, createStudent, updateStudent } from './students.js';
-import { confirmUpload, previewUpload } from './uploads.js';
+import type { MockedFunction } from 'vitest';
+import { API_BASE_URL } from './client';
+import { listCourses, createCourse, updateCourse, setCourseArchived } from './courses';
+import { listStudents, getStudent, createStudent, updateStudent } from './students';
+import { confirmUpload, previewUpload } from './uploads';
+
+const fetchMock = () => global.fetch as MockedFunction<typeof fetch>;
 
 /** Returns the [url, init] pair passed to the most recent fetch call. */
-const lastCall = () => global.fetch.mock.calls.at(-1);
+const lastCall = () => {
+  const call = fetchMock().mock.calls.at(-1);
+  if (!call) throw new Error('fetch was never called');
+  const [url, init] = call;
+  return [url as string, (init ?? {}) as RequestInit & { headers?: Record<string, string> }] as const;
+};
 
 beforeEach(() => {
-  global.fetch = vi.fn(() => Promise.resolve({ ok: true, status: 200 }));
+  global.fetch = vi.fn(() => Promise.resolve({ ok: true, status: 200 } as Response));
 });
 
 describe('URL construction', () => {
@@ -42,29 +50,65 @@ describe('methods and bodies', () => {
   });
 
   it('serializes the body as JSON on POST', async () => {
-    await confirmUpload({ course: 'TEST101', records: [] });
+    await confirmUpload({
+      course: 'TEST101',
+      courseName: 'Test',
+      ects: '6',
+      semester: 'WiSe24/25',
+      records: [],
+    });
     const [, init] = lastCall();
     expect(init.method).toBe('POST');
-    expect(JSON.parse(init.body)).toEqual({ course: 'TEST101', records: [] });
-    expect(init.headers['Content-Type']).toBe('application/json');
+    expect(JSON.parse(init.body as string)).toEqual({
+      course: 'TEST101',
+      courseName: 'Test',
+      ects: '6',
+      semester: 'WiSe24/25',
+      records: [],
+    });
+    expect(init.headers?.['Content-Type']).toBe('application/json');
   });
 
   it('uses PUT when updating', async () => {
-    await updateCourse(7, { course_name: 'x', version: 2 });
+    await updateCourse(7, {
+      course_id: 7,
+      course_name: 'x',
+      semester: 'WiSe24/25',
+      study_program: 'B.Sc.',
+      professor: 'Not Assigned',
+      version: 2,
+    });
     expect(lastCall()[1].method).toBe('PUT');
   });
 });
 
 describe('authentication', () => {
   it('attaches the bearer token to mutating course and student endpoints', async () => {
-    for (const call of [
-      () => createCourse({ course_name: 'x' }),
-      () => updateCourse(1, { version: 1 }),
-      () => createStudent({ student_id: 1 }),
-      () => updateStudent(1, { version: 1 }),
-    ]) {
+    const calls = [
+      () =>
+        createCourse({
+          course_id: 1,
+          course_name: 'x',
+          semester: 'WiSe24/25',
+          study_program: 'B.Sc.',
+          professor: 'Not Assigned',
+        }),
+      () =>
+        updateCourse(1, {
+          course_id: 1,
+          course_name: 'x',
+          semester: 'WiSe24/25',
+          study_program: 'B.Sc.',
+          professor: 'Not Assigned',
+          version: 1,
+        }),
+      () => createStudent({ student_id: 1, name: 'A B', program: 'B.Sc.', status: 'active' }),
+      () => updateStudent(1, { program: 'B.Sc.', version: 1 }),
+    ];
+
+    for (const call of calls) {
       await call();
-      expect(lastCall()[1].headers.Authorization).toMatch(/^Bearer .+/);
+      expect(lastCall()[1].headers?.Authorization).toMatch(/^Bearer .+/);
     }
   });
 

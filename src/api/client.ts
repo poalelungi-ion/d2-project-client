@@ -1,5 +1,5 @@
 /**
- * @file client.js
+ * @file client.ts
  * @description The single place this app knows the backend's address and
  * credentials. Every request to the API goes through here.
  *
@@ -14,28 +14,36 @@
  * the Response keeps that handling intact.
  */
 
-export const API_BASE_URL =
+export const API_BASE_URL: string =
   import.meta.env?.VITE_API_BASE_URL ?? 'http://localhost:8000/api';
 
-const API_TOKEN = import.meta.env?.VITE_API_TOKEN ?? 'sse-staff-token';
+const API_TOKEN: string = import.meta.env?.VITE_API_TOKEN ?? 'sse-staff-token';
 
 /** Authorization header the backend's verify_token dependency expects. */
-export const authHeader = () => ({ Authorization: `Bearer ${API_TOKEN}` });
+export const authHeader = (): Record<string, string> => ({
+  Authorization: `Bearer ${API_TOKEN}`,
+});
 
-const url = (path) => `${API_BASE_URL}${path}`;
+const url = (path: string): string => `${API_BASE_URL}${path}`;
+
+export interface RequestOptions {
+  method?: string;
+  /** Serialized as JSON when present. */
+  body?: unknown;
+  /** Attach the bearer token. */
+  auth?: boolean;
+}
 
 /**
  * Sends a JSON request.
  *
- * @param {string} path   Path below the API root, e.g. "/students/".
- * @param {object} options
- * @param {string} [options.method='GET']
- * @param {*} [options.body]   Serialized as JSON when present.
- * @param {boolean} [options.auth=false]  Attach the bearer token.
- * @returns {Promise<Response>}
+ * @param path Path below the API root, e.g. "/students/".
  */
-export function request(path, { method = 'GET', body, auth = false } = {}) {
-  const headers = {};
+export function request(
+  path: string,
+  { method = 'GET', body, auth = false }: RequestOptions = {},
+): Promise<Response> {
+  const headers: Record<string, string> = {};
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (auth) Object.assign(headers, authHeader());
 
@@ -49,10 +57,12 @@ export function request(path, { method = 'GET', body, auth = false } = {}) {
 /**
  * Sends multipart form data. The browser sets the Content-Type boundary, so
  * no headers are supplied here.
- *
- * @returns {Promise<Response>}
  */
-export function postForm(path, formData, { auth = false } = {}) {
+export function postForm(
+  path: string,
+  formData: FormData,
+  { auth = false }: Pick<RequestOptions, 'auth'> = {},
+): Promise<Response> {
   return fetch(url(path), {
     method: 'POST',
     ...(auth ? { headers: authHeader() } : {}),
@@ -60,6 +70,19 @@ export function postForm(path, formData, { auth = false } = {}) {
   });
 }
 
-export const get = (path, options) => request(path, { ...options, method: 'GET' });
-export const post = (path, body, options) => request(path, { ...options, method: 'POST', body });
-export const put = (path, body, options) => request(path, { ...options, method: 'PUT', body });
+type BodylessOptions = Omit<RequestOptions, 'method' | 'body'>;
+
+export const get = (path: string, options?: BodylessOptions): Promise<Response> =>
+  request(path, { ...options, method: 'GET' });
+
+export const post = (
+  path: string,
+  body?: unknown,
+  options?: BodylessOptions,
+): Promise<Response> => request(path, { ...options, method: 'POST', body });
+
+export const put = (
+  path: string,
+  body?: unknown,
+  options?: BodylessOptions,
+): Promise<Response> => request(path, { ...options, method: 'PUT', body });

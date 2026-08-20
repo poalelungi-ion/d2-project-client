@@ -1,29 +1,36 @@
-import js from "@eslint/js";
-import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
+import js from '@eslint/js';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
 
-export default [
-  js.configs.recommended,
+export default tseslint.config(
+  { ignores: ['dist', 'node_modules', 'coverage'] },
   {
-    files: ["src/**/*.{js,jsx}"],
-    plugins: {
-      "react-hooks": reactHooks,
-      "react-refresh": reactRefresh,
-    },
+    files: ['**/*.{ts,tsx}'],
+    extends: [js.configs.recommended, ...tseslint.configs.recommendedTypeChecked],
     languageOptions: {
       ecmaVersion: 2022,
-      sourceType: "module",
-      globals: {
-        document: "readonly",
-        window: "readonly",
-        console: "readonly",
-        setTimeout: "readonly",
-        URL: "readonly",
-      }
+      globals: globals.browser,
+      parserOptions: {
+        // Type-aware linting: the rules below need the same program tsc builds.
+        project: ['./tsconfig.app.json', './tsconfig.node.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    plugins: {
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
     },
     rules: {
-      "no-undef": "error",
-      "no-unused-vars": "warn",
-    }
-  }
-];
+      ...reactHooks.configs.recommended.rules,
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    },
+  },
+  {
+    // The config file itself is linted without type information.
+    files: ['eslint.config.js'],
+    extends: [tseslint.configs.disableTypeChecked],
+  },
+);

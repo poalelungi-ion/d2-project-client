@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import App from './App';
 import { describe, it, expect, vi } from 'vitest';
+import App from './App';
 
 // Mock recharts to avoid errors in JSDOM
 vi.mock('recharts', () => ({
-  ResponsiveContainer: ({ children }) => <div>{children}</div>,
+  ResponsiveContainer: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   BarChart: () => <div>BarChart</div>,
   Bar: () => <div>Bar</div>,
   XAxis: () => <div>XAxis</div>,

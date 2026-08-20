@@ -3,9 +3,13 @@ node_modules/
 dist/
 dist-ssr/
 build/
+coverage/
 .npm
 .yarn
 *.local
+
+# TypeScript incremental build state
+*.tsbuildinfo
 
 # Env
 .env

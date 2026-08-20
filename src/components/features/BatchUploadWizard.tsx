@@ -1,58 +1,61 @@
-import React, { useState, useEffect } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { getStudent } from '../../api/index.js';
-import { Download as DownloadIcon } from '@mui/icons-material';
-import { 
-  Box, Typography, Grid, Card, CardContent, Button, TextField, 
-  Stepper, Step, StepLabel, Select, MenuItem, FormControl, InputLabel,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions,
-  LinearProgress, Fade, Collapse, Alert, Avatar, Tooltip, Tab, Tabs
+import type {
+  GridReadyEvent,
+  ICellRendererParams,
+  RowClassParams,
+  RowDataUpdatedEvent,
+  RowSelectedEvent,
+} from 'ag-grid-community';
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  Button,
+  TextField,
+  Stepper,
+  Step,
+  StepLabel,
+  Fade,
 } from '@mui/material';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
-} from 'recharts';
-import {
-  UploadFile as UploadFileIcon, CheckCircle as CheckCircleIcon,
-  Warning as WarningIcon, Error as ErrorIcon, Delete as DeleteIcon,
-  Edit as EditIcon, Add as AddIcon, Refresh as RefreshIcon,
-  MoreVert as MoreVertIcon, School as SchoolIcon, Assessment as AssessmentIcon,
-  Timeline as TimelineIcon, Save as SaveIcon, Close as CloseIcon,
-  ArrowBack as ArrowBackIcon, Check as CheckIcon,
-  Dashboard as DashboardIcon, TableChart as TableChartIcon, Person as PersonIcon,
-  History as HistoryIcon, ExpandMore as ExpandMoreIcon, WarningAmber as WarningAmberIcon
+  Download as DownloadIcon,
+  CheckCircle as CheckCircleIcon,
+  TableChart as TableChartIcon,
 } from '@mui/icons-material';
-import { TABS, STEPS } from '../../utils/constants';
+import { STEPS } from '../../utils/constants';
+import type { PreviewRecord } from '../../types';
+import type { AppState } from '../../hooks/useAppLogic';
 
-export const BatchUploadWizard = (props) => {
-  const { 
-        themeMode, setThemeMode, activeTab, setActiveTab, coursesData, setCoursesData,
-    studentsData, setStudentsData, selectedStudent, setSelectedStudent, selectedCourse,
-    setSelectedCourse, analyticsStudent, setAnalyticsStudent, analyticsStudentTranscript,
-    setAnalyticsStudentTranscript, courseFormOpen, setCourseFormOpen, courseFormMode,
-    setCourseFormMode, courseForm, setCourseForm, courseFormErrors, setCourseFormErrors,
-    editCourseVersion, setEditCourseVersion, addGradeDialogOpen, setAddGradeDialogOpen,
-    addGradeForm, setAddGradeForm, archiveTab, setArchiveTab, newCourseName,
-    setNewCourseName, uploadForm, setUploadForm, previewData, setPreviewData,
-    gridApi, setGridApi, uploadPreview, setUploadPreview, activeStep, setActiveStep,
-    selectedDemoFile, setSelectedDemoFile, uploadCourseInfo, setUploadCourseInfo,
-    nameSplitRule, setNameSplitRule, stats, setStats, toast, setToast, loadingCourses,
-    setLoadingCourses, coursesSortBy, setCoursesSortBy, studentViewMode, setStudentViewMode,
-    studentSearchQuery, setStudentSearchQuery, studentFormOpen, setStudentFormOpen,
-    studentFormMode, setStudentFormMode, studentForm, setStudentForm, studentFormErrors,
-    setStudentFormErrors, editStudentVersion, setEditStudentVersion, searchQuery,
-    setSearchQuery, coursesPage, setCoursesPage, viewMode, setViewMode, newCourseId,
-    setNewCourseId, studentColumnDefs,
-    toggleTheme, fetchData, fetchStudentTranscript, saveGradesToDB, openCourseForm, 
-    openStudentForm, validateStudentForm, handleSaveStudent, validateCourseForm, 
-    handleSaveCourse, handleUploadSubmit, updateStudentProgram, handleArchiveCourse, 
-    handleStudentStatus, handleAddGrade, handleUpload, handleConfirmUpload
+/**
+ * Grades the backend could not parse into a number. Selecting such a row in
+ * the review grid rewrites it to a hard fail (5.0) rather than importing a
+ * blank, which the database has no representation for.
+ */
+const UNPARSEABLE_GRADES = ['na', 'ta', 'ne', 'nan', '', 'at'];
+
+const isUnparseableGrade = (value: unknown): boolean =>
+  UNPARSEABLE_GRADES.includes(String(value).toLowerCase().trim());
+
+export const BatchUploadWizard = (props: AppState) => {
+  const {
+    activeStep,
+    setActiveStep,
+    uploadForm,
+    setUploadForm,
+    selectedDemoFile,
+    setSelectedDemoFile,
+    uploadCourseInfo,
+    setUploadCourseInfo,
+    nameSplitRule,
+    setNameSplitRule,
+    previewData,
+    setGridApi,
+    handleUpload,
+    handleConfirmUpload,
   } = props;
-  
-    const steps = ['Upload file', 'Course', 'Map columns', 'Review & fix', 'Done'];
 
-    const renderStepContent = () => {
+  const renderStepContent = () => {
       switch (activeStep) {
         case 0:
           return (
@@ -73,7 +76,7 @@ export const BatchUploadWizard = (props) => {
                   '&:hover': { borderColor: 'primary.main', backgroundColor: 'rgba(183, 28, 28, 0.02)' } 
                 }}
               >
-                <input accept=".xlsx, .xls, .csv, .tsv, .ods" style={{ display: 'none' }} id="excel-upload-file" type="file" onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files[0] })} />
+                <input accept=".xlsx, .xls, .csv, .tsv, .ods" style={{ display: 'none' }} id="excel-upload-file" type="file" onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files?.[0] ?? null })} />
                 <label htmlFor="excel-upload-file" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <Box sx={{ bgcolor: 'rgba(0,0,0,0.05)', borderRadius: '12px', p: 2, mb: 2, display: 'inline-flex' }}>
                     <DownloadIcon sx={{ color: '#757575', fontSize: 32 }} />
@@ -381,15 +384,15 @@ export const BatchUploadWizard = (props) => {
                 <Button variant="outlined" color="inherit" onClick={() => setActiveStep(1)} sx={{ borderRadius: '8px', px: 3, fontWeight: 'bold' }}>
                   &larr; Back
                 </Button>
-                <Button variant="contained" color="primary" size="large" onClick={handleUpload} sx={{ borderRadius: '8px', px: 4, fontWeight: 'bold' }}>
+                <Button variant="contained" color="primary" size="large" onClick={() => void handleUpload()} sx={{ borderRadius: '8px', px: 4, fontWeight: 'bold' }}>
                   Standardise &amp; review &rarr;
                 </Button>
               </Box>
             </Box>
           );
         
-        case 3:
-          const hasErrors = previewData.some(r => !r.is_valid);
+        case 3: {
+          const hasErrors = previewData.some((r) => !r.is_valid);
           return (
             <Box sx={{ py: 2 }}>
               <Box sx={{ mb: 3 }}>
@@ -408,23 +411,22 @@ export const BatchUploadWizard = (props) => {
               )}
 
               <div className="ag-theme-alpine" style={{ height: '400px', width: '100%', marginBottom: '24px' }}>
-                <AgGridReact 
+                <AgGridReact<PreviewRecord>
                   rowData={previewData}
-                  onGridReady={(params) => setGridApi(params.api)}
-                  onRowDataUpdated={(params) => {
+                  onGridReady={(params: GridReadyEvent<PreviewRecord>) =>
+                    setGridApi(params.api)
+                  }
+                  onRowDataUpdated={(params: RowDataUpdatedEvent<PreviewRecord>) => {
                     params.api.forEachNode((node) => {
-                      const g = String(node.data.grade).toLowerCase().trim();
-                      if (!['na', 'ta', 'ne', 'nan', '', 'at'].includes(g) && node.data.is_valid) {
+                      if (!node.data) return;
+                      if (!isUnparseableGrade(node.data.grade) && node.data.is_valid) {
                         node.setSelected(true);
                       }
                     });
                   }}
-                  onRowSelected={(event) => {
-                    if (event.node.isSelected()) {
-                      const g = String(event.data.grade).toLowerCase().trim();
-                      if (['na', 'ta', 'ne', 'nan', '', 'at'].includes(g)) {
-                        event.node.setDataValue('grade', '5.0');
-                      }
+                  onRowSelected={(event: RowSelectedEvent<PreviewRecord>) => {
+                    if (event.node.isSelected() && isUnparseableGrade(event.data?.grade)) {
+                      event.node.setDataValue('grade', '5.0');
                     }
                   }}
                   rowSelection="multiple"
@@ -439,28 +441,38 @@ export const BatchUploadWizard = (props) => {
                       field: 'missing_fields', 
                       headerName: 'Validation Issues', 
                       flex: 1,
-                      cellRenderer: params => {
-                        if (!params.value || params.value.length === 0) return <span style={{color: '#2e7d32', fontWeight: 'bold'}}>Valid</span>;
-                        return <span style={{color: '#d32f2f', fontWeight: 'bold'}}>Missing: {params.value.join(', ')}</span>;
-                      }
+                      cellRenderer: (
+                        params: ICellRendererParams<PreviewRecord, string[]>,
+                      ) => {
+                        if (!params.value || params.value.length === 0)
+                          return (
+                            <span style={{ color: '#2e7d32', fontWeight: 'bold' }}>Valid</span>
+                          );
+                        return (
+                          <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                            Missing: {params.value.join(', ')}
+                          </span>
+                        );
+                      },
                     }
                   ]}
                   defaultColDef={{ resizable: true, sortable: true }}
-                  getRowStyle={params => {
-                    if (!params.data.is_valid) {
-                      return { background: 'rgba(211, 47, 47, 0.05)' };
-                    }
-                  }}
+                  getRowStyle={(params: RowClassParams<PreviewRecord>) =>
+                    params.data && !params.data.is_valid
+                      ? { background: 'rgba(211, 47, 47, 0.05)' }
+                      : undefined
+                  }
                 />
               </div>
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Button variant="outlined" color="inherit" onClick={() => setActiveStep(2)} sx={{ borderRadius: '8px', px: 3, fontWeight: 'bold' }}>&larr; Back</Button>
-                <Button variant="contained" color="primary" size="large" onClick={handleConfirmUpload} sx={{ borderRadius: '8px', px: 4, fontWeight: 'bold' }}>Complete Import</Button>
+                <Button variant="contained" color="primary" size="large" onClick={() => void handleConfirmUpload()} sx={{ borderRadius: '8px', px: 4, fontWeight: 'bold' }}>Complete Import</Button>
               </Box>
             </Box>
           );
-          
+        }
+
         case 4:
           return (
             <Box sx={{ textAlign: 'center', py: 8 }}>
@@ -485,7 +497,7 @@ export const BatchUploadWizard = (props) => {
           
           <Box sx={{ width: '100%', mb: 6 }}>
             <Stepper activeStep={activeStep} alternativeLabel sx={{ '& .MuiStepLabel-label': { fontWeight: '600' }, '& .MuiStepIcon-root.Mui-active': { color: '#B71C1C' }, '& .MuiStepIcon-root.Mui-completed': { color: '#B71C1C' } }}>
-              {steps.map((label) => (
+              {STEPS.map((label) => (
                 <Step key={label}>
                   <StepLabel>{label}</StepLabel>
                 </Step>
@@ -498,73 +510,3 @@ export const BatchUploadWizard = (props) => {
       </Fade>
     );
   };
-  // === ANALYTICS HELPERS ===
-  /**
-   * [User Story 6: Visual Analytics Dashboard]
-   * Fetches the complete grade history for a selected student to plot their longitudinal trend.
-   * @param {Object} student - The student object selected from the course roster grid.
-   */
-  const fetchAnalyticsStudentTranscript = async (student) => {
-    setAnalyticsStudent(student);
-    try {
-      const res = await getStudent(student.student_id, { auth: true });
-      if (res.ok) {
-        const data = await res.json();
-        setAnalyticsStudentTranscript(data.transcript || []);
-      }
-    } catch (e) {
-      console.error("Failed to fetch student transcript for analytics", e);
-    }
-  };
-
-  /**
-   * [User Story 6: Visual Analytics Dashboard]
-   * Computes the histogram distribution of grades for the currently selected course.
-   * @returns {Array} An array of objects formatted for Recharts BarChart ({grade, count}).
-   */
-  const getGradeDistributionData = () => {
-    if (!selectedCourse || !selectedCourse.marks) return [];
-    const dist = {};
-    selectedCourse.marks.forEach(m => {
-      const g = m.grade.toString();
-      dist[g] = (dist[g] || 0) + 1;
-    });
-    return Object.keys(dist).sort((a,b) => parseFloat(a) - parseFloat(b)).map(k => ({ grade: k, count: dist[k] }));
-  };
-
-  /**
-   * [User Story 6: Visual Analytics Dashboard]
-   * Calculates the overall pass vs. fail ratio for the currently selected course.
-   * @returns {Array} An array of objects formatted for Recharts PieChart.
-   */
-  const getPassFailData = () => {
-    if (!selectedCourse || !selectedCourse.marks) return [];
-    let pass = 0, fail = 0;
-    selectedCourse.marks.forEach(m => {
-      if (m.passed) pass++; else fail++;
-    });
-    return [
-      { name: 'Passed', value: pass, fill: '#2E7D32' },
-      { name: 'Failed', value: fail, fill: '#D32F2F' }
-    ];
-  };
-
-  /**
-   * [User Story 6: Visual Analytics Dashboard]
-   * Aggregates the student's historical transcript into a chronological semester-over-semester average.
-   * @returns {Array} An array of objects formatted for Recharts LineChart ({semester, average}).
-   */
-  const getLongitudinalData = () => {
-    if (!analyticsStudentTranscript.length) return [];
-    const semMap = {};
-    analyticsStudentTranscript.forEach(t => {
-      if (!semMap[t.semester]) semMap[t.semester] = { sum: 0, count: 0 };
-      semMap[t.semester].sum += t.grade;
-      semMap[t.semester].count += 1;
-    });
-    return Object.keys(semMap).sort().map(sem => ({
-      semester: sem,
-      average: parseFloat((semMap[sem].sum / semMap[sem].count).toFixed(2))
-    }));
-  };
-

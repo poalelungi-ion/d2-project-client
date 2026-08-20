@@ -3,5 +3,11 @@
 node_modules
 dist
 build
+coverage
 .env
+.env.*
+!.env.example
+*.tsbuildinfo
 README.md
+Dockerfile
+.dockerignore
