@@ -12,9 +12,7 @@ export const STEPS: readonly string[] = [
   'Done',
 ];
 
-export const TABS: readonly string[] = [
-  'Analysis Hub',
-  'Batch Data Upload',
-  'Teacher Dashboard',
-  'Student LSF Roster',
-];
+/** Runtime companions to the ViewMode / CoursesSortBy types, for validating URLs. */
+export const VIEW_MODES = ['grid', 'table'] as const;
+
+export const COURSE_SORTS = ['name', 'semester'] as const;

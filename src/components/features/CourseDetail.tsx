@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Box, Typography, Button, TextField, Paper, Fade } from '@mui/material';
 import {
   Restore as RestoreIcon,
@@ -8,6 +8,7 @@ import {
 } from '@mui/icons-material';
 import { AgGridReact } from 'ag-grid-react';
 import type { ICellRendererParams, RowClickedEvent } from 'ag-grid-community';
+import { useNavigate } from 'react-router-dom';
 import {
   BarChart,
   Bar,
@@ -23,8 +24,12 @@ import {
   Cell,
   Legend,
 } from 'recharts';
-import type { CourseMark } from '../../types';
-import type { AppState } from '../../hooks/useAppLogic';
+import type { Course, CourseMark, TranscriptEntry } from '../../types';
+import { ROUTES } from '../../app/navigation';
+import { useApiMutations } from '../../hooks/useApi';
+import { chart, passRateColor } from '../../styles/colors';
+import { radii } from '../../styles/tokens';
+import { pageSubtitle, pageTitle } from '../../styles/mixins';
 
 /** One bar of the course's grade histogram. */
 interface GradeBucket {
@@ -45,25 +50,34 @@ interface SemesterAverage {
   average: number;
 }
 
-export const CourseDetail = (props: AppState) => {
-  const {
-    selectedCourse,
-    setSelectedCourse,
-    setActiveTab,
-    analyticsStudent,
-    setAnalyticsStudent,
-    analyticsStudentTranscript,
-    uploadCourseInfo,
-    setUploadCourseInfo,
-    handleArchiveCourse,
-    fetchAnalyticsStudentTranscript,
-  } = props;
+interface CourseDetailProps {
+  /** Resolved from :courseId by the route before this screen is mounted. */
+  course: Course;
+}
+
+export const CourseDetail = ({ course }: CourseDetailProps) => {
+  const { archiveCourse, loadTranscript } = useApiMutations();
+  // Which student out of this roster is plotted against the cohort. Only this
+  // screen cares, so it stays here.
+  const [analyticsStudent, setAnalyticsStudent] = useState<CourseMark | null>(null);
+  const [analyticsStudentTranscript, setAnalyticsStudentTranscript] = useState<
+    TranscriptEntry[]
+  >([]);
 
   const courseGridRef = useRef<AgGridReact<CourseMark>>(null);
+  const navigate = useNavigate();
 
-  // CoursesAdmin only mounts this once a course is selected.
-  if (!selectedCourse) return null;
-  const course = selectedCourse;
+  const clearAnalyticsStudent = () => {
+    setAnalyticsStudent(null);
+    setAnalyticsStudentTranscript([]);
+  };
+
+  const selectAnalyticsStudent = async (mark: CourseMark) => {
+    setAnalyticsStudent(mark);
+    setAnalyticsStudentTranscript([]);
+    if (mark.student_id == null) return;
+    setAnalyticsStudentTranscript(await loadTranscript(mark.student_id));
+  };
 
   const getGradeDistributionData = (): GradeBucket[] => {
     if (!course.marks) return [];
@@ -86,8 +100,8 @@ export const CourseDetail = (props: AppState) => {
       else fail++;
     });
     return [
-      { name: 'Passed', value: pass, fill: '#2E7D32' },
-      { name: 'Failed', value: fail, fill: '#D32F2F' },
+      { name: 'Passed', value: pass, fill: chart.pass },
+      { name: 'Failed', value: fail, fill: chart.fail },
     ];
   };
 
@@ -114,38 +128,37 @@ export const CourseDetail = (props: AppState) => {
           <Button
             startIcon={<ChevronLeftIcon />}
             onClick={() => {
-              setSelectedCourse(null);
-              setAnalyticsStudent(null);
+              clearAnalyticsStudent();
+              void navigate(ROUTES.courses);
             }}
-            sx={{ color: '#424242', mb: 1 }}
+            sx={{ color: 'text.secondary', mb: 1 }}
           >
             Return to List
           </Button>
-          <Typography variant="h3" sx={{ fontWeight: '800', letterSpacing: '-1.5px' }}>
+          <Typography variant="h3" sx={pageTitle}>
             {course.course_name}
           </Typography>
           <Box sx={{ display: 'flex', gap: 3, mt: 1, flexWrap: 'wrap' }}>
-            <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: '400' }}>
+            <Typography variant="h6" sx={pageSubtitle}>
               Average Grade: <strong>{course.avg_grade}</strong>
             </Typography>
-            <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: '400' }}>
+            <Typography variant="h6" sx={pageSubtitle}>
               Pass Rate:{' '}
-              <strong style={{ color: course.pass_rate > 50 ? '#2E7D32' : '#D32F2F' }}>
+              <strong style={{ color: passRateColor(course.pass_rate) }}>
                 {course.pass_rate}%
               </strong>
             </Typography>
-            <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: '400' }}>
+            <Typography variant="h6" sx={pageSubtitle}>
               Total Submissions: <strong>{course.total_attempts}</strong>
             </Typography>
             <Button
               variant="contained"
               color="success"
               startIcon={<CloudUploadIcon />}
-              onClick={() => {
-                setUploadCourseInfo({ ...uploadCourseInfo, courseName: course.course_name });
-                setActiveTab('Batch Data Upload');
-              }}
-              sx={{ ml: 'auto', borderRadius: '8px' }}
+              onClick={() =>
+                void navigate(ROUTES.upload, { state: { courseName: course.course_name } })
+              }
+              sx={{ ml: 'auto' }}
             >
               Upload Data
             </Button>
@@ -154,8 +167,11 @@ export const CourseDetail = (props: AppState) => {
                 variant="outlined"
                 color="secondary"
                 startIcon={<ArchiveIcon />}
-                onClick={() => void handleArchiveCourse(course.course_id, true)}
-                sx={{ borderRadius: '8px' }}
+                onClick={() => {
+                  void archiveCourse(course.course_id, true, course.version).then((archived) => {
+                    if (archived) void navigate(ROUTES.courses);
+                  });
+                }}
               >
                 Archive Course
               </Button>
@@ -165,8 +181,12 @@ export const CourseDetail = (props: AppState) => {
                 variant="outlined"
                 color="primary"
                 startIcon={<RestoreIcon />}
-                onClick={() => void handleArchiveCourse(course.course_id, false)}
-                sx={{ ml: 'auto', borderRadius: '8px' }}
+                onClick={() => {
+                  void archiveCourse(course.course_id, false, course.version).then((restored) => {
+                    if (restored) void navigate(ROUTES.courses);
+                  });
+                }}
+                sx={{ ml: 'auto' }}
               >
                 Restore Course
               </Button>
@@ -176,7 +196,7 @@ export const CourseDetail = (props: AppState) => {
 
         {/* === ANALYTICS DASHBOARD SECTION === */}
         <Box sx={{ display: 'flex', gap: 3, mb: 3, flexWrap: 'wrap' }}>
-          <Paper sx={{ p: 3, flex: 2, minWidth: 400, borderRadius: '24px' }}>
+          <Paper sx={{ p: 3, flex: 2, minWidth: 400, borderRadius: radii.xxl }}>
             <Typography variant="h6" fontWeight="700" mb={2}>
               Course Grade Distribution
             </Typography>
@@ -192,8 +212,8 @@ export const CourseDetail = (props: AppState) => {
                       key={`cell-${index}`}
                       fill={
                         analyticsStudent && entry.grade === analyticsStudent.grade.toString()
-                          ? '#FF8F00'
-                          : '#1976d2'
+                          ? chart.highlight
+                          : chart.cohort
                       }
                     />
                   ))}
@@ -214,7 +234,7 @@ export const CourseDetail = (props: AppState) => {
             )}
           </Paper>
 
-          <Paper sx={{ p: 3, flex: 1, minWidth: 250, borderRadius: '24px' }}>
+          <Paper sx={{ p: 3, flex: 1, minWidth: 250, borderRadius: radii.xxl }}>
             <Typography variant="h6" fontWeight="700" mb={2}>
               Pass vs. Fail
             </Typography>
@@ -241,7 +261,7 @@ export const CourseDetail = (props: AppState) => {
           </Paper>
 
           {analyticsStudent && (
-            <Paper sx={{ p: 3, flex: 3, minWidth: 400, borderRadius: '24px' }}>
+            <Paper sx={{ p: 3, flex: 3, minWidth: 400, borderRadius: radii.xxl }}>
               <Typography variant="h6" fontWeight="700" mb={2}>
                 {analyticsStudent.student_name}&apos;s Longitudinal Trend
               </Typography>
@@ -258,7 +278,7 @@ export const CourseDetail = (props: AppState) => {
                   <Line
                     type="monotone"
                     dataKey="average"
-                    stroke="#FF8F00"
+                    stroke={chart.highlight}
                     strokeWidth={3}
                     dot={{ r: 5 }}
                     activeDot={{ r: 8 }}
@@ -274,14 +294,14 @@ export const CourseDetail = (props: AppState) => {
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            borderRadius: '24px',
+            borderRadius: radii.xxl,
             overflow: 'hidden',
           }}
         >
           <Box
             sx={{
               p: 3,
-              borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
+              borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -304,7 +324,7 @@ export const CourseDetail = (props: AppState) => {
               sx={{ width: 300 }}
             />
           </Box>
-          <div className="ag-theme-alpine" style={{ width: '100%', padding: '16px' }}>
+          <Box className="ag-theme-alpine" sx={{ width: '100%', p: 2 }}>
             <AgGridReact<CourseMark>
               ref={courseGridRef}
               domLayout="autoHeight"
@@ -334,11 +354,11 @@ export const CourseDetail = (props: AppState) => {
               pagination={true}
               paginationPageSize={20}
               onRowClicked={(e: RowClickedEvent<CourseMark>) => {
-                if (e.data) void fetchAnalyticsStudentTranscript(e.data);
+                if (e.data) void selectAnalyticsStudent(e.data);
               }}
               rowSelection="single"
             />
-          </div>
+          </Box>
         </Paper>
       </Box>
     </Fade>

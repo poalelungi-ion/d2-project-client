@@ -1,5 +1,8 @@
 import { Box, Typography, Button, Fade } from '@mui/material';
 import { WarningAmber as WarningAmberIcon } from '@mui/icons-material';
+import { semantic } from '../../styles/colors';
+import { radii } from '../../styles/tokens';
+import { toneSurface } from '../../styles/mixins';
 
 interface SystemLogEntry {
   id: number;
@@ -29,7 +32,7 @@ export const SystemLogs = () => {
       <Box sx={{ p: 4, maxWidth: 600 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
           <WarningAmberIcon color="error" sx={{ mr: 1, fontSize: 32 }} />
-          <Typography variant="h5" sx={{ fontWeight: '700', color: '#D32F2F' }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: 'error.main' }}>
             System Logs
           </Typography>
         </Box>
@@ -42,9 +45,8 @@ export const SystemLogs = () => {
             <Box
               key={log.id}
               sx={{
-                bgcolor: 'rgba(211, 47, 47, 0.05)',
-                border: '1px solid rgba(211, 47, 47, 0.2)',
-                borderRadius: '24px',
+                ...toneSurface(semantic.error),
+                borderRadius: radii.xxl,
                 p: 2,
                 px: 3,
                 display: 'flex',
@@ -60,7 +62,7 @@ export const SystemLogs = () => {
                   {log.message}
                 </Typography>
               </Box>
-              <Button variant="outlined" color="error" sx={{ borderRadius: '12px', minWidth: '100px' }}>
+              <Button variant="outlined" color="error" sx={{ minWidth: 100 }}>
                 {log.action}
               </Button>
             </Box>
