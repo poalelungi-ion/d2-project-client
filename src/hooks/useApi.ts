@@ -331,13 +331,17 @@ async function setStudentStatusById(
   return false;
 }
 
+/** File upload and spreadsheet paste share POST /upload/preview/. */
+export type PreviewSource = { file: File } | { paste: string };
+
 async function previewImport(
-  file: File,
+  source: PreviewSource,
   courseInfo: UploadCourseInfo,
   nameSplitRule: NameSplitRule,
 ): Promise<PreviewRecord[] | null> {
   const formData = new FormData();
-  formData.append('file', file);
+  if ('file' in source) formData.append('file', source.file);
+  else formData.append('paste', source.paste);
   formData.append('course', courseInfo.courseNumber);
   formData.append('courseName', courseInfo.courseName);
   formData.append('ects', courseInfo.ects);

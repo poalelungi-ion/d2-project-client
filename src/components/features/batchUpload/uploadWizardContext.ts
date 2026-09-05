@@ -5,6 +5,9 @@ import type { NameSplitRule, PreviewRecord, UploadCourseInfo } from '../../../ty
 export interface UploadWizardValue {
   step: number;
   file: File | null;
+  paste: string;
+  /** Filename, or "Pasted data", shown on later wizard steps. */
+  sourceLabel: string;
   demoFile: string;
   courseInfo: UploadCourseInfo;
   nameSplitRule: NameSplitRule;
@@ -12,6 +15,7 @@ export interface UploadWizardValue {
 
   setStep: (step: number) => void;
   setFile: (file: File | null) => void;
+  setPaste: (text: string) => void;
   setDemoFile: (name: string) => void;
   setCourseInfo: (patch: Partial<UploadCourseInfo>) => void;
   setNameSplitRule: (rule: NameSplitRule) => void;

@@ -75,16 +75,19 @@ export const ReviewStep = () => {
               checkboxSelection: true,
               headerCheckboxSelection: true,
               editable: true,
+              flex: 1.1,
+              minWidth: 140,
             },
-            { field: 'first_name', headerName: 'First Name', editable: true },
-            { field: 'last_name', headerName: 'Last Name', editable: true },
-            { field: 'program', headerName: 'Program', editable: true },
-            { field: 'semester', headerName: 'Semester', editable: true },
-            { field: 'grade', headerName: 'Grade', editable: true },
+            { field: 'first_name', headerName: 'First Name', editable: true, flex: 1, minWidth: 110 },
+            { field: 'last_name', headerName: 'Last Name', editable: true, flex: 1, minWidth: 110 },
+            { field: 'program', headerName: 'Program', editable: true, flex: 1.2, minWidth: 130 },
+            { field: 'semester', headerName: 'Semester', editable: true, flex: 0.8, minWidth: 100 },
+            { field: 'grade', headerName: 'Grade', editable: true, flex: 0.6, minWidth: 90 },
             {
               field: 'missing_fields',
               headerName: 'Validation Issues',
-              flex: 1,
+              flex: 2,
+              minWidth: 240,
               cellRenderer: (params: ICellRendererParams<PreviewRecord, string[]>) => {
                 if (!params.value || params.value.length === 0)
                   return (
@@ -98,7 +101,7 @@ export const ReviewStep = () => {
               },
             },
           ]}
-          defaultColDef={{ resizable: true, sortable: true }}
+          defaultColDef={{ resizable: true, sortable: true, flex: 1, minWidth: 90 }}
           getRowStyle={(params: RowClassParams<PreviewRecord>) =>
             params.data && !params.data.is_valid
               ? { background: tint(semantic.error).bg }
