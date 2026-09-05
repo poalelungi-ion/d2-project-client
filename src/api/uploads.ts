@@ -1,7 +1,3 @@
-/**
- * @file uploads.ts
- * @description Ingestion endpoints, mirroring the backend's routers/upload.py.
- */
 import { post, postForm } from './client';
 import type { PreviewRecord } from '../types';
 

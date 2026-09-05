@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -11,41 +12,67 @@ import {
   TextField,
   Button,
 } from '@mui/material';
-import type { AppState } from '../../hooks/useAppLogic';
+import type { AddGradeFormValues, StudentDetails } from '../../types';
+import { notify } from '../../stores';
+import { useApiMutations, useCourses } from '../../hooks/useApi';
 
-export function AddGradeDialog(props: AppState) {
-  const {
-    addGradeDialogOpen,
-    setAddGradeDialogOpen,
-    addGradeForm,
-    setAddGradeForm,
-    coursesData,
-    handleAddGrade,
-  } = props;
+interface AddGradeDialogProps {
+  /** Whose transcript the record is appended to. */
+  student: StudentDetails;
+  onClose: () => void;
+  /** Called after a successful save so the transcript can reload. */
+  onSaved: () => void;
+}
+
+const EMPTY_FORM: AddGradeFormValues = {
+  course_id: '',
+  semester: 'WiSe23/24',
+  grade: 1.0,
+};
+
+export function AddGradeDialog({ student, onClose, onSaved }: AddGradeDialogProps) {
+  // Its own request: the dialog is the only thing on this screen that needs
+  // the course list, so StudentDetail should not have to carry it.
+  const { courses } = useCourses();
+  const { addGrade } = useApiMutations();
+  const [values, setValues] = useState<AddGradeFormValues>(EMPTY_FORM);
+
+  const update = (patch: Partial<AddGradeFormValues>) =>
+    setValues((current) => ({ ...current, ...patch }));
+
+  const handleSave = async () => {
+    if (values.course_id === '') {
+      notify('Please select a course', 'warning');
+      return;
+    }
+    const added = await addGrade(student.student_id, {
+      course_id: values.course_id,
+      semester: values.semester,
+      grade: values.grade,
+    });
+    if (added) {
+      onSaved();
+      onClose();
+    }
+  };
 
   return (
-    <Dialog
-      disableRestoreFocus
-      disableEnforceFocus
-      open={addGradeDialogOpen}
-      onClose={() => setAddGradeDialogOpen(false)}
-      PaperProps={{ sx: { borderRadius: '16px', p: 1, minWidth: 400 } }}
-    >
-      <DialogTitle sx={{ fontWeight: '800' }}>Add Manual Course Record</DialogTitle>
+    <Dialog disableRestoreFocus disableEnforceFocus open onClose={onClose}>
+      <DialogTitle>Add Manual Course Record</DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
           Assign a new exam attempt or a new course entirely to this student&apos;s transcript.
         </Typography>
         <FormControl fullWidth variant="outlined">
-          <InputLabel>Course</InputLabel>
+          <InputLabel id="add-grade-course-label">Course</InputLabel>
           <Select
-            value={addGradeForm.course_id}
+            labelId="add-grade-course-label"
+            id="add-grade-course"
+            value={values.course_id}
             label="Course"
-            onChange={(e) =>
-              setAddGradeForm({ ...addGradeForm, course_id: Number(e.target.value) })
-            }
+            onChange={(e) => update({ course_id: Number(e.target.value) })}
           >
-            {coursesData.map((c) => (
+            {courses.map((c) => (
               <MenuItem key={c.course_id} value={c.course_id}>
                 {c.course_name}
               </MenuItem>
@@ -53,11 +80,13 @@ export function AddGradeDialog(props: AppState) {
           </Select>
         </FormControl>
         <FormControl fullWidth variant="outlined">
-          <InputLabel>Semester</InputLabel>
+          <InputLabel id="add-grade-semester-label">Semester</InputLabel>
           <Select
-            value={addGradeForm.semester}
+            labelId="add-grade-semester-label"
+            id="add-grade-semester"
+            value={values.semester}
             label="Semester"
-            onChange={(e) => setAddGradeForm({ ...addGradeForm, semester: e.target.value })}
+            onChange={(e) => update({ semester: e.target.value })}
           >
             <MenuItem value="WiSe23/24">Winter Semester 23/24</MenuItem>
             <MenuItem value="SoSe24">Summer Semester 24</MenuItem>
@@ -70,26 +99,15 @@ export function AddGradeDialog(props: AppState) {
           type="number"
           inputProps={{ step: 0.1, min: 1.0, max: 5.0 }}
           label="Grade (1.0 - 5.0)"
-          value={addGradeForm.grade}
-          onChange={(e) =>
-            setAddGradeForm({ ...addGradeForm, grade: parseFloat(e.target.value) })
-          }
+          value={values.grade}
+          onChange={(e) => update({ grade: parseFloat(e.target.value) })}
         />
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button
-          onClick={() => setAddGradeDialogOpen(false)}
-          color="secondary"
-          sx={{ fontWeight: '600' }}
-        >
+        <Button onClick={onClose} color="secondary">
           Cancel
         </Button>
-        <Button
-          onClick={() => void handleAddGrade()}
-          variant="contained"
-          color="primary"
-          sx={{ borderRadius: '12px', fontWeight: 'bold' }}
-        >
+        <Button onClick={() => void handleSave()} variant="contained" color="primary">
           Add Record
         </Button>
       </DialogActions>

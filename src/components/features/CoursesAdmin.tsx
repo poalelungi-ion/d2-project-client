@@ -20,54 +20,68 @@ import {
 import { Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
 import { AgGridReact } from 'ag-grid-react';
 import type { RowClickedEvent } from 'ag-grid-community';
+import { useCallback, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Course, CoursesSortBy, ViewMode } from '../../types';
-import type { AppState } from '../../hooks/useAppLogic';
-import { CourseDetail } from './CourseDetail';
+import { ROUTES } from '../../app/navigation';
+import { useCourses } from '../../hooks/useApi';
+import { useQueryParam } from '../../hooks/useQueryParam';
+import { COURSE_SORTS, VIEW_MODES } from '../../utils/constants';
+import { passRateColor } from '../../styles/colors';
+import { gridContainer, metaChip, pageSubtitle, pageTitle } from '../../styles/mixins';
+import { courseColumns } from './columns';
+import { CourseFormDialog } from '../forms/CourseFormDialog';
 
-export const CoursesAdmin = (props: AppState) => {
-  const {
-    coursesData,
-    selectedCourse,
-    setSelectedCourse,
-    loadingCourses,
-    searchQuery,
-    setSearchQuery,
-    coursesSortBy,
-    setCoursesSortBy,
-    coursesPage,
-    viewMode,
-    setViewMode,
-    courseColumnDefs,
-    openCourseForm,
-  } = props;
+const ITEMS_PER_PAGE = 20;
 
-  if (selectedCourse) {
-    return <CourseDetail {...props} />;
-  }
-
-  let activeCourses = coursesData.filter((c) => !c.is_archived);
-  if (searchQuery) {
-    activeCourses = activeCourses.filter(
-      (c) =>
-        c.course_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.course_id.toString().includes(searchQuery),
-    );
-  }
-  if (coursesSortBy === 'name') {
-    activeCourses.sort((a, b) => a.course_name.localeCompare(b.course_name));
-  } else if (coursesSortBy === 'semester') {
-    activeCourses.sort((a, b) => (a.semester || '').localeCompare(b.semester || ''));
-  }
-
-  const itemsPerPage = 20;
-  const paginatedCourses = activeCourses.slice(
-    (coursesPage - 1) * itemsPerPage,
-    coursesPage * itemsPerPage,
+export const CoursesAdmin = () => {
+  const { courses, loading: loadingCourses, refetch } = useCourses();
+  const [searchQuery, setSearchQuery] = useQueryParam<string>('q', '');
+  const [coursesSortBy, setCoursesSortBy] = useQueryParam<CoursesSortBy>(
+    'sort',
+    'name',
+    COURSE_SORTS,
   );
+  const [viewMode, setViewMode] = useQueryParam<ViewMode>('view', 'table', VIEW_MODES);
+  // `null` while closed; when open it holds the course being edited, or null
+  // inside the wrapper for a create.
+  const [form, setForm] = useState<{ course: Course | null } | null>(null);
+  const openCourseForm = useCallback((course: Course | null = null) => setForm({ course }), []);
+
+  const navigate = useNavigate();
+  const courseColumnDefs = useMemo(() => courseColumns(openCourseForm), [openCourseForm]);
+
+  const activeCourses = useMemo(() => {
+    let result = courses.filter((c) => !c.is_archived);
+    if (searchQuery) {
+      result = result.filter(
+        (c) =>
+          c.course_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.course_id.toString().includes(searchQuery),
+      );
+    }
+    // Copied above, so sorting in place does not mutate the store's array.
+    if (coursesSortBy === 'name') {
+      result.sort((a, b) => a.course_name.localeCompare(b.course_name));
+    } else if (coursesSortBy === 'semester') {
+      result.sort((a, b) => (a.semester || '').localeCompare(b.semester || ''));
+    }
+    return result;
+  }, [courses, searchQuery, coursesSortBy]);
+
+  // The card view shows only the first page; the table view paginates itself.
+  const paginatedCourses = activeCourses.slice(0, ITEMS_PER_PAGE);
 
   return (
     <Fade in={true} timeout={800}>
       <Box sx={{ flexGrow: 1 }}>
+        {form && (
+          <CourseFormDialog
+            course={form.course}
+            onClose={() => setForm(null)}
+            onSaved={() => void refetch()}
+          />
+        )}
         <Box
           sx={{
             display: 'flex',
@@ -79,14 +93,10 @@ export const CoursesAdmin = (props: AppState) => {
           }}
         >
           <Box>
-            <Typography
-              variant="h3"
-              gutterBottom
-              sx={{ fontWeight: '800', letterSpacing: '-1.5px', m: 0 }}
-            >
+            <Typography variant="h3" gutterBottom sx={{ ...pageTitle, m: 0 }}>
               Analysis Hub
             </Typography>
-            <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: '400', mt: 1 }}>
+            <Typography variant="h6" sx={{ ...pageSubtitle, mt: 1 }}>
               Select a course to view detailed analytics.
             </Typography>
           </Box>
@@ -98,7 +108,6 @@ export const CoursesAdmin = (props: AppState) => {
                 if (newMode) setViewMode(newMode);
               }}
               size="small"
-              sx={{ bgcolor: 'background.paper' }}
             >
               <ToggleButton value="grid">Grid</ToggleButton>
               <ToggleButton value="table">Table</ToggleButton>
@@ -109,41 +118,24 @@ export const CoursesAdmin = (props: AppState) => {
               placeholder="Search courses..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{
-                bgcolor: 'background.paper',
-                borderRadius: '12px',
-                '& .MuiOutlinedInput-root': { borderRadius: '12px' },
-              }}
+              sx={{ bgcolor: 'background.paper' }}
             />
             {viewMode === 'grid' && (
-              <FormControl
-                size="small"
-                sx={{ minWidth: 200, bgcolor: 'background.paper', borderRadius: '12px' }}
-              >
-                <InputLabel>Sort By</InputLabel>
+              <FormControl size="small" sx={{ minWidth: 200, bgcolor: 'background.paper' }}>
+                <InputLabel id="courses-sort-label">Sort By</InputLabel>
                 <Select
+                  labelId="courses-sort-label"
+                  id="courses-sort"
                   value={coursesSortBy}
                   label="Sort By"
                   onChange={(e) => setCoursesSortBy(e.target.value as CoursesSortBy)}
-                  sx={{ borderRadius: '12px' }}
                 >
                   <MenuItem value="name">Course Name (A-Z)</MenuItem>
                   <MenuItem value="semester">Semester (Chronological)</MenuItem>
                 </Select>
               </FormControl>
             )}
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() => openCourseForm()}
-              sx={{
-                borderRadius: '12px',
-                height: 48,
-                px: 3,
-                boxShadow: '0 8px 20px rgba(183, 28, 28, 0.3)',
-              }}
-            >
+            <Button variant="cta" startIcon={<AddIcon />} onClick={() => openCourseForm()}>
               Create New Course
             </Button>
           </Box>
@@ -153,7 +145,7 @@ export const CoursesAdmin = (props: AppState) => {
           <Grid container spacing={3}>
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <Grid item xs={12} md={6} lg={4} key={i}>
-                <Skeleton variant="rectangular" height={200} sx={{ borderRadius: '12px' }} />
+                <Skeleton variant="rectangular" height={200} />
               </Grid>
             ))}
           </Grid>
@@ -168,15 +160,8 @@ export const CoursesAdmin = (props: AppState) => {
             {paginatedCourses.map((course) => (
               <Grid item xs={12} md={6} lg={4} key={course.course_id}>
                 <Card
-                  sx={{
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 12px 24px rgba(0,0,0,0.1)',
-                    },
-                  }}
-                  onClick={() => setSelectedCourse(course)}
+                  variant="interactive"
+                  onClick={() => void navigate(ROUTES.courseDetail(course.course_id))}
                 >
                   <CardContent sx={{ p: 3, position: 'relative' }}>
                     <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
@@ -203,40 +188,13 @@ export const CoursesAdmin = (props: AppState) => {
                         flexWrap: 'wrap',
                       }}
                     >
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: 'text.secondary',
-                          bgcolor: 'rgba(0,0,0,0.05)',
-                          px: 1,
-                          py: 0.5,
-                          borderRadius: 1,
-                        }}
-                      >
+                      <Typography variant="caption" sx={metaChip}>
                         {course.semester}
                       </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: 'text.secondary',
-                          bgcolor: 'rgba(0,0,0,0.05)',
-                          px: 1,
-                          py: 0.5,
-                          borderRadius: 1,
-                        }}
-                      >
+                      <Typography variant="caption" sx={metaChip}>
                         ID: {course.course_id}
                       </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: 'text.secondary',
-                          bgcolor: 'rgba(0,0,0,0.05)',
-                          px: 1,
-                          py: 0.5,
-                          borderRadius: 1,
-                        }}
-                      >
+                      <Typography variant="caption" sx={metaChip}>
                         {course.assigned_professor}
                       </Typography>
                     </Box>
@@ -252,7 +210,7 @@ export const CoursesAdmin = (props: AppState) => {
                       sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}
                     >
                       Pass Rate:{' '}
-                      <strong style={{ color: course.pass_rate > 50 ? '#2E7D32' : '#D32F2F' }}>
+                      <strong style={{ color: passRateColor(course.pass_rate) }}>
                         {course.pass_rate}%
                       </strong>
                     </Typography>
@@ -268,10 +226,7 @@ export const CoursesAdmin = (props: AppState) => {
             ))}
           </Grid>
         ) : (
-          <div
-            className="ag-theme-alpine"
-            style={{ flex: 1, width: '100%', height: '600px', marginTop: '16px' }}
-          >
+          <Box className="ag-theme-alpine" sx={gridContainer}>
             <AgGridReact<Course>
               rowData={activeCourses}
               columnDefs={courseColumnDefs}
@@ -280,10 +235,10 @@ export const CoursesAdmin = (props: AppState) => {
               pagination={true}
               paginationPageSize={20}
               onRowClicked={(e: RowClickedEvent<Course>) => {
-                if (e.data) setSelectedCourse(e.data);
+                if (e.data) void navigate(ROUTES.courseDetail(e.data.course_id));
               }}
             />
-          </div>
+          </Box>
         )}
       </Box>
     </Fade>

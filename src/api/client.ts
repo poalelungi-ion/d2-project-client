@@ -1,19 +1,3 @@
-/**
- * @file client.ts
- * @description The single place this app knows the backend's address and
- * credentials. Every request to the API goes through here.
- *
- * The base URL and token come from the environment so the same build can be
- * pointed at a local backend, a staging one or production. Vite inlines
- * `VITE_`-prefixed variables at build time, so a production image must be
- * built with the values it will run against; see .env.example.
- *
- * These helpers deliberately return the raw `Response` rather than parsed
- * JSON. Callers inspect `res.ok` and `res.status` themselves -- notably to
- * turn a 409 into the "modified by another user" message -- so handing back
- * the Response keeps that handling intact.
- */
-
 export const API_BASE_URL: string =
   import.meta.env?.VITE_API_BASE_URL ?? 'http://localhost:8000/api';
 

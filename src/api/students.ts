@@ -1,7 +1,3 @@
-/**
- * @file students.ts
- * @description Student endpoints, mirroring the backend's routers/students.py.
- */
 import { get, post, put } from './client';
 import type { StudentStatus } from '../types';
 
