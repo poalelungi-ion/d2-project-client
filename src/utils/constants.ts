@@ -5,16 +5,14 @@
  * src/api/client.ts, the only module that talks to the API.
  */
 export const STEPS: readonly string[] = [
-  'Upload file',
+  'Add data',
   'Course',
   'Map columns',
   'Review & fix',
   'Done',
 ];
 
-export const TABS: readonly string[] = [
-  'Analysis Hub',
-  'Batch Data Upload',
-  'Teacher Dashboard',
-  'Student LSF Roster',
-];
+/** Runtime companions to the ViewMode / CoursesSortBy types, for validating URLs. */
+export const VIEW_MODES = ['grid', 'table'] as const;
+
+export const COURSE_SORTS = ['name', 'semester'] as const;

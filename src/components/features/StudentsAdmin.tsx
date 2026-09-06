@@ -20,39 +20,59 @@ import {
 } from '@mui/icons-material';
 import { AgGridReact } from 'ag-grid-react';
 import type { RowClickedEvent } from 'ag-grid-community';
+import { useCallback, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Student, ViewMode } from '../../types';
-import type { AppState } from '../../hooks/useAppLogic';
-import { StudentDetail } from './StudentDetail';
+import { ROUTES } from '../../app/navigation';
+import { useStudents } from '../../hooks/useApi';
+import { useQueryParam } from '../../hooks/useQueryParam';
+import { VIEW_MODES } from '../../utils/constants';
+import { semantic } from '../../styles/colors';
+import { borders, shadows } from '../../styles/tokens';
+import { gridContainer, pageSubtitle, pageTitle } from '../../styles/mixins';
+import { studentColumns } from './columns';
+import { StudentFormDialog } from '../forms/StudentFormDialog';
 
-export const StudentsAdmin = (props: AppState) => {
-  const {
-    studentsData,
-    selectedStudent,
-    studentViewMode,
-    setStudentViewMode,
-    studentSearchQuery,
-    setStudentSearchQuery,
-    studentRosterColumnDefs,
-    openStudentForm,
-    fetchStudentTranscript,
-  } = props;
+export const StudentsAdmin = () => {
+  const { students, refetch } = useStudents();
+  const [studentSearchQuery, setStudentSearchQuery] = useQueryParam<string>('q', '');
+  const [studentViewMode, setStudentViewMode] = useQueryParam<ViewMode>(
+    'view',
+    'table',
+    VIEW_MODES,
+  );
+  // `null` while closed; when open it holds the student being edited, or null
+  // inside the wrapper for a create.
+  const [form, setForm] = useState<{ student: Student | null } | null>(null);
+  const openStudentForm = useCallback(
+    (student: Student | null = null) => setForm({ student }),
+    [],
+  );
 
-  if (selectedStudent) {
-    return <StudentDetail {...props} />;
-  }
+  const navigate = useNavigate();
+  const studentRosterColumnDefs = useMemo(
+    () => studentColumns(openStudentForm),
+    [openStudentForm],
+  );
 
-  let activeStudents = studentsData;
-  if (studentSearchQuery) {
-    activeStudents = activeStudents.filter(
-      (s) =>
-        s.name.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
-        s.student_id.toString().includes(studentSearchQuery),
+  const activeStudents = useMemo(() => {
+    if (!studentSearchQuery) return students;
+    const query = studentSearchQuery.toLowerCase();
+    return students.filter(
+      (s) => s.name.toLowerCase().includes(query) || s.student_id.toString().includes(query),
     );
-  }
+  }, [students, studentSearchQuery]);
 
   return (
     <Fade in={true} timeout={800}>
       <Box sx={{ flexGrow: 1 }}>
+        {form && (
+          <StudentFormDialog
+            student={form.student}
+            onClose={() => setForm(null)}
+            onSaved={() => void refetch()}
+          />
+        )}
         <Box
           sx={{
             display: 'flex',
@@ -62,14 +82,10 @@ export const StudentsAdmin = (props: AppState) => {
           }}
         >
           <Box>
-            <Typography
-              variant="h3"
-              gutterBottom
-              sx={{ fontWeight: '800', letterSpacing: '-1.5px' }}
-            >
+            <Typography variant="h3" gutterBottom sx={pageTitle}>
               LSF Student Roster
             </Typography>
-            <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: '400' }}>
+            <Typography variant="h6" sx={pageSubtitle}>
               Manage the student directory and view individual marks.
             </Typography>
           </Box>
@@ -79,7 +95,6 @@ export const StudentsAdmin = (props: AppState) => {
               exclusive
               onChange={(_e, v: ViewMode | null) => v && setStudentViewMode(v)}
               size="small"
-              sx={{ bgcolor: 'background.paper', borderRadius: '12px' }}
             >
               <ToggleButton value="grid">Grid</ToggleButton>
               <ToggleButton value="table">Table</ToggleButton>
@@ -90,25 +105,10 @@ export const StudentsAdmin = (props: AppState) => {
               placeholder="Search students..."
               value={studentSearchQuery}
               onChange={(e) => setStudentSearchQuery(e.target.value)}
-              sx={{
-                bgcolor: 'background.paper',
-                borderRadius: '12px',
-                '& .MuiOutlinedInput-root': { borderRadius: '12px' },
-              }}
+              sx={{ bgcolor: 'background.paper' }}
             />
 
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() => openStudentForm()}
-              sx={{
-                borderRadius: '12px',
-                height: 48,
-                px: 3,
-                boxShadow: '0 8px 20px rgba(183, 28, 28, 0.3)',
-              }}
-            >
+            <Button variant="cta" startIcon={<AddIcon />} onClick={() => openStudentForm()}>
               Add Student
             </Button>
           </Box>
@@ -119,12 +119,15 @@ export const StudentsAdmin = (props: AppState) => {
             {activeStudents.map((student) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={student.student_id}>
                 <Card
+                  variant="interactive"
                   sx={{
-                    cursor: 'pointer',
-                    border: student.program === 'Unknown' ? '2px solid #FF8F00' : 'none',
                     position: 'relative',
+                    border:
+                      student.program === 'Unknown'
+                        ? borders.emphasis(semantic.warning)
+                        : undefined,
                   }}
-                  onClick={() => void fetchStudentTranscript(student.student_id)}
+                  onClick={() => void navigate(ROUTES.studentDetail(student.student_id))}
                 >
                   <Box sx={{ position: 'absolute', top: 12, right: 12, zIndex: 2 }}>
                     <IconButton
@@ -138,7 +141,7 @@ export const StudentsAdmin = (props: AppState) => {
                     </IconButton>
                   </Box>
                   {student.program === 'Unknown' && (
-                    <Box sx={{ position: 'absolute', top: 12, left: 12, color: '#FF8F00' }}>
+                    <Box sx={{ position: 'absolute', top: 12, left: 12, color: 'warning.main' }}>
                       <WarningAmberIcon />
                     </Box>
                   )}
@@ -149,11 +152,11 @@ export const StudentsAdmin = (props: AppState) => {
                       sx={{
                         width: 72,
                         height: 72,
-                        bgcolor: '#424242',
+                        bgcolor: 'grey.800',
                         fontSize: '2rem',
                         fontWeight: 'bold',
                         mb: 2,
-                        boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+                        boxShadow: shadows.avatar,
                       }}
                     >
                       {student.name.charAt(0)}
@@ -161,7 +164,7 @@ export const StudentsAdmin = (props: AppState) => {
                     <Typography variant="h6" sx={{ fontWeight: '700', textAlign: 'center' }}>
                       {student.name}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#B71C1C', mb: 2, fontWeight: '600' }}>
+                    <Typography variant="body2" sx={{ color: 'primary.main', mb: 2, fontWeight: 600 }}>
                       {student.student_id}
                     </Typography>
                     <Divider sx={{ width: '100%', mb: 2, opacity: 0.5 }} />
@@ -181,10 +184,7 @@ export const StudentsAdmin = (props: AppState) => {
             ))}
           </Grid>
         ) : (
-          <div
-            className="ag-theme-alpine"
-            style={{ flex: 1, width: '100%', height: '600px', marginTop: '16px' }}
-          >
+          <Box className="ag-theme-alpine" sx={gridContainer}>
             <AgGridReact<Student>
               rowData={activeStudents}
               columnDefs={studentRosterColumnDefs}
@@ -193,10 +193,10 @@ export const StudentsAdmin = (props: AppState) => {
               pagination={true}
               paginationPageSize={20}
               onRowClicked={(e: RowClickedEvent<Student>) => {
-                if (e.data) void fetchStudentTranscript(e.data.student_id);
+                if (e.data) void navigate(ROUTES.studentDetail(e.data.student_id));
               }}
             />
-          </div>
+          </Box>
         )}
       </Box>
     </Fade>

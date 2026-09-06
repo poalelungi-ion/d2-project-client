@@ -1,7 +1,3 @@
-/**
- * @file courses.ts
- * @description Course endpoints, mirroring the backend's routers/courses.py.
- */
 import { get, post, put } from './client';
 
 /** Payload for POST /courses/ -- see the backend's schemas.CourseCreate. */

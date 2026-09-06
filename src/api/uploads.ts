@@ -1,7 +1,3 @@
-/**
- * @file uploads.ts
- * @description Ingestion endpoints, mirroring the backend's routers/upload.py.
- */
 import { post, postForm } from './client';
 import type { PreviewRecord } from '../types';
 
@@ -18,7 +14,10 @@ export interface UploadConfirmPayload {
 export const uploadFile = (formData: FormData): Promise<Response> =>
   postForm('/upload/', formData);
 
-/** Parses and validates a file, returning rows for review without saving. */
+/**
+ * Parses a file or pasted table (the `paste` form field) and returns rows
+ * for review without saving. Same endpoint either way.
+ */
 export const previewUpload = (formData: FormData): Promise<Response> =>
   postForm('/upload/preview/', formData);
 

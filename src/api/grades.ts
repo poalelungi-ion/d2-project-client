@@ -1,7 +1,3 @@
-/**
- * @file grades.ts
- * @description Exam result endpoints, mirroring the backend's routers/grades.py.
- */
 import { post } from './client';
 import type { TranscriptEntry } from '../types';
 

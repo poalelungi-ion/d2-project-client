@@ -172,12 +172,6 @@ export interface AddGradeFormValues {
   grade: number;
 }
 
-export interface UploadFormValues {
-  semester: string;
-  course: string;
-  file: File | null;
-}
-
 /** Course metadata that applies to every row of a batch upload. */
 export interface UploadCourseInfo {
   courseNumber: string;
