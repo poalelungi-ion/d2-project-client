@@ -58,7 +58,7 @@ const NAME_SPLIT_RULES: readonly NameSplitRule[] = ['Last, First', 'First Last']
 
 export const MapColumnsStep = () => {
   const {
-    demoFile: selectedDemoFile,
+    sourceLabel,
     nameSplitRule,
     setNameSplitRule,
     setStep: setActiveStep,
@@ -70,7 +70,7 @@ export const MapColumnsStep = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-        <Box sx={{ ...monoChip, mr: 2 }}>{selectedDemoFile}</Box>
+        <Box sx={{ ...monoChip, mr: 2 }}>{sourceLabel}</Box>
         <Typography variant="body2" color="text.secondary">
           5 columns &middot; 8 rows detected
         </Typography>

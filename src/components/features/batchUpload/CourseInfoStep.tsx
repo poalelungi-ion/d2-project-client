@@ -6,7 +6,7 @@ const EXAM_DATES = ['1st date', '2nd date'] as const;
 
 export const CourseInfoStep = () => {
   const {
-    demoFile: selectedDemoFile,
+    sourceLabel,
     courseInfo: uploadCourseInfo,
     setCourseInfo: setUploadCourseInfo,
     setStep: setActiveStep,
@@ -19,9 +19,9 @@ export const CourseInfoStep = () => {
         sx={{ mb: 4, color: 'text.secondary', fontSize: '1rem', maxWidth: 800 }}
       >
         A table is always for one course and one semester &mdash; that can&apos;t vary within
-        a file. Tell us which one{' '}
+        one import. Tell us which one{' '}
         <Box component="span" sx={{ ...monoChip, px: 1 }}>
-          {selectedDemoFile}
+          {sourceLabel}
         </Box>{' '}
         is for.
       </Typography>

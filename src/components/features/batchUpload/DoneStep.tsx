@@ -15,7 +15,7 @@ export const DoneStep = () => {
         The grades have been safely stored in the database.
       </Typography>
       <Button variant="outlined" onClick={resetWizard} sx={{ px: 3 }}>
-        Import another file
+        Import more grades
       </Button>
     </Box>
   );

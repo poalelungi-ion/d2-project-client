@@ -4,6 +4,7 @@ import type { GridApi } from 'ag-grid-community';
 import type { NameSplitRule, PreviewRecord, UploadCourseInfo } from '../../../types';
 import { notify } from '../../../stores';
 import { useApiMutations } from '../../../hooks/useApi';
+import { isTabularPaste } from '../../../utils/tabularPaste';
 import { UploadWizardContext } from './uploadWizardContext';
 import type { UploadWizardValue } from './uploadWizardContext';
 
@@ -24,7 +25,8 @@ interface UploadWizardProviderProps {
 export function UploadWizardProvider({ initialCourseName, children }: UploadWizardProviderProps) {
   const { previewImport, confirmImport: sendImport } = useApiMutations();
   const [step, setStep] = useState(0);
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFileState] = useState<File | null>(null);
+  const [paste, setPasteState] = useState('');
   const [demoFile, setDemoFile] = useState('Klausur_DBS_WS2425.xlsx');
   const [nameSplitRule, setNameSplitRule] = useState<NameSplitRule>('Last, First');
   const [preview, setPreview] = useState<PreviewRecord[]>([]);
@@ -40,21 +42,46 @@ export function UploadWizardProvider({ initialCourseName, children }: UploadWiza
     [],
   );
 
+  const setFile = useCallback((next: File | null) => {
+    setFileState(next);
+    if (next) setPasteState('');
+  }, []);
+
+  const setPaste = useCallback((text: string) => {
+    setPasteState(text);
+    if (text) setFileState(null);
+  }, []);
+
+  const sourceLabel = file?.name ?? (paste.trim() ? 'Pasted data' : demoFile);
+
   const setGridApi = useCallback((api: GridApi<PreviewRecord> | null) => {
     gridApiRef.current = api;
   }, []);
 
   const runPreview = useCallback(async () => {
-    if (!file) {
-      notify('Please select a file first.', 'error');
+    const trimmedPaste = paste.trim();
+    let source: { file: File } | { paste: string };
+    if (file) {
+      source = { file };
+    } else if (trimmedPaste) {
+      if (!isTabularPaste(trimmedPaste)) {
+        notify(
+          'Pasted data is not tabular. Copy cells from a spreadsheet or paste CSV.',
+          'error',
+        );
+        return;
+      }
+      source = { paste: trimmedPaste };
+    } else {
+      notify('Please select a file or paste tabular data first.', 'error');
       return;
     }
-    const rows = await previewImport(file, courseInfo, nameSplitRule);
+    const rows = await previewImport(source, courseInfo, nameSplitRule);
     if (rows) {
       setPreview(rows);
       setStep(3);
     }
-  }, [file, courseInfo, nameSplitRule, previewImport]);
+  }, [file, paste, courseInfo, nameSplitRule, previewImport]);
 
   const confirmImport = useCallback(async () => {
     const api = gridApiRef.current;
@@ -70,7 +97,8 @@ export function UploadWizardProvider({ initialCourseName, children }: UploadWiza
 
   const reset = useCallback(() => {
     setStep(0);
-    setFile(null);
+    setFileState(null);
+    setPasteState('');
     setPreview([]);
     gridApiRef.current = null;
   }, []);
@@ -79,12 +107,15 @@ export function UploadWizardProvider({ initialCourseName, children }: UploadWiza
     () => ({
       step,
       file,
+      paste,
+      sourceLabel,
       demoFile,
       courseInfo,
       nameSplitRule,
       preview,
       setStep,
       setFile,
+      setPaste,
       setDemoFile,
       setCourseInfo,
       setNameSplitRule,
@@ -96,10 +127,14 @@ export function UploadWizardProvider({ initialCourseName, children }: UploadWiza
     [
       step,
       file,
+      paste,
+      sourceLabel,
       demoFile,
       courseInfo,
       nameSplitRule,
       preview,
+      setFile,
+      setPaste,
       setCourseInfo,
       setGridApi,
       runPreview,

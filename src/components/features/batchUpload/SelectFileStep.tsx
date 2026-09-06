@@ -1,10 +1,14 @@
-import { Box, Typography, Grid, Card, Button, useTheme } from '@mui/material';
+import { useState } from 'react';
+import { Box, Typography, Grid, Card, Button, TextField, Divider, useTheme } from '@mui/material';
 import {
   Download as DownloadIcon,
   CheckCircle as CheckCircleIcon,
   TableChart as TableChartIcon,
+  ContentPaste as ContentPasteIcon,
 } from '@mui/icons-material';
 import { useUploadWizard } from './uploadWizardContext';
+import { notify } from '../../../stores';
+import { isTabularPaste } from '../../../utils/tabularPaste';
 import { radii, typography } from '../../../styles/tokens';
 import { dropZone, fieldLabel, selectableTile, warningBadge } from '../../../styles/mixins';
 
@@ -36,6 +40,8 @@ export const SelectFileStep = () => {
   const {
     file,
     setFile,
+    paste,
+    setPaste,
     demoFile: selectedDemoFile,
     setDemoFile: setSelectedDemoFile,
     setStep: setActiveStep,
@@ -43,6 +49,29 @@ export const SelectFileStep = () => {
 
   const theme = useTheme();
   const brandColor = theme.palette.primary.main;
+  const hasPaste = Boolean(paste.trim());
+  const [pasteError, setPasteError] = useState<string | null>(null);
+
+  const continueToCourse = () => {
+    if (file) {
+      setPasteError(null);
+      setActiveStep(1);
+      return;
+    }
+    if (hasPaste) {
+      if (!isTabularPaste(paste)) {
+        const message =
+          'Pasted data is not tabular. Copy cells from a spreadsheet or paste CSV.';
+        setPasteError(message);
+        notify(message, 'error');
+        return;
+      }
+      setPasteError(null);
+      setActiveStep(1);
+      return;
+    }
+    notify('Please select a file or paste tabular data first.', 'error');
+  };
 
   return (
     <Box>
@@ -50,8 +79,9 @@ export const SelectFileStep = () => {
         variant="body1"
         sx={{ mb: 4, color: 'text.secondary', fontSize: '1rem', maxWidth: 800 }}
       >
-        Upload a spreadsheet from any lecturer. The system standardises the columns, flags
-        problems automatically, and only saves once everything is clean.
+        Upload a spreadsheet or paste rows copied from Excel, LibreOffice or Google Sheets.
+        The system standardises the columns, flags problems automatically, and only saves
+        once everything is clean.
       </Typography>
       <Box sx={{ ...dropZone(Boolean(file)), p: 8, textAlign: 'center', mb: 6 }}>
         <input
@@ -93,6 +123,55 @@ export const SelectFileStep = () => {
             Selected: {file.name}
           </Typography>
         )}
+      </Box>
+
+      <Divider sx={{ mb: 4 }}>
+        <Typography variant="overline" sx={{ ...fieldLabel, mb: 0 }}>
+          or paste tabular data
+        </Typography>
+      </Divider>
+
+      <Box
+        sx={{
+          ...dropZone(hasPaste),
+          p: 3,
+          mb: 6,
+          cursor: 'default',
+          textAlign: 'left',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+          <ContentPasteIcon sx={{ color: 'grey.600' }} />
+          <Typography variant="subtitle1" fontWeight="700">
+            Paste from a spreadsheet
+          </Typography>
+        </Box>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Copy the cells (including the header row) and paste them here. Tab-separated and CSV
+          both work.
+        </Typography>
+        <TextField
+          multiline
+          minRows={6}
+          maxRows={14}
+          fullWidth
+          placeholder={'Matrikelnr\tName\tStudiengang\tFachsemester\tNote\n1012345\tSchneider, Lena\tSE Master\t3\t1.7'}
+          value={paste}
+          onChange={(e) => {
+            setPasteError(null);
+            setPaste(e.target.value);
+          }}
+          error={Boolean(pasteError)}
+          helperText={pasteError}
+          inputProps={{ 'aria-label': 'Paste tabular grade data' }}
+          sx={{
+            '& .MuiInputBase-input': {
+              fontFamily: typography.mono,
+              fontSize: '0.85rem',
+              whiteSpace: 'pre',
+            },
+          }}
+        />
       </Box>
 
       <Typography variant="overline" sx={{ ...fieldLabel, mb: 2 }}>
@@ -144,7 +223,7 @@ export const SelectFileStep = () => {
       </Grid>
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 'auto', pt: 2 }}>
-        <Button variant="contained" size="large" onClick={() => setActiveStep(1)} sx={{ px: 4 }}>
+        <Button variant="contained" size="large" onClick={continueToCourse} sx={{ px: 4 }}>
           Continue &rarr;
         </Button>
       </Box>
