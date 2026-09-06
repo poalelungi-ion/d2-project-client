@@ -12,7 +12,7 @@ const DEFAULT_COURSE_INFO: UploadCourseInfo = {
   courseNumber: '3545',
   courseName: 'SE Tools Lab',
   ects: '6',
-  examDate: '1st date',
+  attemptType: 'Exam 1',
   semester: 'WiSe 2024/25',
 };
 

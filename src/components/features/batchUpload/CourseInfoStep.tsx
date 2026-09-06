@@ -1,8 +1,9 @@
-import { Box, Typography, Button, TextField } from '@mui/material';
+import { Box, Typography, Button, TextField, MenuItem, Select } from '@mui/material';
+import type { AttemptType } from '../../../types';
 import { useUploadWizard } from './uploadWizardContext';
-import { fieldLabel, monoChip, segmentedOption, segmentedTrack } from '../../../styles/mixins';
+import { fieldLabel, monoChip } from '../../../styles/mixins';
 
-const EXAM_DATES = ['1st date', '2nd date'] as const;
+const ATTEMPT_TYPES: readonly AttemptType[] = ['Exam 1', 'Exam 2', 'Other'];
 
 export const CourseInfoStep = () => {
   const {
@@ -75,30 +76,31 @@ export const CourseInfoStep = () => {
           </Typography>
         </Box>
         <Box>
-          <Typography variant="overline" sx={fieldLabel}>
-            EXAM DATE
+          <Typography variant="overline" sx={fieldLabel} id="attempt-type-label">
+            ATTEMPT TYPE
           </Typography>
-          <Box sx={segmentedTrack}>
-            {EXAM_DATES.map((date) => (
-              <Button
-                key={date}
-                variant="text"
-                onClick={() => setUploadCourseInfo({ examDate: date })}
-                sx={{
-                  ...segmentedOption(uploadCourseInfo.examDate === date),
-                  px: 2,
-                }}
-              >
-                {date}
-              </Button>
+          <Select
+            fullWidth
+            variant="outlined"
+            labelId="attempt-type-label"
+            value={uploadCourseInfo.attemptType}
+            onChange={(e) =>
+              setUploadCourseInfo({ attemptType: e.target.value as AttemptType })
+            }
+          >
+            {ATTEMPT_TYPES.map((attempt) => (
+              <MenuItem key={attempt} value={attempt}>
+                {attempt}
+              </MenuItem>
             ))}
-          </Box>
+          </Select>
           <Typography
             variant="caption"
             color="text.secondary"
             sx={{ mt: 0.5, display: 'block' }}
           >
-            Lets you compare how the first and second exam date went for this course later.
+            Saved on every record in this import, so you can compare how the first and
+            second sitting of this course went later.
           </Typography>
         </Box>
         <Box>

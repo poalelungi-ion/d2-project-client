@@ -70,6 +70,8 @@ export const studentColumns = (onEdit: (student: Student) => void): ColDef<Stude
 export const transcriptColumns = (mode: ThemeMode): ColDef<TranscriptEntry>[] => [
   { field: 'result_id', headerName: 'ID', hide: true },
   { field: 'attempt', headerName: 'Attempt #', editable: false, flex: 0.8 },
+  // Declared on import, unlike 'Attempt #', which this system derives by counting.
+  { field: 'attempt_type', headerName: 'Exam', editable: false, flex: 1 },
   { field: 'semester', headerName: 'Semester', editable: false, flex: 1 },
   { field: 'course', headerName: 'Course', editable: false, flex: 2 },
   {
