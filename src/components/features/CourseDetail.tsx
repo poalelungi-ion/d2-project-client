@@ -83,6 +83,7 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
     if (!course.marks) return [];
     const dist: Record<string, number> = {};
     course.marks.forEach((m) => {
+      if (m.grade == null) return;
       const g = m.grade.toString();
       dist[g] = (dist[g] ?? 0) + 1;
     });
@@ -109,6 +110,7 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
     if (!analyticsStudentTranscript.length) return [];
     const semMap: Record<string, { sum: number; count: number }> = {};
     analyticsStudentTranscript.forEach((t) => {
+      if (t.grade == null) return;
       if (!semMap[t.semester]) semMap[t.semester] = { sum: 0, count: 0 };
       semMap[t.semester].sum += t.grade;
       semMap[t.semester].count += 1;
@@ -211,7 +213,9 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
                     <Cell
                       key={`cell-${index}`}
                       fill={
-                        analyticsStudent && entry.grade === analyticsStudent.grade.toString()
+                        analyticsStudent &&
+                        analyticsStudent.grade != null &&
+                        entry.grade === analyticsStudent.grade.toString()
                           ? chart.highlight
                           : chart.cohort
                       }
@@ -229,7 +233,7 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
                 mt={1}
               >
                 Highlighting <strong>{analyticsStudent.student_name}&apos;s</strong> grade (
-                {analyticsStudent.grade})
+                {analyticsStudent.grade ?? analyticsStudent.absence_code ?? '—'})
               </Typography>
             )}
           </Paper>

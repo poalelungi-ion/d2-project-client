@@ -15,14 +15,20 @@ export type ThemeMode = 'light' | 'dark';
 /** Lifecycle states the backend stores on a student profile. */
 export type StudentStatus = 'active' | 'graduated' | 'dropped' | 'failed';
 
+/** Pass/fail derived by the system from the numeric grade or NE/EX/AT. */
+export type GradeOutcome = 'passed' | 'failed' | 'excused' | 'invalid';
+
 /** One student's result in a course, as embedded in the course list response. */
 export interface CourseMark {
   student_id: number | null;
   student_name: string;
   program: string;
   semester: string;
-  grade: number;
+  grade: number | null;
   passed: boolean;
+  /** System-calculated status. Never taken from a Passed/Failed file column. */
+  outcome: GradeOutcome;
+  absence_code: string | null;
   version: number;
 }
 
@@ -60,8 +66,11 @@ export interface TranscriptEntry {
   name: string;
   course: string;
   semester: string;
-  grade: number;
+  grade: number | null;
   passed: boolean;
+  /** System-calculated status. Never taken from a Passed/Failed file column. */
+  outcome: GradeOutcome;
+  absence_code: string | null;
   /** 1 for the first sitting of this course, 2 for the retake, and so on. */
   attempt: number;
   /**
@@ -126,6 +135,8 @@ export interface PreviewRecord {
   grade: string;
   missing_fields: string[];
   is_valid: boolean;
+  outcome?: GradeOutcome;
+  absence_code?: string | null;
   [key: string]: unknown;
 }
 
