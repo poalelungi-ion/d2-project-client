@@ -279,7 +279,9 @@ async function loadTranscript(studentId: number): Promise<TranscriptEntry[]> {
 
 async function saveTranscript(rows: TranscriptEntry[]): Promise<TranscriptSaveResult> {
   try {
-    const res = await saveGrades(rows);
+    // Excused sittings have no numeric grade; the system keeps them unless
+    // the lecturer types a mark over the AT placeholder.
+    const res = await saveGrades(rows.filter((row) => row.grade != null));
     if (res.ok) {
       notify('Database updated successfully!');
       return { saved: true, shouldRefresh: true };

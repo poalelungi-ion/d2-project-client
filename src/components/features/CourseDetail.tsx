@@ -27,9 +27,10 @@ import {
 import type { Course, CourseMark, TranscriptEntry } from '../../types';
 import { ROUTES } from '../../app/navigation';
 import { useApiMutations } from '../../hooks/useApi';
-import { chart, passRateColor } from '../../styles/colors';
+import { chart, gradeOutcomeColor, passRateColor } from '../../styles/colors';
 import { radii } from '../../styles/tokens';
 import { pageSubtitle, pageTitle } from '../../styles/mixins';
+import { formatGrade, outcomeLabel } from '../../utils/gradeOutcome';
 
 /** One bar of the course's grade histogram. */
 interface GradeBucket {
@@ -96,14 +97,17 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
     if (!course.marks) return [];
     let pass = 0;
     let fail = 0;
+    let excused = 0;
     course.marks.forEach((m) => {
-      if (m.passed) pass++;
+      if (m.outcome === 'excused') excused++;
+      else if (m.passed || m.outcome === 'passed') pass++;
       else fail++;
     });
     return [
       { name: 'Passed', value: pass, fill: chart.pass },
       { name: 'Failed', value: fail, fill: chart.fail },
-    ];
+      { name: 'Excused', value: excused, fill: chart.excused },
+    ].filter((slice) => slice.value > 0);
   };
 
   const getLongitudinalData = (): SemesterAverage[] => {
@@ -240,7 +244,7 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
 
           <Paper sx={{ p: 3, flex: 1, minWidth: 250, borderRadius: radii.xxl }}>
             <Typography variant="h6" fontWeight="700" mb={2}>
-              Pass vs. Fail
+              Results
             </Typography>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
@@ -342,15 +346,26 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
                   field: 'grade',
                   headerName: 'Grade',
                   flex: 1,
-                  type: 'numericColumn',
+                  valueFormatter: (params) =>
+                    formatGrade(params.value, params.data?.absence_code),
                   cellStyle: { fontWeight: 'bold' },
                 },
                 {
-                  field: 'passed',
-                  headerName: 'Passed?',
+                  colId: 'outcome',
+                  headerName: 'Result',
                   flex: 1,
-                  cellRenderer: (params: ICellRendererParams<CourseMark, boolean>) =>
-                    params.value ? 'Yes' : 'No',
+                  valueGetter: (params) =>
+                    params.data ? outcomeLabel(params.data.outcome, params.data.passed) : '',
+                  cellRenderer: (params: ICellRendererParams<CourseMark, string>) => (
+                    <span
+                      style={{
+                        color: gradeOutcomeColor(params.data?.outcome ?? ''),
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      {params.value}
+                    </span>
+                  ),
                 },
               ]}
               defaultColDef={{ resizable: true, sortable: true, filter: true }}

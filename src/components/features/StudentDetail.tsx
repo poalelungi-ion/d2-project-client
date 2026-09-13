@@ -167,7 +167,8 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
                 Personal Transcript
               </Typography>
               <Typography variant="body1" color="text.secondary">
-                View and edit marks directly in the student&apos;s official record grid.
+                View marks in the student&apos;s official record. Pass, Fail and Excused
+                are calculated from the grade; they cannot be ticked by hand.
               </Typography>
             </Box>
             <Box sx={{ display: 'flex' }}>

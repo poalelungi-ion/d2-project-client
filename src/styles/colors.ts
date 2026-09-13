@@ -120,9 +120,16 @@ export const chart = {
   bar: semantic.error,
   pass: semantic.success,
   fail: semantic.error,
+  excused: semantic.warning,
   /** The one student the user drilled into, against the cohort. */
   highlight: semantic.warning,
   cohort: semantic.info,
   grid: { light: alpha(common.black, 0.1), dark: alpha(common.white, 0.12) } as ByMode<string>,
   cursor: { light: alpha(common.black, 0.05), dark: alpha(common.white, 0.08) } as ByMode<string>,
 } as const;
+
+export const gradeOutcomeColor = (outcome: string): string => {
+  if (outcome === 'passed') return semantic.success;
+  if (outcome === 'excused') return semantic.warning;
+  return semantic.error;
+};

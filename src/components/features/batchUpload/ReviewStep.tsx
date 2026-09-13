@@ -8,19 +8,13 @@ import type {
 import { Box, Typography, Button } from '@mui/material';
 import type { PreviewRecord } from '../../../types';
 import { useUploadWizard } from './uploadWizardContext';
-import { semantic, tint } from '../../../styles/colors';
+import { semantic, tint, gradeOutcomeColor } from '../../../styles/colors';
 import { errorCallout } from '../../../styles/mixins';
 import {
   evaluateGradeCell,
   isOfficialAbsenceCell,
   outcomeLabel,
 } from '../../../utils/gradeOutcome';
-
-const outcomeColor = (outcome: string): string => {
-  if (outcome === 'passed') return semantic.success;
-  if (outcome === 'excused') return semantic.warning;
-  return semantic.error;
-};
 
 export const ReviewStep = () => {
   const {
@@ -99,7 +93,7 @@ export const ReviewStep = () => {
                     ? ` (${String(params.data.grade).toUpperCase()})`
                     : '';
                 return (
-                  <span style={{ color: outcomeColor(outcome), fontWeight: 'bold' }}>
+                  <span style={{ color: gradeOutcomeColor(outcome), fontWeight: 'bold' }}>
                     {outcomeLabel(outcome)}
                     {absence}
                   </span>
