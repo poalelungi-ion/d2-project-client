@@ -64,6 +64,11 @@ export interface TranscriptEntry {
   passed: boolean;
   /** 1 for the first sitting of this course, 2 for the retake, and so on. */
   attempt: number;
+  /**
+   * The sitting the lecturer tagged the upload with. Distinct from `attempt`:
+   * that is this system counting results, this is what was declared on import.
+   */
+  attempt_type: AttemptType;
   version: number;
 }
 
@@ -172,12 +177,18 @@ export interface AddGradeFormValues {
   grade: number;
 }
 
+/**
+ * Which sitting an upload covers. Chosen once per import and stored on every
+ * result in the batch, so first and second attempts stay comparable later.
+ */
+export type AttemptType = 'Exam 1' | 'Exam 2' | 'Other';
+
 /** Course metadata that applies to every row of a batch upload. */
 export interface UploadCourseInfo {
   courseNumber: string;
   courseName: string;
   ects: string;
-  examDate: string;
+  attemptType: AttemptType;
   semester: string;
 }
 

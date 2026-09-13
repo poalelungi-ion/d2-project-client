@@ -346,6 +346,7 @@ async function previewImport(
   formData.append('courseName', courseInfo.courseName);
   formData.append('ects', courseInfo.ects);
   formData.append('semester', courseInfo.semester);
+  formData.append('attemptType', courseInfo.attemptType);
   formData.append('mapping', JSON.stringify(COLUMN_MAPPING));
   formData.append('nameSplitRule', nameSplitRule);
 
@@ -370,6 +371,7 @@ async function confirmImport(
       courseName: courseInfo.courseName,
       ects: courseInfo.ects,
       semester: courseInfo.semester,
+      attemptType: courseInfo.attemptType,
       records,
     });
     const data = (await res.json()) as UploadConfirmResponse;

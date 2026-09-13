@@ -1,5 +1,5 @@
 import { post, postForm } from './client';
-import type { PreviewRecord } from '../types';
+import type { AttemptType, PreviewRecord } from '../types';
 
 /** Payload for POST /upload/confirm/ -- schemas.UploadConfirmRequest. */
 export interface UploadConfirmPayload {
@@ -7,6 +7,7 @@ export interface UploadConfirmPayload {
   courseName: string;
   ects: string;
   semester: string;
+  attemptType: AttemptType;
   records: PreviewRecord[];
 }
 

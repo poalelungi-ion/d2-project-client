@@ -49,7 +49,7 @@ const TARGET_SCHEMA = [
   { name: 'Matrikelnummer', req: 'required' },
   { name: 'First name', req: 'optional' },
   { name: 'Last name', req: 'required' },
-  { name: 'Study program', req: 'required' },
+  { name: 'Study program', req: 'optional' },
   { name: 'Semester (Fachsemester)', req: 'optional' },
   { name: 'Grade', req: 'required' },
 ] as const;
