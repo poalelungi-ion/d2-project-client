@@ -14,7 +14,7 @@ stages: [quality]
 duplication:
   <<: *quality_base
   script:
-    - npx jscpd@5 ./src --reporters console,html,codeclimate,json
+    - npx jscpd@5 . --reporters console,html,codeclimate,json
   artifacts:
     when: always
     paths: [report/]
