@@ -1,0 +1,75 @@
+import { readFileSync } from 'node:fs';
+
+const COMPLEXITY_RULES = new Set([
+  'complexity',
+  'max-depth',
+  'max-lines-per-function',
+  'max-nested-callbacks',
+  'max-params',
+]);
+
+const reportPath = process.argv[2] ?? 'gl-code-quality-report.json';
+
+let findings;
+try {
+  findings = JSON.parse(readFileSync(reportPath, 'utf8'));
+} catch (error) {
+  console.error(`Could not read ${reportPath}: ${error.message}`);
+  process.exit(1);
+}
+
+const rel = (p) => p.replace(`${process.cwd()}/`, '');
+const line = (f) => f.location?.lines?.begin ?? f.location?.positions?.begin?.line ?? 0;
+const ruleOf = (f) => (f.check_name ?? '').replace(/^eslint\./, '');
+
+const complexity = findings.filter((f) => COMPLEXITY_RULES.has(ruleOf(f)));
+const other = findings.filter((f) => !COMPLEXITY_RULES.has(ruleOf(f)));
+
+const table = (rows, headers) => {
+  const all = [headers, ...rows];
+  const widths = headers.map((_, i) => Math.max(...all.map((r) => String(r[i]).length)));
+  const sep = `+${widths.map((w) => '-'.repeat(w + 2)).join('+')}+`;
+  const row = (r) => `| ${r.map((c, i) => String(c).padEnd(widths[i])).join(' | ')} |`;
+  console.log(sep);
+  console.log(row(headers));
+  console.log(sep);
+  rows.forEach((r) => console.log(row(r)));
+  console.log(sep);
+};
+
+const countBy = (items, key) =>
+  [...items.reduce((m, i) => m.set(key(i), (m.get(key(i)) ?? 0) + 1), new Map())].sort(
+    (a, b) => b[1] - a[1],
+  );
+
+console.log('\nComplexity report');
+
+if (complexity.length === 0) {
+  console.log('No complexity budgets exceeded.');
+} else {
+  table(
+    countBy(complexity, ruleOf).map(([rule, count]) => [rule, count]),
+    ['Rule', 'Violations'],
+  );
+
+  console.log('\nHotspots (files with the most violations):');
+  table(
+    countBy(complexity, (f) => rel(f.location.path))
+      .slice(0, 10)
+      .map(([file, count]) => [file, count]),
+    ['File', 'Violations'],
+  );
+
+  console.log('\nDetails:');
+  for (const f of complexity.sort((a, b) =>
+    `${a.location.path}${line(a)}`.localeCompare(`${b.location.path}${line(b)}`),
+  )) {
+    console.log(`  ${rel(f.location.path)}:${line(f)}  ${f.description}  [${ruleOf(f)}]`);
+  }
+}
+
+console.log(
+  `\nTotal: ${complexity.length} complexity finding(s), ${other.length} other lint finding(s) across ${
+    new Set(findings.map((f) => f.location.path)).size
+  } file(s).\n`,
+);

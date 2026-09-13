@@ -32,3 +32,4 @@ yarn-error.log*
 
 # Quality and other metric reports
 /report
+/gl-code-quality-report.json

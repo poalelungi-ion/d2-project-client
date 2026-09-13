@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "lint": "eslint .",
+    "lint:complexity": "ESLINT_CODE_QUALITY_REPORT=gl-code-quality-report.json eslint --config eslint.config.ci.js src/ --format gitlab; node scripts/complexity-summary.mjs gl-code-quality-report.json",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -34,6 +35,7 @@
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.2.0",
     "eslint": "^9.39.5",
+    "eslint-formatter-gitlab": "^7.2.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.26",
     "globals": "^15.15.0",

@@ -23,9 +23,14 @@ duplication:
 
 complexity:
   <<: *quality_base
+  variables:
+    ESLINT_CODE_QUALITY_REPORT: gl-code-quality-report.json
   script:
     - npm ci --cache .npm --prefer-offline
-    - npx eslint --format gitlab src/ || true
+    # Prints every finding to the job log and writes the code quality report.
+    - npx eslint --config eslint.config.ci.js src/ --format gitlab || true
+    # Console summary: violations per rule, hotspot files, per-finding details.
+    - node scripts/complexity-summary.mjs "$ESLINT_CODE_QUALITY_REPORT"
   artifacts:
     when: always
     paths: [gl-code-quality-report.json]
