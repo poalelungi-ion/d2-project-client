@@ -2,7 +2,8 @@ import { IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import type { Course, Student, StudentStatus, ThemeMode, TranscriptEntry } from '../../types';
-import { passRateColor, studentStatusColor, surfaces } from '../../styles/colors';
+import { gradeOutcomeColor, passRateColor, studentStatusColor, surfaces } from '../../styles/colors';
+import { formatGrade, outcomeLabel } from '../../utils/gradeOutcome';
 
 const editAction = <T,>(onEdit: (row: T) => void): ColDef<T> => ({
   headerName: 'Actions',
@@ -80,13 +81,23 @@ export const transcriptColumns = (mode: ThemeMode): ColDef<TranscriptEntry>[] =>
     editable: true,
     flex: 1,
     type: 'numericColumn',
+    valueFormatter: (params) => formatGrade(params.value, params.data?.absence_code),
     cellStyle: { fontWeight: 'bold', backgroundColor: surfaces.well[mode] },
   },
   {
-    field: 'passed',
-    headerName: 'Passed?',
-    editable: true,
+    colId: 'outcome',
+    headerName: 'Result',
+    editable: false,
     flex: 1,
-    cellEditor: 'agCheckboxCellEditor',
+    valueGetter: (params) => {
+      const row = params.data;
+      if (!row) return '';
+      return outcomeLabel(row.outcome, row.passed);
+    },
+    cellRenderer: (params: ICellRendererParams<TranscriptEntry, string>) => (
+      <span style={{ color: gradeOutcomeColor(params.data?.outcome ?? ''), fontWeight: 'bold' }}>
+        {params.value}
+      </span>
+    ),
   },
 ];

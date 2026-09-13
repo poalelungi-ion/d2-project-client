@@ -39,6 +39,7 @@ import type {
   UploadPreviewResponse,
 } from '../types';
 import { notify } from '../stores';
+import { withoutIgnoredColumns } from '../utils/gradeOutcome';
 
 const EMPTY_STATS: Stats = { kpis: {}, toughest_courses: [], atRisk: [] };
 
@@ -59,6 +60,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'Study Program': 'program',
   Note: 'grade',
   Grade: 'grade',
+  // Passed/Failed/Yes/No are stripped before upload; they are never a result.
 };
 
 export function useCourses() {
@@ -277,7 +279,9 @@ async function loadTranscript(studentId: number): Promise<TranscriptEntry[]> {
 
 async function saveTranscript(rows: TranscriptEntry[]): Promise<TranscriptSaveResult> {
   try {
-    const res = await saveGrades(rows);
+    // Excused sittings have no numeric grade; the system keeps them unless
+    // the lecturer types a mark over the AT placeholder.
+    const res = await saveGrades(rows.filter((row) => row.grade != null));
     if (res.ok) {
       notify('Database updated successfully!');
       return { saved: true, shouldRefresh: true };
@@ -347,7 +351,7 @@ async function previewImport(
   formData.append('ects', courseInfo.ects);
   formData.append('semester', courseInfo.semester);
   formData.append('attemptType', courseInfo.attemptType);
-  formData.append('mapping', JSON.stringify(COLUMN_MAPPING));
+  formData.append('mapping', JSON.stringify(withoutIgnoredColumns(COLUMN_MAPPING)));
   formData.append('nameSplitRule', nameSplitRule);
 
   try {

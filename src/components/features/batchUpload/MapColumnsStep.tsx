@@ -38,7 +38,7 @@ const COLUMN_MAPPINGS = [
   },
   {
     source: 'Note',
-    example: 'e.g. 1.7',
+    example: 'e.g. 1.7, NE, EX, AT',
     target: 'Grade',
     status: 'Mapped',
     tone: semantic.success,
@@ -226,9 +226,13 @@ export const MapColumnsStep = () => {
               variant="caption"
               sx={{ color: 'grey.600', display: 'block', lineHeight: 1.4 }}
             >
-              Grades are validated as German marks (1.0 &ndash; 5.0). Course, course number,
-              ECTS and the course semester were already set in the previous step and apply to
-              every row. &quot;Semester&quot; below is the student&apos;s Fachsemester count.
+              Grades are validated as German marks (1.0 &ndash; 5.0) or official
+              absence codes: NE (no show) and EX (disqualified) fail, AT (medical
+              note) is excused. Columns named Passed, Failed, Yes or No are ignored
+              &mdash; the system calculates the result. Course, course number, ECTS
+              and the course semester were already set in the previous step and apply
+              to every row. &quot;Semester&quot; below is the student&apos;s
+              Fachsemester count.
             </Typography>
           </Card>
         </Grid>

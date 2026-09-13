@@ -4,21 +4,17 @@ import type {
   ICellRendererParams,
   RowClassParams,
   RowDataUpdatedEvent,
-  RowSelectedEvent,
 } from 'ag-grid-community';
 import { Box, Typography, Button } from '@mui/material';
 import type { PreviewRecord } from '../../../types';
 import { useUploadWizard } from './uploadWizardContext';
-import { semantic, tint } from '../../../styles/colors';
+import { semantic, tint, gradeOutcomeColor } from '../../../styles/colors';
 import { errorCallout } from '../../../styles/mixins';
-
-/**
- * Grades the backend could not parse into a number. 
- */
-const UNPARSEABLE_GRADES = ['na', 'ta', 'ne', 'nan', '', 'at'];
-
-const isUnparseableGrade = (value: unknown): boolean =>
-  UNPARSEABLE_GRADES.includes(String(value).toLowerCase().trim());
+import {
+  evaluateGradeCell,
+  isOfficialAbsenceCell,
+  outcomeLabel,
+} from '../../../utils/gradeOutcome';
 
 export const ReviewStep = () => {
   const {
@@ -37,7 +33,8 @@ export const ReviewStep = () => {
           Review Data &amp; Validation
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Please review the parsed records. Rows missing required fields are highlighted.
+          Pass, Fail and Excused are calculated from the grade or NE/EX/AT. File
+          columns named Passed, Failed, Yes or No are ignored.
         </Typography>
       </Box>
 
@@ -57,15 +54,8 @@ export const ReviewStep = () => {
           onRowDataUpdated={(params: RowDataUpdatedEvent<PreviewRecord>) => {
             params.api.forEachNode((node) => {
               if (!node.data) return;
-              if (!isUnparseableGrade(node.data.grade) && node.data.is_valid) {
-                node.setSelected(true);
-              }
+              if (node.data.is_valid) node.setSelected(true);
             });
-          }}
-          onRowSelected={(event: RowSelectedEvent<PreviewRecord>) => {
-            if (event.node.isSelected() && isUnparseableGrade(event.data?.grade)) {
-              event.node.setDataValue('grade', '5.0');
-            }
           }}
           rowSelection="multiple"
           columnDefs={[
@@ -83,6 +73,33 @@ export const ReviewStep = () => {
             { field: 'program', headerName: 'Program', editable: true, flex: 1.2, minWidth: 130 },
             { field: 'semester', headerName: 'Semester', editable: true, flex: 0.8, minWidth: 100 },
             { field: 'grade', headerName: 'Grade', editable: true, flex: 0.6, minWidth: 90 },
+            {
+              colId: 'outcome',
+              headerName: 'Result',
+              flex: 0.8,
+              minWidth: 100,
+              editable: false,
+              valueGetter: (params) => {
+                const grade = params.data?.grade;
+                if (grade != null && String(grade).length > 0) {
+                  return evaluateGradeCell(grade).outcome;
+                }
+                return params.data?.outcome ?? 'invalid';
+              },
+              cellRenderer: (params: ICellRendererParams<PreviewRecord, string>) => {
+                const outcome = String(params.value ?? 'invalid');
+                const absence =
+                  params.data && isOfficialAbsenceCell(params.data.grade)
+                    ? ` (${String(params.data.grade).toUpperCase()})`
+                    : '';
+                return (
+                  <span style={{ color: gradeOutcomeColor(outcome), fontWeight: 'bold' }}>
+                    {outcomeLabel(outcome)}
+                    {absence}
+                  </span>
+                );
+              },
+            },
             {
               field: 'missing_fields',
               headerName: 'Validation Issues',
