@@ -1,37 +1,33 @@
 stages: [quality]
 
-.mr_only: &mr_only
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
-.node_cache: &node_cache
+.quality_base: &quality_base
+  stage: quality
+  image: node:22-alpine
   cache:
     key:
       files: [package-lock.json]
     paths: [.npm/]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 duplication:
-  <<: *mr_only
-  stage: quality
-  image: node:22-alpine
-  <<: *node_cache
+  <<: *quality_base
   script:
-    - npx jscpd@5 ./src
+    - npx jscpd@5 ./src --reporters console,html,codeclimate,json
   artifacts:
     when: always
+    paths: [report/]
     reports:
       codequality: report/gl-code-quality-report.json
-    paths: [report/]
 
 complexity:
-  <<: *mr_only
-  stage: quality
-  image: node:22-alpine
-  <<: *node_cache
+  <<: *quality_base
   script:
     - npm ci --cache .npm --prefer-offline
     - npx eslint --format gitlab src/ || true
   artifacts:
     when: always
+    paths: [gl-code-quality-report.json]
     reports:
       codequality: gl-code-quality-report.json
