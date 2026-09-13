@@ -28,8 +28,10 @@ complexity:
   script:
     - npm ci --cache .npm --prefer-offline
     # Prints every finding to the job log and writes the code quality report.
+    # `|| true` so pre-existing lint errors don't abort the job here; the
+    # summary below decides the exit code.
     - npx eslint --config eslint.config.ci.js src/ --format gitlab || true
-    # Console summary: violations per rule, hotspot files, per-finding details.
+    # Console summary, and the gate: fails the job on complexity violations only.
     - node scripts/complexity-summary.mjs "$ESLINT_CODE_QUALITY_REPORT"
   artifacts:
     when: always

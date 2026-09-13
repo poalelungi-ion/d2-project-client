@@ -71,5 +71,21 @@ if (complexity.length === 0) {
 console.log(
   `\nTotal: ${complexity.length} complexity finding(s), ${other.length} other lint finding(s) across ${
     new Set(findings.map((f) => f.location.path)).size
-  } file(s).\n`,
+  } file(s).`,
 );
+
+if (other.length > 0) {
+  console.log(
+    `Note: the ${other.length} other lint finding(s) are reported in the code quality report but do not fail this job.`,
+  );
+}
+
+// Only the complexity budgets gate the pipeline.
+if (complexity.length > 0) {
+  console.log(
+    `\nFAILED: ${complexity.length} complexity budget violation(s). Split the offending unit(s) or raise the budget in eslint.config.ci.js.\n`,
+  );
+  process.exit(1);
+}
+
+console.log('\nPASSED: all complexity budgets met.\n');
