@@ -13,28 +13,32 @@ export interface ParsedSemester {
   term: number; // 1 for Summer, 2 for Winter, 0 for unknown
 }
 
+const WINTER_PATTERN = /^(W|.*(WISE|WS|WINTER))/i;
+const SUMMER_PATTERN = /^(S|.*(SOSE|SS|SOMMER|SUMMER))/i;
+
+function extractTerm(upper: string): number {
+  if (WINTER_PATTERN.test(upper)) return 2;
+  if (SUMMER_PATTERN.test(upper)) return 1;
+  return 0;
+}
+
+function extractYear(clean: string): number {
+  const matches = clean.match(/\d+/g);
+  if (!matches || matches.length === 0) return 0;
+  const raw = parseInt(matches[0], 10);
+  if (isNaN(raw)) return 0;
+  return raw < 100 ? (raw <= 70 ? 2000 + raw : 1900 + raw) : raw;
+}
+
 export function parseSemester(s: string): ParsedSemester {
   if (!s) return { year: 0, term: 0 };
   const clean = String(s).trim();
   const upper = clean.toUpperCase();
 
-  let term = 0;
-  if (upper.startsWith('W') || upper.includes('WISE') || upper.includes('WS') || upper.includes('WINTER')) {
-    term = 2;
-  } else if (upper.startsWith('S') || upper.includes('SOSE') || upper.includes('SS') || upper.includes('SOMMER') || upper.includes('SUMMER')) {
-    term = 1;
-  }
-
-  const matches = clean.match(/\d+/g);
-  let year = 0;
-  if (matches && matches.length > 0) {
-    const raw = parseInt(matches[0], 10);
-    if (!isNaN(raw)) {
-      year = raw < 100 ? (raw <= 70 ? 2000 + raw : 1900 + raw) : raw;
-    }
-  }
-
-  return { year, term };
+  return {
+    year: extractYear(clean),
+    term: extractTerm(upper),
+  };
 }
 
 export function compareSemesters(a: string, b: string): number {
