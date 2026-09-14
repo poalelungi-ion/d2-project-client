@@ -1,5 +1,6 @@
 import { Box, Typography, Stepper, Step, StepLabel, Fade } from '@mui/material';
 import { useLocation } from 'react-router-dom';
+import type { UploadCourseHandoff } from '../../../types';
 import { STEPS } from '../../../utils/constants';
 import { pageTitle } from '../../../styles/mixins';
 import { UploadWizardProvider } from './UploadWizardProvider';
@@ -12,13 +13,16 @@ import { DoneStep } from './DoneStep';
 
 const STEP_COMPONENTS = [SelectFileStep, CourseInfoStep, MapColumnsStep, ReviewStep, DoneStep];
 
-const handoffCourseName = (state: unknown): string | undefined =>
-  state !== null &&
-    typeof state === 'object' &&
-    'courseName' in state &&
-    typeof state.courseName === 'string'
-    ? state.courseName
-    : undefined;
+/**
+ * The course a Course view handed over. Both halves must be present: an id
+ * without a name (or the reverse) is not a course this wizard can lock onto.
+ */
+const courseHandoff = (state: unknown): UploadCourseHandoff | undefined => {
+  if (state === null || typeof state !== 'object') return undefined;
+  const { courseId, courseName } = state as Record<string, unknown>;
+  if (typeof courseId !== 'number' || typeof courseName !== 'string') return undefined;
+  return { id: courseId, name: courseName };
+};
 
 const WizardBody = () => {
   const { step } = useUploadWizard();
@@ -46,7 +50,7 @@ export const BatchUploadWizard = () => {
   const routeState: unknown = useLocation().state;
 
   return (
-    <UploadWizardProvider initialCourseName={handoffCourseName(routeState)}>
+    <UploadWizardProvider course={courseHandoff(routeState)}>
       <Fade in={true} timeout={800}>
         <Box
           sx={{

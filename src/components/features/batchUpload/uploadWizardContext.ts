@@ -10,6 +10,11 @@ export interface UploadWizardValue {
   sourceLabel: string;
   demoFile: string;
   courseInfo: UploadCourseInfo;
+  /**
+   * The course was taken from the Course view this upload started in, so it is
+   * shown rather than asked for and cannot be edited into a different course.
+   */
+  courseLocked: boolean;
   nameSplitRule: NameSplitRule;
   preview: PreviewRecord[];
 

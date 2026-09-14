@@ -371,6 +371,9 @@ async function confirmImport(
 ): Promise<boolean> {
   try {
     const res = await confirmUpload({
+      // Non-null when the upload started inside a course: the backend then
+      // attaches the batch to that course instead of matching on the name.
+      courseId: courseInfo.courseId,
       course: courseInfo.courseNumber,
       courseName: courseInfo.courseName,
       ects: courseInfo.ects,
