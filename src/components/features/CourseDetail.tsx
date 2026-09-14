@@ -30,6 +30,7 @@ import { useApiMutations } from '../../hooks/useApi';
 import { chart, gradeOutcomeColor, passRateColor } from '../../styles/colors';
 import { radii } from '../../styles/tokens';
 import { pageSubtitle, pageTitle } from '../../styles/mixins';
+import { ExamsHeatmap } from './ExamsHeatmap';
 import { formatGrade, outcomeLabel } from '../../utils/gradeOutcome';
 
 /** One bar of the course's grade histogram. */
@@ -108,6 +109,41 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
       { name: 'Failed', value: fail, fill: chart.fail },
       { name: 'Excused', value: excused, fill: chart.excused },
     ].filter((slice) => slice.value > 0);
+  };
+
+  const getCourseHeatmapData = () => {
+    // group by semester
+    const bySemester = new Map<string, CourseMark[]>();
+    course.marks.forEach(m => {
+      if (!bySemester.has(m.semester)) bySemester.set(m.semester, []);
+      bySemester.get(m.semester)!.push(m);
+    });
+
+    const heatmapData = [];
+    for (const [semester, marks] of bySemester.entries()) {
+      // group by student
+      const byStudent = new Map<number, number>();
+      marks.forEach(m => {
+        if (m.student_id) {
+          byStudent.set(m.student_id, (byStudent.get(m.student_id) || 0) + 1);
+        }
+      });
+
+      const distribution: Record<number, number> = {};
+      for (const attempts of byStudent.values()) {
+        distribution[attempts] = (distribution[attempts] || 0) + 1;
+      }
+      
+      heatmapData.push({
+        semester,
+        total_students: byStudent.size,
+        distribution
+      });
+    }
+    
+    // Sort semesters to maintain chronological order if they follow a pattern like SOSE_25, WISE_25
+    heatmapData.sort((a, b) => a.semester.localeCompare(b.semester));
+    return heatmapData;
   };
 
   const getLongitudinalData = (): SemesterAverage[] => {
@@ -295,6 +331,15 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
               </ResponsiveContainer>
             </Paper>
           )}
+        </Box>
+
+        {/* === COURSE EXAMS HEATMAP === */}
+        <Box sx={{ mb: 3 }}>
+          <ExamsHeatmap 
+            heatmapData={getCourseHeatmapData()} 
+            title="Course Attempts Activity" 
+            subtitle="Distribution of how many times students took this specific course's exams per semester." 
+          />
         </Box>
 
         <Paper

@@ -1,6 +1,6 @@
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, useTheme } from '@mui/material';
 
-export const ExamsHeatmap = ({ heatmapData }: { heatmapData: any[] }) => {
+export const ExamsHeatmap = ({ heatmapData, title = "Exams Completed", subtitle = "Total number of exams taken by each student per semester." }: { heatmapData: any[], title?: string, subtitle?: string }) => {
   const theme = useTheme();
 
   if (!heatmapData || heatmapData.length === 0) return null;
@@ -32,10 +32,10 @@ export const ExamsHeatmap = ({ heatmapData }: { heatmapData: any[] }) => {
   return (
     <Box sx={{ mt: 4 }}>
       <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
-        Total Exams Taken
+        {title}
       </Typography>
       <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
-        Track activity level, completion rate, and overall academic participation.
+        {subtitle}
       </Typography>
       <TableContainer component={Paper} variant="outlined" sx={{ overflowX: 'auto' }}>
         <Table size="small">
