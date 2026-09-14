@@ -32,6 +32,7 @@ import { radii } from '../../styles/tokens';
 import { pageSubtitle, pageTitle } from '../../styles/mixins';
 import { ExamsHeatmap } from './ExamsHeatmap';
 import { formatGrade, outcomeLabel } from '../../utils/gradeOutcome';
+import { compareSemesters } from '../../utils/semester';
 
 /** One bar of the course's grade histogram. */
 interface GradeBucket {
@@ -124,16 +125,9 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
       }
     });
 
-    const parseSemester = (s: string) => {
-      const parts = s.split('_');
-      const year = parseInt(parts[1] || '0', 10);
-      const isSoSe = s.toUpperCase().startsWith('SOSE');
-      return year * 10 + (isSoSe ? 0 : 1);
-    };
-
     const history = [];
     for (const [student_id, marks] of byStudent.entries()) {
-      marks.sort((a, b) => parseSemester(a.semester) - parseSemester(b.semester));
+      marks.sort((a, b) => compareSemesters(a.semester, b.semester));
 
       const m1 = marks[0];
       const m2 = marks.length > 1 ? marks[1] : null;
@@ -165,17 +159,10 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
       }
     });
 
-    const parseSemester = (s: string) => {
-      const parts = s.split('_');
-      const year = parseInt(parts[1] || '0', 10);
-      const isSoSe = s.toUpperCase().startsWith('SOSE');
-      return year * 10 + (isSoSe ? 0 : 1);
-    };
-
     // Sort each student's marks chronologically and assign an attempt number
     const processedMarks: (CourseMark & { attempt_number: number })[] = [];
     for (const marks of byStudent.values()) {
-      marks.sort((a, b) => parseSemester(a.semester) - parseSemester(b.semester));
+      marks.sort((a, b) => compareSemesters(a.semester, b.semester));
       marks.forEach((m, index) => {
         processedMarks.push({ ...m, attempt_number: index + 1 });
       });
@@ -203,7 +190,7 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
     }
     
     // Sort semesters for the final output
-    heatmapData.sort((a, b) => parseSemester(a.semester) - parseSemester(b.semester));
+    heatmapData.sort((a, b) => compareSemesters(a.semester, b.semester));
     return heatmapData;
   };
 
@@ -217,7 +204,7 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
       semMap[t.semester].count += 1;
     });
     return Object.keys(semMap)
-      .sort()
+      .sort((a, b) => compareSemesters(a, b))
       .map((sem) => ({
         semester: sem,
         average: parseFloat((semMap[sem].sum / semMap[sem].count).toFixed(2)),
