@@ -1,6 +1,16 @@
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, useTheme } from '@mui/material';
 
-export const ExamsHeatmap = ({ heatmapData, title = "Exams Completed", subtitle = "Total number of exams taken by each student per semester." }: { heatmapData: any[], title?: string, subtitle?: string }) => {
+export const ExamsHeatmap = ({ 
+  heatmapData, 
+  title = "Exams Completed", 
+  subtitle = "Total number of exams taken by each student per semester.",
+  minColumns = 0
+}: { 
+  heatmapData: any[], 
+  title?: string, 
+  subtitle?: string,
+  minColumns?: number
+}) => {
   const theme = useTheme();
 
   if (!heatmapData || heatmapData.length === 0) return null;
@@ -16,8 +26,8 @@ export const ExamsHeatmap = ({ heatmapData, title = "Exams Completed", subtitle 
     });
   });
 
-  // Ensure we at least show 0-15, or up to maxExams
-  const cols = Math.max(15, maxExams);
+  // Ensure we show at least up to maxExams, but don't force a huge number if not needed
+  const cols = Math.max(minColumns, maxExams);
   const examColumns = Array.from({ length: cols + 1 }, (_, i) => i);
 
   // Helper to get color scale (light green to dark green based on value)
