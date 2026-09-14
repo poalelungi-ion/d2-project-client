@@ -11,6 +11,8 @@
     "lint": "eslint .",
     "lint:complexity": "ESLINT_CODE_QUALITY_REPORT=gl-code-quality-report.json eslint --config eslint.config.ci.js src/ --format gitlab; node scripts/complexity-summary.mjs gl-code-quality-report.json",
     "test": "vitest run",
+    "test:ci": "vitest run --coverage --reporter=default --reporter=junit --reporter=json --outputFile.junit=junit.xml --outputFile.json=vitest-results.json",
+    "test:summary": "node scripts/test-summary.mjs vitest-results.json coverage/coverage-summary.json",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -34,6 +36,7 @@
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.2.0",
+    "@vitest/coverage-v8": "^3.2.7",
     "eslint": "^9.39.5",
     "eslint-formatter-gitlab": "^7.2.0",
     "eslint-plugin-react-hooks": "^5.2.0",

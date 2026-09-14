@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 
+import { countBy, rel, table } from './report-table.mjs';
+
 const COMPLEXITY_RULES = new Set([
   'complexity',
   'max-depth',
@@ -18,29 +20,11 @@ try {
   process.exit(1);
 }
 
-const rel = (p) => p.replace(`${process.cwd()}/`, '');
 const line = (f) => f.location?.lines?.begin ?? f.location?.positions?.begin?.line ?? 0;
 const ruleOf = (f) => (f.check_name ?? '').replace(/^eslint\./, '');
 
 const complexity = findings.filter((f) => COMPLEXITY_RULES.has(ruleOf(f)));
 const other = findings.filter((f) => !COMPLEXITY_RULES.has(ruleOf(f)));
-
-const table = (rows, headers) => {
-  const all = [headers, ...rows];
-  const widths = headers.map((_, i) => Math.max(...all.map((r) => String(r[i]).length)));
-  const sep = `+${widths.map((w) => '-'.repeat(w + 2)).join('+')}+`;
-  const row = (r) => `| ${r.map((c, i) => String(c).padEnd(widths[i])).join(' | ')} |`;
-  console.log(sep);
-  console.log(row(headers));
-  console.log(sep);
-  rows.forEach((r) => console.log(row(r)));
-  console.log(sep);
-};
-
-const countBy = (items, key) =>
-  [...items.reduce((m, i) => m.set(key(i), (m.get(key(i)) ?? 0) + 1), new Map())].sort(
-    (a, b) => b[1] - a[1],
-  );
 
 console.log('\nComplexity report');
 
