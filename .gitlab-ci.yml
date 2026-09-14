@@ -1,0 +1,74 @@
+stages: [quality]
+
+.quality_base: &quality_base
+  stage: quality
+  image: node:22-alpine
+  cache:
+    key:
+      files: [package-lock.json]
+    paths: [.npm/]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+duplication:
+  <<: *quality_base
+  script:
+    - npx jscpd@5 . --reporters console,html,codeclimate,json
+  artifacts:
+    when: always
+    paths: [report/]
+    reports:
+      codequality: report/gl-code-quality-report.json
+
+complexity:
+  <<: *quality_base
+  variables:
+    ESLINT_CODE_QUALITY_REPORT: gl-code-quality-report.json
+  script:
+    - npm ci --cache .npm --prefer-offline
+    # Prints every finding to the job log and writes the code quality report.
+    # `|| true` so pre-existing lint errors don't abort the job here; the
+    # summary below decides the exit code.
+    - npx eslint --config eslint.config.ci.js src/ --format gitlab || true
+    # Console summary, and the gate: fails the job on complexity violations only.
+    - node scripts/complexity-summary.mjs "$ESLINT_CODE_QUALITY_REPORT"
+  artifacts:
+    when: always
+    paths: [gl-code-quality-report.json]
+    reports:
+      codequality: gl-code-quality-report.json
+
+unit_tests:
+  <<: *quality_base
+  variables:
+    # Floor, not a target. Raise it as tests land so coverage can only ratchet up.
+    COVERAGE_FLOOR: "2"
+  script:
+    - npm ci --cache .npm --prefer-offline
+    # `|| true` so failing tests still reach the summary below, which decides
+    # the exit code and prints the pass/fail and coverage tables.
+    - npm run test:ci || true
+    - npm run test:summary
+  coverage: '/Total coverage: (\d+\.\d+)%/'
+  artifacts:
+    when: always
+    paths: [coverage/, junit.xml]
+    reports:
+      junit: junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+
+require_approval:
+  stage: quality
+  image: alpine:3.20
+  # Merge request pipelines only: there is nothing to approve on a branch build.
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  variables:
+    REQUIRED_APPROVALS: "1"
+  before_script:
+    - apk add --no-cache curl jq
+  script:
+    - sh scripts/require-approval.sh

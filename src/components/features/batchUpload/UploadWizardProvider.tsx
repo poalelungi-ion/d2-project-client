@@ -1,7 +1,12 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { GridApi } from 'ag-grid-community';
-import type { NameSplitRule, PreviewRecord, UploadCourseInfo } from '../../../types';
+import type {
+  NameSplitRule,
+  PreviewRecord,
+  UploadCourseHandoff,
+  UploadCourseInfo,
+} from '../../../types';
 import { notify } from '../../../stores';
 import { useApiMutations } from '../../../hooks/useApi';
 import { isTabularPaste } from '../../../utils/tabularPaste';
@@ -9,6 +14,7 @@ import { UploadWizardContext } from './uploadWizardContext';
 import type { UploadWizardValue } from './uploadWizardContext';
 
 const DEFAULT_COURSE_INFO: UploadCourseInfo = {
+  courseId: null,
   courseNumber: '3545',
   courseName: 'SE Tools Lab',
   ects: '6',
@@ -17,12 +23,15 @@ const DEFAULT_COURSE_INFO: UploadCourseInfo = {
 };
 
 interface UploadWizardProviderProps {
-  /** Seeds the course name when arriving from a course's "Upload Data" button. */
-  initialCourseName?: string;
+  /**
+   * The course this upload belongs to, handed over by a Course view's "Upload
+   * Exam Data" button. Omitted by the standalone wizard reached from the nav.
+   */
+  course?: UploadCourseHandoff;
   children: ReactNode;
 }
 
-export function UploadWizardProvider({ initialCourseName, children }: UploadWizardProviderProps) {
+export function UploadWizardProvider({ course, children }: UploadWizardProviderProps) {
   const { previewImport, confirmImport: sendImport } = useApiMutations();
   const [step, setStep] = useState(0);
   const [file, setFileState] = useState<File | null>(null);
@@ -30,9 +39,21 @@ export function UploadWizardProvider({ initialCourseName, children }: UploadWiza
   const [demoFile, setDemoFile] = useState('Klausur_DBS_WS2425.xlsx');
   const [nameSplitRule, setNameSplitRule] = useState<NameSplitRule>('Last, First');
   const [preview, setPreview] = useState<PreviewRecord[]>([]);
+  // In this system a course's id is its course number -- the catalogue form
+  // labels the field "Course Number / ID" -- so the active course fills both.
   const [courseInfo, setCourseInfoState] = useState<UploadCourseInfo>(() =>
-    initialCourseName ? { ...DEFAULT_COURSE_INFO, courseName: initialCourseName } : DEFAULT_COURSE_INFO,
+    course
+      ? {
+          ...DEFAULT_COURSE_INFO,
+          courseId: course.id,
+          courseNumber: String(course.id),
+          courseName: course.name,
+        }
+      : DEFAULT_COURSE_INFO,
   );
+
+  /** True while the course came from the page rather than from a text field. */
+  const courseLocked = course !== undefined;
 
   const gridApiRef = useRef<GridApi<PreviewRecord> | null>(null);
 
@@ -111,6 +132,7 @@ export function UploadWizardProvider({ initialCourseName, children }: UploadWiza
       sourceLabel,
       demoFile,
       courseInfo,
+      courseLocked,
       nameSplitRule,
       preview,
       setStep,
@@ -131,6 +153,7 @@ export function UploadWizardProvider({ initialCourseName, children }: UploadWiza
       sourceLabel,
       demoFile,
       courseInfo,
+      courseLocked,
       nameSplitRule,
       preview,
       setFile,

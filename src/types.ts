@@ -118,6 +118,7 @@ export interface Stats {
   kpis: Partial<Kpis>;
   toughest_courses: ToughestCourse[];
   atRisk: AtRiskStudent[];
+  activity_heatmap?: any[];
 }
 
 /**
@@ -196,11 +197,26 @@ export type AttemptType = 'Exam 1' | 'Exam 2' | 'Other';
 
 /** Course metadata that applies to every row of a batch upload. */
 export interface UploadCourseInfo {
+  /**
+   * The course this import belongs to, read off the Course view the upload was
+   * started in. Null only in the standalone wizard, which has no active course
+   * and asks the lecturer to type the number instead.
+   */
+  courseId: number | null;
   courseNumber: string;
   courseName: string;
   ects: string;
   attemptType: AttemptType;
   semester: string;
+}
+
+/**
+ * The active course handed to the upload wizard by a Course view's "Upload
+ * Exam Data" button, carried as react-router location state.
+ */
+export interface UploadCourseHandoff {
+  id: number;
+  name: string;
 }
 
 export type FormMode = 'create' | 'edit';

@@ -9,7 +9,9 @@ import {
 
 import type { AttemptType } from '../../../types';
 import { useUploadWizard } from './uploadWizardContext';
-import { fieldLabel, monoChip } from '../../../styles/mixins';
+import { fieldLabel, monoChip, toneSurface } from '../../../styles/mixins';
+import { semantic } from '../../../styles/colors';
+import { radii } from '../../../styles/tokens';
 
 const ATTEMPT_TYPES: readonly AttemptType[] = [
   'Exam 1',
@@ -40,6 +42,7 @@ export const CourseInfoStep = () => {
   const {
     sourceLabel,
     courseInfo: uploadCourseInfo,
+    courseLocked,
     setCourseInfo: setUploadCourseInfo,
     setStep: setActiveStep,
   } = useUploadWizard();
@@ -55,68 +58,84 @@ export const CourseInfoStep = () => {
           maxWidth: 800,
         }}
       >
-        A table is always for one course and one semester &mdash; that can&apos;t
-        vary within one import. Tell us which one{' '}
-        <Box
-          component="span"
-          sx={{
-            ...monoChip,
-            px: 1,
-          }}
-        >
-          {sourceLabel}
-        </Box>{' '}
-        is for.
+        A table is always for one course and one semester &mdash; that can&apos;t vary within
+        one import.{' '}
+        {courseLocked ? (
+          <>
+            The course is already settled below; tell us which semester and sitting{' '}
+            <Box component="span" sx={{ ...monoChip, px: 1 }}>
+              {sourceLabel}
+            </Box>{' '}
+            covers.
+          </>
+        ) : (
+          <>
+            Tell us which one{' '}
+            <Box component="span" sx={{ ...monoChip, px: 1 }}>
+              {sourceLabel}
+            </Box>{' '}
+            is for.
+          </>
+        )}
       </Typography>
 
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 3,
-          maxWidth: 600,
-        }}
-      >
-        <Box>
-          <Typography
-            variant="overline"
-            sx={fieldLabel}
-          >
-            COURSE NUMBER
-          </Typography>
-
-          <TextField
-            fullWidth
-            variant="outlined"
-            value={uploadCourseInfo.courseNumber}
-            onChange={(e) =>
-              setUploadCourseInfo({
-                courseNumber: e.target.value,
-              })
-            }
-          />
-        </Box>
-
-        <Box>
-          <Typography
-            variant="overline"
-            sx={fieldLabel}
-          >
-            COURSE NAME
-          </Typography>
-
-          <TextField
-            fullWidth
-            variant="outlined"
-            value={uploadCourseInfo.courseName}
-            onChange={(e) =>
-              setUploadCourseInfo({
-                courseName: e.target.value,
-              })
-            }
-          />
-        </Box>
-
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, maxWidth: 600 }}>
+        {courseLocked ? (
+          <Box>
+            <Typography variant="overline" sx={fieldLabel}>
+              COURSE
+            </Typography>
+            <Box sx={{ ...toneSurface(semantic.success), p: 2, borderRadius: radii.lg }}>
+              <Typography variant="subtitle1" fontWeight={700}>
+                {uploadCourseInfo.courseName}
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}
+              >
+                Course number
+                <Box component="span" sx={{ ...monoChip, px: 1 }}>
+                  {uploadCourseInfo.courseNumber}
+                </Box>
+              </Typography>
+            </Box>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: 0.5, display: 'block' }}
+            >
+              Taken from the course you started this upload in and attached to every row,
+              so there is nothing to type. A course or course-number column in the file is
+              ignored.
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            <Box>
+              <Typography variant="overline" sx={fieldLabel}>
+                COURSE NUMBER
+              </Typography>
+              <TextField
+                fullWidth
+                variant="outlined"
+                value={uploadCourseInfo.courseNumber}
+                onChange={(e) => setUploadCourseInfo({ courseNumber: e.target.value })}
+              />
+            </Box>
+            <Box>
+              <Typography variant="overline" sx={fieldLabel}>
+                COURSE NAME
+              </Typography>
+              <TextField
+                fullWidth
+                variant="outlined"
+                value={uploadCourseInfo.courseName}
+                onChange={(e) => setUploadCourseInfo({ courseName: e.target.value })}
+              />
+            </Box>
+          </>
+        )}
         <Box>
           <Typography
             variant="overline"
@@ -144,8 +163,9 @@ export const CourseInfoStep = () => {
               display: 'block',
             }}
           >
-            Same course number but different credits (e.g. 6 vs 8) counts as a
-            separate course instance.
+            {courseLocked
+              ? 'Recorded with the import. The course itself is fixed by the tab you came from, so the credits here never split it into a second course.'
+              : 'Same course number but different credits (e.g. 6 vs 8) counts as a separate course instance.'}
           </Typography>
         </Box>
 
