@@ -83,7 +83,17 @@ export const SelectFileStep = () => {
         The system standardises the columns, flags problems automatically, and only saves
         once everything is clean.
       </Typography>
-      <Box sx={{ ...dropZone(Boolean(file)), p: 8, textAlign: 'center', mb: 6 }}>
+      <Box 
+        sx={{ ...dropZone(Boolean(file)), p: 8, textAlign: 'center', mb: 6 }}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          const droppedFile = e.dataTransfer.files?.[0];
+          if (droppedFile) {
+            setFile(droppedFile);
+          }
+        }}
+      >
         <input
           accept=".xlsx, .xls, .csv, .tsv, .ods"
           style={{ display: 'none' }}
