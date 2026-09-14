@@ -11,7 +11,8 @@ import {
 import { useStats } from '../../hooks/useApi';
 import { chart, neutral, semantic } from '../../styles/colors';
 import { blur } from '../../styles/tokens';
-import { chartTooltip, pageSubtitle, pageTitle, toneSurface, toneValue } from '../../styles/mixins';
+import { pageSubtitle, pageTitle, toneSurface, toneValue, chartTooltip } from '../../styles/mixins';
+import { ExamsHeatmap } from './ExamsHeatmap';
 
 export const AnalysisHub = () => {
   const { stats } = useStats();
@@ -114,6 +115,10 @@ export const AnalysisHub = () => {
                 </Box>
               </CardContent>
             </Card>
+          </Grid>
+          
+          <Grid item xs={12}>
+            <ExamsHeatmap heatmapData={stats.activity_heatmap} />
           </Grid>
         </Grid>
       </Box>

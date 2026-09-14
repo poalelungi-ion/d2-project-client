@@ -118,6 +118,7 @@ export interface Stats {
   kpis: Partial<Kpis>;
   toughest_courses: ToughestCourse[];
   atRisk: AtRiskStudent[];
+  activity_heatmap?: any[];
 }
 
 /**
