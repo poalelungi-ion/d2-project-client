@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  MenuItem,
+} from '@mui/material';
+
 import type { Course, CourseFormErrors, CourseFormValues } from '../../types';
 import { useApiMutations } from '../../hooks/useApi';
 
@@ -10,6 +19,19 @@ interface CourseFormDialogProps {
   /** Called after a successful save so the caller can reload its list. */
   onSaved: () => void;
 }
+
+const SEMESTERS = [
+  'WiSe23/24',
+  'SoSe24',
+  'WiSe24/25',
+  'SoSe25',
+  'WiSe25/26',
+  'SoSe26',
+  'WiSe26/27',
+  'SoSe27',
+  'WiSe27/28',
+  'SoSe28',
+] as const;
 
 const EMPTY_FORM: CourseFormValues = {
   course_id: '',
@@ -32,10 +54,23 @@ const toFormValues = (course: Course | null): CourseFormValues =>
 
 const validate = (values: CourseFormValues): CourseFormErrors => {
   const errors: CourseFormErrors = {};
-  if (!values.course_name.trim()) errors.course_name = 'Course Name is mandatory';
-  if (!values.course_id.trim()) errors.course_id = 'Course ID is mandatory';
-  if (!values.semester.trim()) errors.semester = 'Semester is mandatory';
-  if (!values.study_program.trim()) errors.study_program = 'Study Program is mandatory';
+
+  if (!values.course_name.trim()) {
+    errors.course_name = 'Course Name is mandatory';
+  }
+
+  if (!values.course_id.trim()) {
+    errors.course_id = 'Course ID is mandatory';
+  }
+
+  if (!values.semester.trim()) {
+    errors.semester = 'Semester is mandatory';
+  }
+
+  if (!values.study_program.trim()) {
+    errors.study_program = 'Study Program is mandatory';
+  }
+
   return errors;
 };
 
@@ -43,18 +78,32 @@ const validate = (values: CourseFormValues): CourseFormErrors => {
  * Mounted by CoursesAdmin only while open, so the field values below start
  * fresh on every open without needing a reset effect.
  */
-export function CourseFormDialog({ course, onClose, onSaved }: CourseFormDialogProps) {
+export function CourseFormDialog({
+  course,
+  onClose,
+  onSaved,
+}: CourseFormDialogProps) {
   const { saveCourse } = useApiMutations();
-  const [values, setValues] = useState<CourseFormValues>(() => toFormValues(course));
+
+  const [values, setValues] = useState<CourseFormValues>(() =>
+    toFormValues(course)
+  );
+
   const [errors, setErrors] = useState<CourseFormErrors>({});
 
   const update = (patch: Partial<CourseFormValues>) =>
-    setValues((current) => ({ ...current, ...patch }));
+    setValues((current) => ({
+      ...current,
+      ...patch,
+    }));
 
   const handleSave = async () => {
     const found = validate(values);
+
     setErrors(found);
+
     if (Object.keys(found).length > 0) return;
+
     if (await saveCourse(values, course?.version)) {
       onSaved();
       onClose();
@@ -66,6 +115,7 @@ export function CourseFormDialog({ course, onClose, onSaved }: CourseFormDialogP
       <DialogTitle sx={{ fontSize: '1.25rem' }}>
         {course ? 'Edit Course' : 'Create New Course'}
       </DialogTitle>
+
       <DialogContent>
         <TextField
           autoFocus
@@ -80,6 +130,7 @@ export function CourseFormDialog({ course, onClose, onSaved }: CourseFormDialogP
           helperText={errors.course_id}
           sx={{ mb: 2, mt: 1 }}
         />
+
         <TextField
           margin="dense"
           label="Course Name"
@@ -92,10 +143,11 @@ export function CourseFormDialog({ course, onClose, onSaved }: CourseFormDialogP
           helperText={errors.course_name}
           sx={{ mb: 2 }}
         />
+
         <TextField
+          select
           margin="dense"
           label="Semester"
-          type="text"
           fullWidth
           variant="outlined"
           value={values.semester}
@@ -103,7 +155,18 @@ export function CourseFormDialog({ course, onClose, onSaved }: CourseFormDialogP
           error={!!errors.semester}
           helperText={errors.semester}
           sx={{ mb: 2 }}
-        />
+        >
+          <MenuItem value="" disabled>
+            Select semester
+          </MenuItem>
+
+          {SEMESTERS.map((semester) => (
+            <MenuItem key={semester} value={semester}>
+              {semester}
+            </MenuItem>
+          ))}
+        </TextField>
+
         <TextField
           margin="dense"
           label="Study Program"
@@ -116,6 +179,7 @@ export function CourseFormDialog({ course, onClose, onSaved }: CourseFormDialogP
           helperText={errors.study_program}
           sx={{ mb: 2 }}
         />
+
         <TextField
           margin="dense"
           label="Assigned Professor"
@@ -127,11 +191,17 @@ export function CourseFormDialog({ course, onClose, onSaved }: CourseFormDialogP
           sx={{ mb: 2 }}
         />
       </DialogContent>
+
       <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button onClick={onClose} color="inherit">
           Cancel
         </Button>
-        <Button onClick={() => void handleSave()} variant="contained" color="primary">
+
+        <Button
+          onClick={() => void handleSave()}
+          variant="contained"
+          color="primary"
+        >
           Save
         </Button>
       </DialogActions>
