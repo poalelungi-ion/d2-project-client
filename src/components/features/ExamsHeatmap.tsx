@@ -1,4 +1,24 @@
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, useTheme } from '@mui/material';
+import { useMemo, useState } from 'react';
+import {
+  Box,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  TableSortLabel,
+  useTheme,
+} from '@mui/material';
+import { compareSemesters } from '../../utils/semester';
+
+export interface HeatmapRow {
+  semester: string;
+  total_students: number;
+  distribution: Record<string | number, number>;
+}
 
 export const ExamsHeatmap = ({ 
   heatmapData, 
@@ -6,12 +26,26 @@ export const ExamsHeatmap = ({
   subtitle = "Total number of exams taken by each student per semester.",
   minColumns = 0
 }: { 
-  heatmapData: any[], 
+  heatmapData: HeatmapRow[], 
   title?: string, 
   subtitle?: string,
   minColumns?: number
 }) => {
   const theme = useTheme();
+
+  const [order, setOrder] = useState<'asc' | 'desc'>('asc');
+
+  const handleSortToggle = () => {
+    setOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+  };
+
+  const sortedData = useMemo(() => {
+    if (!heatmapData || heatmapData.length === 0) return [];
+    return [...heatmapData].sort((a, b) => {
+      const cmp = compareSemesters(a.semester, b.semester);
+      return order === 'asc' ? cmp : -cmp;
+    });
+  }, [heatmapData, order]);
 
   if (!heatmapData || heatmapData.length === 0) return null;
 
@@ -51,7 +85,15 @@ export const ExamsHeatmap = ({
         <Table size="small">
           <TableHead>
             <TableRow sx={{ bgcolor: theme.palette.action.hover }}>
-              <TableCell sx={{ fontWeight: 'bold' }}>Semester</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>
+                <TableSortLabel
+                  active={true}
+                  direction={order}
+                  onClick={handleSortToggle}
+                >
+                  Semester
+                </TableSortLabel>
+              </TableCell>
               <TableCell align="center" sx={{ fontWeight: 'bold' }}>#Students</TableCell>
               {examColumns.map(col => (
                 <TableCell key={col} align="center" sx={{ fontWeight: 'bold', minWidth: 40 }}>{col}</TableCell>
@@ -59,7 +101,7 @@ export const ExamsHeatmap = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {heatmapData.map((row) => (
+            {sortedData.map((row) => (
               <TableRow key={row.semester}>
                 <TableCell component="th" scope="row">
                   {row.semester}
