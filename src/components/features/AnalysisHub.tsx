@@ -118,7 +118,7 @@ export const AnalysisHub = () => {
           </Grid>
           
           <Grid item xs={12}>
-            <ExamsHeatmap heatmapData={stats.activity_heatmap} />
+            <ExamsHeatmap heatmapData={stats.activity_heatmap || []} />
           </Grid>
         </Grid>
       </Box>
