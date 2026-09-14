@@ -1,9 +1,40 @@
-import { Box, Typography, Button, TextField, MenuItem, Select } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  MenuItem,
+  Select,
+} from '@mui/material';
+
 import type { AttemptType } from '../../../types';
 import { useUploadWizard } from './uploadWizardContext';
 import { fieldLabel, monoChip } from '../../../styles/mixins';
 
-const ATTEMPT_TYPES: readonly AttemptType[] = ['Exam 1', 'Exam 2', 'Other'];
+const ATTEMPT_TYPES: readonly AttemptType[] = [
+  'Exam 1',
+  'Exam 2',
+  'Other',
+];
+
+/**
+ * Predefined semester options in chronological order.
+ *
+ * Keeping semester values predefined prevents free-form input,
+ * avoids typos and ensures consistent semester formatting.
+ */
+const SEMESTERS = [
+  'WiSe23/24',
+  'SoSe24',
+  'WiSe24/25',
+  'SoSe25',
+  'WiSe25/26',
+  'SoSe26',
+  'WiSe26/27',
+  'SoSe27',
+  'WiSe27/28',
+  'SoSe28',
+] as const;
 
 export const CourseInfoStep = () => {
   const {
@@ -17,112 +48,230 @@ export const CourseInfoStep = () => {
     <Box>
       <Typography
         variant="body1"
-        sx={{ mb: 4, color: 'text.secondary', fontSize: '1rem', maxWidth: 800 }}
+        sx={{
+          mb: 4,
+          color: 'text.secondary',
+          fontSize: '1rem',
+          maxWidth: 800,
+        }}
       >
-        A table is always for one course and one semester &mdash; that can&apos;t vary within
-        one import. Tell us which one{' '}
-        <Box component="span" sx={{ ...monoChip, px: 1 }}>
+        A table is always for one course and one semester &mdash; that can&apos;t
+        vary within one import. Tell us which one{' '}
+        <Box
+          component="span"
+          sx={{
+            ...monoChip,
+            px: 1,
+          }}
+        >
           {sourceLabel}
         </Box>{' '}
         is for.
       </Typography>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, maxWidth: 600 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 3,
+          maxWidth: 600,
+        }}
+      >
         <Box>
-          <Typography variant="overline" sx={fieldLabel}>
+          <Typography
+            variant="overline"
+            sx={fieldLabel}
+          >
             COURSE NUMBER
           </Typography>
+
           <TextField
             fullWidth
             variant="outlined"
             value={uploadCourseInfo.courseNumber}
             onChange={(e) =>
-              setUploadCourseInfo({ courseNumber: e.target.value })
+              setUploadCourseInfo({
+                courseNumber: e.target.value,
+              })
             }
           />
         </Box>
+
         <Box>
-          <Typography variant="overline" sx={fieldLabel}>
+          <Typography
+            variant="overline"
+            sx={fieldLabel}
+          >
             COURSE NAME
           </Typography>
+
           <TextField
             fullWidth
             variant="outlined"
             value={uploadCourseInfo.courseName}
             onChange={(e) =>
-              setUploadCourseInfo({ courseName: e.target.value })
+              setUploadCourseInfo({
+                courseName: e.target.value,
+              })
             }
           />
         </Box>
+
         <Box>
-          <Typography variant="overline" sx={fieldLabel}>
+          <Typography
+            variant="overline"
+            sx={fieldLabel}
+          >
             ECTS (CREDITS FOR THIS COURSE)
           </Typography>
+
           <TextField
             fullWidth
             variant="outlined"
             value={uploadCourseInfo.ects}
             onChange={(e) =>
-              setUploadCourseInfo({ ects: e.target.value })
+              setUploadCourseInfo({
+                ects: e.target.value,
+              })
             }
           />
+
           <Typography
             variant="caption"
             color="text.secondary"
-            sx={{ mt: 0.5, display: 'block' }}
+            sx={{
+              mt: 0.5,
+              display: 'block',
+            }}
           >
-            Same course number but different credits (e.g. 6 vs 8) counts as a separate
-            course instance.
+            Same course number but different credits (e.g. 6 vs 8) counts as a
+            separate course instance.
           </Typography>
         </Box>
+
         <Box>
-          <Typography variant="overline" sx={fieldLabel} id="attempt-type-label">
+          <Typography
+            variant="overline"
+            sx={fieldLabel}
+            id="attempt-type-label"
+          >
             ATTEMPT TYPE
           </Typography>
+
           <Select
             fullWidth
             variant="outlined"
             labelId="attempt-type-label"
             value={uploadCourseInfo.attemptType}
             onChange={(e) =>
-              setUploadCourseInfo({ attemptType: e.target.value as AttemptType })
+              setUploadCourseInfo({
+                attemptType: e.target.value as AttemptType,
+              })
             }
           >
             {ATTEMPT_TYPES.map((attempt) => (
-              <MenuItem key={attempt} value={attempt}>
+              <MenuItem
+                key={attempt}
+                value={attempt}
+              >
                 {attempt}
               </MenuItem>
             ))}
           </Select>
+
           <Typography
             variant="caption"
             color="text.secondary"
-            sx={{ mt: 0.5, display: 'block' }}
+            sx={{
+              mt: 0.5,
+              display: 'block',
+            }}
           >
-            Saved on every record in this import, so you can compare how the first and
-            second sitting of this course went later.
+            Saved on every record in this import, so you can compare how the
+            first and second sitting of this course went later.
           </Typography>
         </Box>
+
         <Box>
-          <Typography variant="overline" sx={fieldLabel}>
+          <Typography
+            variant="overline"
+            sx={fieldLabel}
+            id="semester-label"
+          >
             SEMESTER
           </Typography>
-          <TextField
+
+          <Select
             fullWidth
             variant="outlined"
+            labelId="semester-label"
             value={uploadCourseInfo.semester}
+            displayEmpty
             onChange={(e) =>
-              setUploadCourseInfo({ semester: e.target.value })
+              setUploadCourseInfo({
+                semester: e.target.value,
+              })
             }
-          />
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  maxHeight: 320,
+                },
+              },
+            }}
+          >
+            <MenuItem
+              value=""
+              disabled
+            >
+              Select semester
+            </MenuItem>
+
+            {SEMESTERS.map((semester) => (
+              <MenuItem
+                key={semester}
+                value={semester}
+              >
+                {semester}
+              </MenuItem>
+            ))}
+          </Select>
+
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              mt: 0.5,
+              display: 'block',
+            }}
+          >
+            Select the required semester from the predefined list.
+          </Typography>
         </Box>
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 6 }}>
-        <Button variant="outlined" color="inherit" onClick={() => setActiveStep(0)} sx={{ px: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          mt: 6,
+        }}
+      >
+        <Button
+          variant="outlined"
+          color="inherit"
+          onClick={() => setActiveStep(0)}
+          sx={{ px: 3 }}
+        >
           &larr; Back
         </Button>
-        <Button variant="contained" size="large" onClick={() => setActiveStep(2)} sx={{ px: 4 }}>
+
+        <Button
+          variant="contained"
+          size="large"
+          onClick={() => setActiveStep(2)}
+          sx={{ px: 4 }}
+        >
           Continue &rarr;
         </Button>
       </Box>
