@@ -161,12 +161,16 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
               variant="contained"
               color="success"
               startIcon={<CloudUploadIcon />}
+              // The id travels with the handoff, so the wizard never has to ask
+              // which course the file is for -- and never gets told the wrong one.
               onClick={() =>
-                void navigate(ROUTES.upload, { state: { courseName: course.course_name } })
+                void navigate(ROUTES.upload, {
+                  state: { courseId: course.course_id, courseName: course.course_name },
+                })
               }
               sx={{ ml: 'auto' }}
             >
-              Upload Data
+              Upload Exam Data
             </Button>
             {!course.is_archived && (
               <Button

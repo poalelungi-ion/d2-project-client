@@ -3,6 +3,8 @@ import type { AttemptType, PreviewRecord } from '../types';
 
 /** Payload for POST /upload/confirm/ -- schemas.UploadConfirmRequest. */
 export interface UploadConfirmPayload {
+  /** The active course id, so the backend attaches the batch to exactly it. */
+  courseId: number | null;
   course: string;
   courseName: string;
   ects: string;
