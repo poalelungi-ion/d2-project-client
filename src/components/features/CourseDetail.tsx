@@ -112,37 +112,54 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
   };
 
   const getCourseHeatmapData = () => {
-    // group by semester
-    const bySemester = new Map<string, CourseMark[]>();
+    // 1. Group marks by student to determine their chronological attempt numbers
+    const byStudent = new Map<number, CourseMark[]>();
     course.marks.forEach(m => {
+      if (m.student_id != null) {
+        if (!byStudent.has(m.student_id)) byStudent.set(m.student_id, []);
+        byStudent.get(m.student_id)!.push(m);
+      }
+    });
+
+    const parseSemester = (s: string) => {
+      const parts = s.split('_');
+      const year = parseInt(parts[1] || '0', 10);
+      const isSoSe = s.toUpperCase().startsWith('SOSE');
+      return year * 10 + (isSoSe ? 0 : 1);
+    };
+
+    // Sort each student's marks chronologically and assign an attempt number
+    const processedMarks: (CourseMark & { attempt_number: number })[] = [];
+    for (const marks of byStudent.values()) {
+      marks.sort((a, b) => parseSemester(a.semester) - parseSemester(b.semester));
+      marks.forEach((m, index) => {
+        processedMarks.push({ ...m, attempt_number: index + 1 });
+      });
+    }
+
+    // 2. Group the processed marks by semester
+    const bySemester = new Map<string, typeof processedMarks>();
+    processedMarks.forEach(m => {
       if (!bySemester.has(m.semester)) bySemester.set(m.semester, []);
       bySemester.get(m.semester)!.push(m);
     });
 
     const heatmapData = [];
     for (const [semester, marks] of bySemester.entries()) {
-      // group by student
-      const byStudent = new Map<number, number>();
-      marks.forEach(m => {
-        if (m.student_id) {
-          byStudent.set(m.student_id, (byStudent.get(m.student_id) || 0) + 1);
-        }
-      });
-
       const distribution: Record<number, number> = {};
-      for (const attempts of byStudent.values()) {
-        distribution[attempts] = (distribution[attempts] || 0) + 1;
-      }
+      marks.forEach(m => {
+        distribution[m.attempt_number] = (distribution[m.attempt_number] || 0) + 1;
+      });
       
       heatmapData.push({
         semester,
-        total_students: byStudent.size,
+        total_students: marks.length,
         distribution
       });
     }
     
-    // Sort semesters to maintain chronological order if they follow a pattern like SOSE_25, WISE_25
-    heatmapData.sort((a, b) => a.semester.localeCompare(b.semester));
+    // Sort semesters for the final output
+    heatmapData.sort((a, b) => parseSemester(a.semester) - parseSemester(b.semester));
     return heatmapData;
   };
 
