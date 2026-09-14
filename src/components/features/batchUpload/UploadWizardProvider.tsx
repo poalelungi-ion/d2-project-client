@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { GridApi } from 'ag-grid-community';
 import type {
   NameSplitRule,
@@ -10,6 +11,7 @@ import type {
 import { notify } from '../../../stores';
 import { useApiMutations } from '../../../hooks/useApi';
 import { isTabularPaste } from '../../../utils/tabularPaste';
+import { ROUTES } from '../../../app/navigation';
 import { UploadWizardContext } from './uploadWizardContext';
 import type { UploadWizardValue } from './uploadWizardContext';
 
@@ -32,6 +34,7 @@ interface UploadWizardProviderProps {
 }
 
 export function UploadWizardProvider({ course, children }: UploadWizardProviderProps) {
+  const navigate = useNavigate();
   const { previewImport, confirmImport: sendImport } = useApiMutations();
   const [step, setStep] = useState(0);
   const [file, setFileState] = useState<File | null>(null);
@@ -113,8 +116,21 @@ export function UploadWizardProvider({ course, children }: UploadWizardProviderP
       notify('No rows selected for import!', 'error');
       return;
     }
-    if (await sendImport(courseInfo, selectedRows)) setStep(4);
-  }, [courseInfo, sendImport]);
+    const result = await sendImport(courseInfo, selectedRows);
+    if (result.success) {
+      const targetCourseId = result.courseId ?? courseInfo.courseId;
+      if (targetCourseId != null) {
+        void navigate(ROUTES.courseDetail(targetCourseId), {
+          state: {
+            importSuccess: true,
+            importMessage: result.message ?? 'Data imported successfully!',
+          },
+        });
+      } else {
+        setStep(4);
+      }
+    }
+  }, [courseInfo, sendImport, navigate]);
 
   const reset = useCallback(() => {
     setStep(0);

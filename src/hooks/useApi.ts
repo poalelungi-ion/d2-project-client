@@ -365,10 +365,16 @@ async function previewImport(
   return null;
 }
 
+export interface ConfirmImportResult {
+  success: boolean;
+  courseId?: number;
+  message?: string;
+}
+
 async function confirmImport(
   courseInfo: UploadCourseInfo,
   records: PreviewRecord[],
-): Promise<boolean> {
+): Promise<ConfirmImportResult> {
   try {
     const res = await confirmUpload({
       // Non-null when the upload started inside a course: the backend then
@@ -383,14 +389,20 @@ async function confirmImport(
     });
     const data = (await res.json()) as UploadConfirmResponse;
     if (res.ok) {
-      notify(data.message ?? 'Upload successful!');
-      return true;
+      const message = data.message ?? 'Upload successful!';
+      notify(message);
+      const parsedNum = courseInfo.courseNumber ? parseInt(courseInfo.courseNumber, 10) : undefined;
+      const courseId =
+        data.course_id ??
+        courseInfo.courseId ??
+        (parsedNum != null && !isNaN(parsedNum) ? parsedNum : undefined);
+      return { success: true, courseId, message };
     }
     notify(`Error: ${data.detail}`, 'error');
   } catch {
     notify('Network error', 'error');
   }
-  return false;
+  return { success: false };
 }
 
 const MUTATIONS = {

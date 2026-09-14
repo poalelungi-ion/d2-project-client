@@ -153,6 +153,7 @@ export interface UploadConfirmResponse {
   status?: string;
   message?: string;
   detail?: string;
+  course_id?: number;
 }
 
 /** FastAPI's error envelope: `{"detail": "..."}`. */
