@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Box, Typography, Button, TextField, Paper, Fade } from '@mui/material';
+import { Box, Typography, Button, TextField, Paper, Fade, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import {
   Restore as RestoreIcon,
   ChevronLeft as ChevronLeftIcon,
@@ -66,7 +66,9 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
     TranscriptEntry[]
   >([]);
 
+  const [viewMode, setViewMode] = useState<'individual' | 'history'>('history');
   const courseGridRef = useRef<AgGridReact<CourseMark>>(null);
+  const historyGridRef = useRef<AgGridReact<any>>(null);
   const navigate = useNavigate();
 
   const clearAnalyticsStudent = () => {
@@ -109,6 +111,48 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
       { name: 'Failed', value: fail, fill: chart.fail },
       { name: 'Excused', value: excused, fill: chart.excused },
     ].filter((slice) => slice.value > 0);
+  };
+
+  const getHistoryData = () => {
+    if (!course.marks) return [];
+    
+    const byStudent = new Map<number, CourseMark[]>();
+    course.marks.forEach(m => {
+      if (m.student_id != null) {
+        if (!byStudent.has(m.student_id)) byStudent.set(m.student_id, []);
+        byStudent.get(m.student_id)!.push(m);
+      }
+    });
+
+    const parseSemester = (s: string) => {
+      const parts = s.split('_');
+      const year = parseInt(parts[1] || '0', 10);
+      const isSoSe = s.toUpperCase().startsWith('SOSE');
+      return year * 10 + (isSoSe ? 0 : 1);
+    };
+
+    const history = [];
+    for (const [student_id, marks] of byStudent.entries()) {
+      marks.sort((a, b) => parseSemester(a.semester) - parseSemester(b.semester));
+
+      const m1 = marks[0];
+      const m2 = marks.length > 1 ? marks[1] : null;
+
+      const passed = marks.some(m => m.passed || m.outcome === 'passed');
+      
+      history.push({
+        student_id,
+        student_name: m1.student_name,
+        program: m1.program,
+        exam1_grade: m1.grade,
+        exam1_absence: m1.absence_code,
+        exam2_grade: m2 ? m2.grade : null,
+        exam2_absence: m2 ? m2.absence_code : null,
+        final_status: passed ? 'Passed' : 'Failed',
+        marks
+      });
+    }
+    return history;
   };
 
   const getCourseHeatmapData = () => {
@@ -382,63 +426,130 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
                 Detailed Course Marks
               </Typography>
               <Typography variant="body1" color="text.secondary">
-                Marks per student per semester.
+                {viewMode === 'history' ? 'Per-Person History across exam attempts.' : 'Marks per student per semester.'}
               </Typography>
             </Box>
-            <TextField
-              label="Quick Search (Semester, Person...)"
-              size="small"
-              onChange={(e) =>
-                courseGridRef.current?.api.setGridOption('quickFilterText', e.target.value)
-              }
-              sx={{ width: 300 }}
-            />
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <ToggleButtonGroup
+                value={viewMode}
+                exclusive
+                onChange={(_, newValue) => {
+                  if (newValue) setViewMode(newValue);
+                }}
+                size="small"
+              >
+                <ToggleButton value="history">Per-Person History</ToggleButton>
+                <ToggleButton value="individual">Individual Marks</ToggleButton>
+              </ToggleButtonGroup>
+              <TextField
+                label="Quick Search..."
+                size="small"
+                onChange={(e) => {
+                  if (viewMode === 'individual') {
+                    courseGridRef.current?.api.setGridOption('quickFilterText', e.target.value);
+                  } else {
+                    historyGridRef.current?.api.setGridOption('quickFilterText', e.target.value);
+                  }
+                }}
+                sx={{ width: 250 }}
+              />
+            </Box>
           </Box>
           <Box className="ag-theme-alpine" sx={{ width: '100%', p: 2 }}>
-            <AgGridReact<CourseMark>
-              ref={courseGridRef}
-              domLayout="autoHeight"
-              rowData={course.marks}
-              columnDefs={[
-                { field: 'student_id', headerName: 'Student ID', flex: 1 },
-                { field: 'student_name', headerName: 'Name', flex: 2 },
-                { field: 'program', headerName: 'Study Program', flex: 2 },
-                { field: 'semester', headerName: 'Semester', flex: 1 },
-                {
-                  field: 'grade',
-                  headerName: 'Grade',
-                  flex: 1,
-                  valueFormatter: (params) =>
-                    formatGrade(params.value, params.data?.absence_code),
-                  cellStyle: { fontWeight: 'bold' },
-                },
-                {
-                  colId: 'outcome',
-                  headerName: 'Result',
-                  flex: 1,
-                  valueGetter: (params) =>
-                    params.data ? outcomeLabel(params.data.outcome, params.data.passed) : '',
-                  cellRenderer: (params: ICellRendererParams<CourseMark, string>) => (
-                    <span
-                      style={{
-                        color: gradeOutcomeColor(params.data?.outcome ?? ''),
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      {params.value}
-                    </span>
-                  ),
-                },
-              ]}
-              defaultColDef={{ resizable: true, sortable: true, filter: true }}
-              animateRows={true}
-              pagination={true}
-              paginationPageSize={20}
-              onRowClicked={(e: RowClickedEvent<CourseMark>) => {
-                if (e.data) void selectAnalyticsStudent(e.data);
-              }}
-              rowSelection="single"
-            />
+            {viewMode === 'individual' ? (
+              <AgGridReact<CourseMark>
+                ref={courseGridRef}
+                domLayout="autoHeight"
+                rowData={course.marks}
+                columnDefs={[
+                  { field: 'student_id', headerName: 'Student ID', flex: 1 },
+                  { field: 'student_name', headerName: 'Name', flex: 2 },
+                  { field: 'program', headerName: 'Study Program', flex: 2 },
+                  { field: 'semester', headerName: 'Semester', flex: 1 },
+                  {
+                    field: 'grade',
+                    headerName: 'Grade',
+                    flex: 1,
+                    valueFormatter: (params) =>
+                      formatGrade(params.value, params.data?.absence_code),
+                    cellStyle: { fontWeight: 'bold' },
+                  },
+                  {
+                    colId: 'outcome',
+                    headerName: 'Result',
+                    flex: 1,
+                    valueGetter: (params) =>
+                      params.data ? outcomeLabel(params.data.outcome, params.data.passed) : '',
+                    cellRenderer: (params: ICellRendererParams<CourseMark, string>) => (
+                      <span
+                        style={{
+                          color: gradeOutcomeColor(params.data?.outcome ?? ''),
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        {params.value}
+                      </span>
+                    ),
+                  },
+                ]}
+                defaultColDef={{ resizable: true, sortable: true, filter: true }}
+                animateRows={true}
+                pagination={true}
+                paginationPageSize={20}
+                onRowClicked={(e: RowClickedEvent<CourseMark>) => {
+                  if (e.data) void selectAnalyticsStudent(e.data);
+                }}
+                rowSelection="single"
+              />
+            ) : (
+              <AgGridReact<any>
+                ref={historyGridRef}
+                domLayout="autoHeight"
+                rowData={getHistoryData()}
+                columnDefs={[
+                  { field: 'student_id', headerName: 'Student ID', flex: 1 },
+                  { field: 'student_name', headerName: 'Student Name', flex: 2 },
+                  { field: 'program', headerName: 'Study Program', flex: 2 },
+                  {
+                    field: 'exam1_grade',
+                    headerName: 'Exam 1 Grade',
+                    flex: 1,
+                    valueFormatter: (params) => formatGrade(params.value, params.data?.exam1_absence),
+                    cellStyle: { fontWeight: 'bold' },
+                  },
+                  {
+                    field: 'exam2_grade',
+                    headerName: 'Exam 2 Grade',
+                    flex: 1,
+                    valueFormatter: (params) => formatGrade(params.value, params.data?.exam2_absence),
+                    cellStyle: { fontWeight: 'bold' },
+                  },
+                  {
+                    field: 'final_status',
+                    headerName: 'Final Status',
+                    flex: 1,
+                    cellRenderer: (params: ICellRendererParams<any, string>) => (
+                      <span
+                        style={{
+                          color: params.value === 'Passed' ? chart.pass : chart.fail,
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        {params.value}
+                      </span>
+                    ),
+                  },
+                ]}
+                defaultColDef={{ resizable: true, sortable: true, filter: true }}
+                animateRows={true}
+                pagination={true}
+                paginationPageSize={20}
+                onRowClicked={(e: RowClickedEvent<any>) => {
+                  if (e.data && e.data.marks.length > 0) void selectAnalyticsStudent(e.data.marks[0]);
+                }}
+                rowSelection="single"
+              />
+            )}
           </Box>
         </Paper>
       </Box>
