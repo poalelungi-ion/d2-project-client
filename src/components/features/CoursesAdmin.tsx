@@ -31,6 +31,7 @@ import { passRateColor } from '../../styles/colors';
 import { gridContainer, metaChip, pageSubtitle, pageTitle } from '../../styles/mixins';
 import { courseColumns } from './columns';
 import { CourseFormDialog } from '../forms/CourseFormDialog';
+import { compareSemesters } from '../../utils/semester';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -64,7 +65,7 @@ export const CoursesAdmin = () => {
     if (coursesSortBy === 'name') {
       result.sort((a, b) => a.course_name.localeCompare(b.course_name));
     } else if (coursesSortBy === 'semester') {
-      result.sort((a, b) => (a.semester || '').localeCompare(b.semester || ''));
+      result.sort((a, b) => compareSemesters(a.semester || '', b.semester || ''));
     }
     return result;
   }, [courses, searchQuery, coursesSortBy]);

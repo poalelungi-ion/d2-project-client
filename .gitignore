@@ -29,3 +29,12 @@ yarn-error.log*
 
 # OS
 .DS_Store
+
+# Quality and other metric reports
+/report
+/gl-code-quality-report.json
+junit.xml
+vitest-results.json
+/coverage.xml
+/coverage.json
+.coverage

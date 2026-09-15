@@ -1,0 +1,32 @@
+{
+    "threshold": 5,
+    "minLines": 5,
+    "minTokens": 60,
+    "mode": "mild",
+    "gitignore": true,
+    "ignore": [
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/build/**",
+        "**/coverage/**",
+        "**/*.test.{ts,tsx,js,jsx}",
+        "**/*.spec.{ts,tsx,js,jsx}",
+        "**/__mocks__/**",
+        "**/*.d.ts",
+        "**/vite-env.d.ts"
+    ],
+    "format": [
+        "typescript",
+        "tsx",
+        "javascript",
+        "jsx",
+        "css",
+        "scss"
+    ],
+    "reporters": [
+        "console",
+        "codeclimate"
+    ],
+    "output": "report",
+    "absolute": false
+}
