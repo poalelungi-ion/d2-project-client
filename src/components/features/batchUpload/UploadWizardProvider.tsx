@@ -13,21 +13,15 @@ import { isTabularPaste } from '../../../utils/tabularPaste';
 import { UploadWizardContext } from './uploadWizardContext';
 import type { UploadWizardValue } from './uploadWizardContext';
 
-const DEFAULT_COURSE_INFO: UploadCourseInfo = {
-  courseId: null,
-  courseNumber: '3545',
-  courseName: 'SE Tools Lab',
+const UPLOAD_DEFAULTS = {
   ects: '6',
   attemptType: 'Exam 1',
   semester: 'WiSe 2024/25',
-};
+} as const;
 
 interface UploadWizardProviderProps {
-  /**
-   * The course this upload belongs to, handed over by a Course view's "Upload
-   * Exam Data" button. Omitted by the standalone wizard reached from the nav.
-   */
-  course?: UploadCourseHandoff;
+  /** The course this upload belongs to, handed over by a Course view's "Upload Exam Data" button. */
+  course: UploadCourseHandoff;
   children: ReactNode;
 }
 
@@ -36,24 +30,16 @@ export function UploadWizardProvider({ course, children }: UploadWizardProviderP
   const [step, setStep] = useState(0);
   const [file, setFileState] = useState<File | null>(null);
   const [paste, setPasteState] = useState('');
-  const [demoFile, setDemoFile] = useState('Klausur_DBS_WS2425.xlsx');
   const [nameSplitRule, setNameSplitRule] = useState<NameSplitRule>('Last, First');
   const [preview, setPreview] = useState<PreviewRecord[]>([]);
   // In this system a course's id is its course number -- the catalogue form
   // labels the field "Course Number / ID" -- so the active course fills both.
-  const [courseInfo, setCourseInfoState] = useState<UploadCourseInfo>(() =>
-    course
-      ? {
-          ...DEFAULT_COURSE_INFO,
-          courseId: course.id,
-          courseNumber: String(course.id),
-          courseName: course.name,
-        }
-      : DEFAULT_COURSE_INFO,
-  );
-
-  /** True while the course came from the page rather than from a text field. */
-  const courseLocked = course !== undefined;
+  const [courseInfo, setCourseInfoState] = useState<UploadCourseInfo>(() => ({
+    ...UPLOAD_DEFAULTS,
+    courseId: course.id,
+    courseNumber: String(course.id),
+    courseName: course.name,
+  }));
 
   const gridApiRef = useRef<GridApi<PreviewRecord> | null>(null);
 
@@ -73,7 +59,7 @@ export function UploadWizardProvider({ course, children }: UploadWizardProviderP
     if (text) setFileState(null);
   }, []);
 
-  const sourceLabel = file?.name ?? (paste.trim() ? 'Pasted data' : demoFile);
+  const sourceLabel = file?.name ?? (paste.trim() ? 'Pasted data' : '');
 
   const setGridApi = useCallback((api: GridApi<PreviewRecord> | null) => {
     gridApiRef.current = api;
@@ -130,15 +116,12 @@ export function UploadWizardProvider({ course, children }: UploadWizardProviderP
       file,
       paste,
       sourceLabel,
-      demoFile,
       courseInfo,
-      courseLocked,
       nameSplitRule,
       preview,
       setStep,
       setFile,
       setPaste,
-      setDemoFile,
       setCourseInfo,
       setNameSplitRule,
       setGridApi,
@@ -151,9 +134,7 @@ export function UploadWizardProvider({ course, children }: UploadWizardProviderP
       file,
       paste,
       sourceLabel,
-      demoFile,
       courseInfo,
-      courseLocked,
       nameSplitRule,
       preview,
       setFile,
