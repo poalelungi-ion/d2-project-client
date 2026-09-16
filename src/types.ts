@@ -197,11 +197,7 @@ export type AttemptType = 'Exam 1' | 'Exam 2' | 'Other';
 
 /** Course metadata that applies to every row of a batch upload. */
 export interface UploadCourseInfo {
-  /**
-   * The course this import belongs to, read off the Course view the upload was
-   * started in. Null only in the standalone wizard, which has no active course
-   * and asks the lecturer to type the number instead.
-   */
+  /** The course this import belongs to, read off the Course view the upload was started in. */
   courseId: number | null;
   courseNumber: string;
   courseName: string;
