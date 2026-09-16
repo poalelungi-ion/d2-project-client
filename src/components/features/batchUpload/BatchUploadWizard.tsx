@@ -1,6 +1,7 @@
 import { Box, Typography, Stepper, Step, StepLabel, Fade } from '@mui/material';
-import { useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import type { UploadCourseHandoff } from '../../../types';
+import { ROUTES } from '../../../app/navigation';
 import { STEPS } from '../../../utils/constants';
 import { pageTitle } from '../../../styles/mixins';
 import { UploadWizardProvider } from './UploadWizardProvider';
@@ -48,9 +49,14 @@ const WizardBody = () => {
 export const BatchUploadWizard = () => {
   // React Router types route state as `any`; narrow it before trusting it.
   const routeState: unknown = useLocation().state;
+  const course = courseHandoff(routeState);
+
+  // Reached without a course (e.g. a stale link) -- there is no standalone
+  // wizard anymore, so send the lecturer to pick a course instead.
+  if (!course) return <Navigate to={ROUTES.courses} replace />;
 
   return (
-    <UploadWizardProvider course={courseHandoff(routeState)}>
+    <UploadWizardProvider course={course}>
       <Fade in={true} timeout={800}>
         <Box
           sx={{

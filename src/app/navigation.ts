@@ -1,5 +1,4 @@
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import TableChartIcon from '@mui/icons-material/TableChart';
 import SchoolIcon from '@mui/icons-material/School';
 import PersonIcon from '@mui/icons-material/Person';
 import type { SvgIconComponent } from '@mui/icons-material';
@@ -22,7 +21,6 @@ export interface NavItem {
 
 export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Dashboard', path: ROUTES.dashboard, icon: DashboardIcon },
-  { label: 'Batch Upload', path: ROUTES.upload, icon: TableChartIcon },
   { label: 'Courses', path: ROUTES.courses, icon: SchoolIcon },
   { label: 'Students', path: ROUTES.students, icon: PersonIcon },
 ];
