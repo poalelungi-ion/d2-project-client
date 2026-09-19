@@ -68,7 +68,6 @@ export function useCourses() {
   const [loading, setLoading] = useState(true);
 
   const refetch = useCallback(async () => {
-    setLoading(true);
     try {
       const res = await listCourses();
       setCourses((await res.json()) as Course[]);
