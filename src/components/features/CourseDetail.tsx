@@ -29,7 +29,7 @@ import { ROUTES } from '../../app/navigation';
 import { useApiMutations } from '../../hooks/useApi';
 import { chart, gradeOutcomeColor, passRateColor } from '../../styles/colors';
 import { radii } from '../../styles/tokens';
-import { pageSubtitle, pageTitle } from '../../styles/mixins';
+import { metaChip, pageSubtitle, pageTitle } from '../../styles/mixins';
 import { ExamsHeatmap } from './ExamsHeatmap';
 import { formatGrade, outcomeLabel } from '../../utils/gradeOutcome';
 import { compareSemesters } from '../../utils/semester';
@@ -228,6 +228,20 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
           <Typography variant="h3" sx={pageTitle}>
             {course.course_name}
           </Typography>
+          <Box sx={{ display: 'flex', gap: 1, mt: 1.5, flexWrap: 'wrap' }}>
+            <Typography variant="caption" sx={metaChip}>
+              ID: {course.course_id}
+            </Typography>
+            <Typography variant="caption" sx={metaChip}>
+              {course.semester}
+            </Typography>
+            <Typography variant="caption" sx={metaChip}>
+              {course.study_program}
+            </Typography>
+            <Typography variant="caption" sx={metaChip}>
+              {course.assigned_professor}
+            </Typography>
+          </Box>
           <Box sx={{ display: 'flex', gap: 3, mt: 1, flexWrap: 'wrap' }}>
             <Typography variant="h6" sx={pageSubtitle}>
               Average Grade: <strong>{course.avg_grade}</strong>
