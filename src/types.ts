@@ -20,6 +20,7 @@ export type GradeOutcome = 'passed' | 'failed' | 'excused' | 'invalid';
 
 /** One student's result in a course, as embedded in the course list response. */
 export interface CourseMark {
+  result_id: number;
   student_id: number | null;
   student_name: string;
   program: string;
