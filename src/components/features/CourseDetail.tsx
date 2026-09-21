@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Box, Typography, Button, TextField, Paper, Fade, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Box, Typography, Button, TextField, Paper, Fade, ToggleButton, ToggleButtonGroup, Alert, AlertTitle } from '@mui/material';
 import {
   Restore as RestoreIcon,
   ChevronLeft as ChevronLeftIcon,
@@ -8,7 +8,7 @@ import {
 } from '@mui/icons-material';
 import { AgGridReact } from 'ag-grid-react';
 import type { ICellRendererParams, RowClickedEvent } from 'ag-grid-community';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   BarChart,
   Bar,
@@ -71,6 +71,12 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
   const courseGridRef = useRef<AgGridReact<CourseMark>>(null);
   const historyGridRef = useRef<AgGridReact<any>>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const routeState = location.state as Record<string, unknown> | null;
+  const [importBannerOpen, setImportBannerOpen] = useState<boolean>(() =>
+    Boolean(routeState?.importSuccess),
+  );
+  const importMessage = routeState?.importMessage as string | undefined;
 
   const clearAnalyticsStudent = () => {
     setAnalyticsStudent(null);
@@ -214,6 +220,18 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
   return (
     <Fade in={true} timeout={800}>
       <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+        {importBannerOpen && (
+          <Fade in={importBannerOpen}>
+            <Alert
+              severity="success"
+              onClose={() => setImportBannerOpen(false)}
+              sx={{ mb: 3, borderRadius: radii.lg }}
+            >
+              <AlertTitle sx={{ fontWeight: 700 }}>Import Successful</AlertTitle>
+              {importMessage || 'Course exam data was imported successfully and all statistics have been updated.'}
+            </Alert>
+          </Fade>
+        )}
         <Box sx={{ mb: 3 }}>
           <Button
             startIcon={<ChevronLeftIcon />}
