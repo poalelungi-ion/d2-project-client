@@ -7,8 +7,8 @@ interface CourseFormDialogProps {
   /** The course being edited, or null to create a new one. */
   course: Course | null;
   onClose: () => void;
-  /** Called after a successful save so the caller can reload. Receives the id that was saved. */
-  onSaved: (savedCourseId: string) => void;
+  /** Called after a successful save so the caller can reload its list. */
+  onSaved: () => void;
 }
 
 const EMPTY_FORM: CourseFormValues = {
@@ -40,8 +40,8 @@ const validate = (values: CourseFormValues): CourseFormErrors => {
 };
 
 /**
- * Fresh field values on every open: the parent unmounts this dialog when it
- * closes, so there is no reset effect.
+ * Mounted by CoursesAdmin only while open, so the field values below start
+ * fresh on every open without needing a reset effect.
  */
 export function CourseFormDialog({ course, onClose, onSaved }: CourseFormDialogProps) {
   const { saveCourse } = useApiMutations();
@@ -56,7 +56,7 @@ export function CourseFormDialog({ course, onClose, onSaved }: CourseFormDialogP
     setErrors(found);
     if (Object.keys(found).length > 0) return;
     if (await saveCourse(values, course?.version)) {
-      onSaved(values.course_id.trim());
+      onSaved();
       onClose();
     }
   };

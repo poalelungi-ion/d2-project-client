@@ -68,6 +68,7 @@ export function useCourses() {
   const [loading, setLoading] = useState(true);
 
   const refetch = useCallback(async () => {
+    setLoading(true);
     try {
       const res = await listCourses();
       setCourses((await res.json()) as Course[]);
@@ -276,21 +277,11 @@ async function loadTranscript(studentId: number): Promise<TranscriptEntry[]> {
   return [];
 }
 
-async function saveTranscript(
-  rows: Array<{ result_id: number; version: number; grade: number | null }>,
-): Promise<TranscriptSaveResult> {
+async function saveTranscript(rows: TranscriptEntry[]): Promise<TranscriptSaveResult> {
   try {
     // Excused sittings have no numeric grade; the system keeps them unless
     // the lecturer types a mark over the AT placeholder.
-    const res = await saveGrades(
-      rows
-        .filter((row): row is { result_id: number; version: number; grade: number } => row.grade != null)
-        .map((row) => ({
-          result_id: row.result_id,
-          version: row.version,
-          grade: row.grade,
-        })),
-    );
+    const res = await saveGrades(rows.filter((row) => row.grade != null));
     if (res.ok) {
       notify('Database updated successfully!');
       return { saved: true, shouldRefresh: true };

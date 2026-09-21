@@ -1,19 +1,23 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Box, Typography, Button, TextField, Paper, Divider, Fade } from '@mui/material';
 import {
   Restore as RestoreIcon,
   ChevronLeft as ChevronLeftIcon,
   Cancel as CancelIcon,
   CheckCircle as CheckCircleIcon,
+  Add as AddIcon,
+  Save as SaveIcon,
 } from '@mui/icons-material';
 import { AgGridReact } from 'ag-grid-react';
 import { useNavigate } from 'react-router-dom';
-import type { StudentDetails, StudentStatus } from '../../types';
+import type { StudentDetails, StudentStatus, TranscriptEntry } from '../../types';
 import { ROUTES } from '../../app/navigation';
+import { useThemeStore } from '../../stores';
 import { useApiMutations } from '../../hooks/useApi';
 import { radii } from '../../styles/tokens';
 import { pageTitle } from '../../styles/mixins';
 import { transcriptColumns } from './columns';
+import { AddGradeDialog } from '../forms/AddGradeDialog';
 
 interface StudentDetailProps {
   /** Fetched by the route from :studentId, transcript included. */
@@ -23,13 +27,28 @@ interface StudentDetailProps {
 }
 
 export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
-  const { updateProgram, setStudentStatus } = useApiMutations();
+  const { saveTranscript, updateProgram, setStudentStatus } = useApiMutations();
+  const themeMode = useThemeStore((s) => s.mode);
+  const [addingGrade, setAddingGrade] = useState(false);
   // The program field is edited in place before being saved, so it needs a
   // local draft on top of the fetched student.
   const [program, setProgram] = useState(student.program);
 
+  const studentGridRef = useRef<AgGridReact<TranscriptEntry>>(null);
   const navigate = useNavigate();
-  const studentColumnDefs = useMemo(() => transcriptColumns(), []);
+  const studentColumnDefs = useMemo(() => transcriptColumns(themeMode), [themeMode]);
+
+  const handleSave = async () => {
+    const api = studentGridRef.current?.api;
+    if (!api) return;
+    const rows: TranscriptEntry[] = [];
+    api.forEachNode((node) => {
+      if (node.data) rows.push(node.data);
+    });
+
+    const { shouldRefresh } = await saveTranscript(rows);
+    if (shouldRefresh) onRefresh();
+  };
 
   const updateStudentProgram = async () => {
     if (await updateProgram(student.student_id, program, student.version)) onRefresh();
@@ -42,6 +61,13 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
   return (
     <Fade in={true} timeout={800}>
       <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+        {addingGrade && (
+          <AddGradeDialog
+            student={student}
+            onClose={() => setAddingGrade(false)}
+            onSaved={onRefresh}
+          />
+        )}
         <Box sx={{ mb: 3 }}>
           <Button
             startIcon={<ChevronLeftIcon />}
@@ -131,20 +157,47 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
             sx={{
               p: 3,
               borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
             }}
           >
-            <Typography variant="h5" fontWeight="700">
-              Personal Transcript
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Grades are read-only here. Edit them on the course page.
-            </Typography>
+            <Box>
+              <Typography variant="h5" fontWeight="700">
+                Personal Transcript
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                View marks in the student&apos;s official record. Pass, Fail and Excused
+                are calculated from the grade; they cannot be ticked by hand.
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex' }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<AddIcon />}
+                onClick={() => setAddingGrade(true)}
+                sx={{ px: 3, mr: 2 }}
+              >
+                Add Course Record
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<SaveIcon />}
+                onClick={() => void handleSave()}
+                sx={{ px: 3 }}
+              >
+                Save Official Marks
+              </Button>
+            </Box>
           </Box>
           <Box className="ag-theme-alpine" sx={{ flex: 1, width: '100%', p: 2 }}>
-            <AgGridReact
+            <AgGridReact<TranscriptEntry>
+              ref={studentGridRef}
               rowData={student.transcript}
               columnDefs={studentColumnDefs}
-              defaultColDef={{ resizable: true, sortable: true, filter: true, editable: false }}
+              defaultColDef={{ resizable: true, sortable: true, filter: true }}
               animateRows={true}
               pagination={true}
               paginationPageSize={20}

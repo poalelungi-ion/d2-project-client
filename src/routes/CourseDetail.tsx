@@ -9,7 +9,7 @@ import { radii } from '../styles/tokens';
 import { NotFound } from './NotFound';
 
 export const CourseDetail = () => {
-  const { courses, loading, refetch } = useCourses();
+  const { courses, loading } = useCourses();
   const { courseId } = useParams<'courseId'>();
 
   const course = useMemo(
@@ -31,5 +31,5 @@ export const CourseDetail = () => {
 
   // Keyed on the id so drilling into a different course starts with a clean
   // analytics panel rather than the previous course's student.
-  return <CourseDetailView key={course.course_id} course={course} onRefresh={refetch} />;
+  return <CourseDetailView key={course.course_id} course={course} />;
 };

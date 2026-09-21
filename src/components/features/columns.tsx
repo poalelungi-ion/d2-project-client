@@ -1,8 +1,8 @@
 import { IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
-import type { Course, Student, StudentStatus, TranscriptEntry } from '../../types';
-import { gradeOutcomeColor, passRateColor, studentStatusColor } from '../../styles/colors';
+import type { Course, Student, StudentStatus, ThemeMode, TranscriptEntry } from '../../types';
+import { gradeOutcomeColor, passRateColor, studentStatusColor, surfaces } from '../../styles/colors';
 import { formatGrade, outcomeLabel } from '../../utils/gradeOutcome';
 import { compareSemesters } from '../../utils/semester';
 
@@ -69,7 +69,7 @@ export const studentColumns = (onEdit: (student: Student) => void): ColDef<Stude
   { ...editAction(onEdit), flex: 1 },
 ];
 
-export const transcriptColumns = (): ColDef<TranscriptEntry>[] => [
+export const transcriptColumns = (mode: ThemeMode): ColDef<TranscriptEntry>[] => [
   { field: 'result_id', headerName: 'ID', hide: true },
   { field: 'attempt', headerName: 'Attempt #', editable: false, flex: 0.8 },
   // Declared on import, unlike 'Attempt #', which this system derives by counting.
@@ -79,11 +79,11 @@ export const transcriptColumns = (): ColDef<TranscriptEntry>[] => [
   {
     field: 'grade',
     headerName: 'Grade (1.0-5.0)',
-    editable: false,
+    editable: true,
     flex: 1,
     type: 'numericColumn',
     valueFormatter: (params) => formatGrade(params.value, params.data?.absence_code),
-    cellStyle: { fontWeight: 'bold' },
+    cellStyle: { fontWeight: 'bold', backgroundColor: surfaces.well[mode] },
   },
   {
     colId: 'outcome',

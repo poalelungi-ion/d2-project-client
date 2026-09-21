@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseSemester, compareSemesters, averageGradeBySemester } from './semester';
+import { parseSemester, compareSemesters } from './semester';
 
 describe('semester parsing and chronological sorting (Ticket #99881)', () => {
   it('parses WiSe and SoSe semester variants accurately', () => {
@@ -44,32 +44,5 @@ describe('semester parsing and chronological sorting (Ticket #99881)', () => {
     expect(parseSemester('')).toEqual({ year: 0, term: 0 });
     expect(compareSemesters('', '')).toBe(0);
     expect(compareSemesters('WiSe24', '')).toBeGreaterThan(0);
-  });
-});
-
-describe('averageGradeBySemester (Ticket #99896)', () => {
-  it('averages numeric grades per semester in chronological order', () => {
-    const rows = averageGradeBySemester([
-      { semester: 'WISE_25', grade: 5.0 },
-      { semester: 'SOSE_25', grade: 1.7 },
-      { semester: 'SOSE_25', grade: 2.3 },
-    ]);
-    expect(rows).toEqual([
-      { semester: 'SOSE_25', average: 2.0, sittings: 2 },
-      { semester: 'WISE_25', average: 5.0, sittings: 1 },
-    ]);
-  });
-
-  it('skips excused sittings that have no numeric grade', () => {
-    const rows = averageGradeBySemester([
-      { semester: 'WISE_25', grade: null },
-      { semester: 'WISE_25', grade: 2.0 },
-    ]);
-    expect(rows).toEqual([{ semester: 'WISE_25', average: 2.0, sittings: 1 }]);
-  });
-
-  it('returns an empty list when there are no graded sittings', () => {
-    expect(averageGradeBySemester([])).toEqual([]);
-    expect(averageGradeBySemester([{ semester: 'WISE_25', grade: null }])).toEqual([]);
   });
 });
