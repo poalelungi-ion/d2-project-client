@@ -49,35 +49,3 @@ export function compareSemesters(a: string, b: string): number {
   }
   return String(a).localeCompare(String(b));
 }
-
-/** Mean numeric grade for one offering of a course. */
-export interface SemesterGradeAverage {
-  semester: string;
-  average: number;
-  sittings: number;
-}
-
-/**
- * Average German grade per semester, oldest first.
- * Null grades (excused / AT) are skipped so they do not pull the mean.
- */
-export function averageGradeBySemester(
-  marks: readonly { semester: string; grade: number | null }[],
-): SemesterGradeAverage[] {
-  const bySemester = new Map<string, { sum: number; count: number }>();
-  for (const mark of marks) {
-    if (mark.grade == null) continue;
-    const bucket = bySemester.get(mark.semester) ?? { sum: 0, count: 0 };
-    bucket.sum += mark.grade;
-    bucket.count += 1;
-    bySemester.set(mark.semester, bucket);
-  }
-  return [...bySemester.entries()]
-    .sort(([left], [right]) => compareSemesters(left, right))
-    .map(([semester, { sum, count }]) => ({
-      semester,
-      average: parseFloat((sum / count).toFixed(2)),
-      sittings: count,
-    }));
-}
-
