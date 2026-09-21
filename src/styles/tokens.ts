@@ -44,10 +44,15 @@ export const gradients = {
   /** The app-bar wordmark, painted through the text. */
   wordmark: `linear-gradient(45deg, ${brand.main} 30%, ${brand.accent} 90%)`,
   navSelected: `linear-gradient(135deg, ${alpha(brand.main, 0.1)}, ${alpha(brand.main, 0.05)})`,
+  /** Account avatar: the wordmark gradient, so the initials read as branded
+   *  rather than as MUI's default grey placeholder. */
+  avatar: `linear-gradient(135deg, ${brand.main} 0%, ${brand.accent} 100%)`,
 } as const;
 
 export const layout = {
   drawerWidth: 260,
+  /** Sign-in and registration card: wide enough for an email field, no wider. */
+  authCardWidth: 440,
   /** Every ag-grid on a list screen. */
   gridHeight: 600,
   /** Main pane top padding, clearing the fixed app bar. */

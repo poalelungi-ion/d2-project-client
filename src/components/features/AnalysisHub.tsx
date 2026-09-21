@@ -9,6 +9,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { useStats } from '../../hooks/useApi';
+import { useAuthStore } from '../../stores';
+import { firstName } from '../../utils/userName';
 import { chart, neutral, semantic } from '../../styles/colors';
 import { blur } from '../../styles/tokens';
 import { pageSubtitle, pageTitle, toneSurface, toneValue, chartTooltip } from '../../styles/mixins';
@@ -17,6 +19,10 @@ import { ExamsHeatmap } from './ExamsHeatmap';
 export const AnalysisHub = () => {
   const { stats } = useStats();
   const theme = useTheme();
+  const user = useAuthStore((s) => s.user);
+  // Falls back to a plain greeting rather than an empty comma if the account
+  // somehow has no usable name.
+  const greetingName = firstName(user?.name);
 
   const kpis = [
     {
@@ -45,7 +51,7 @@ export const AnalysisHub = () => {
     <Fade in={true} timeout={800}>
       <Box sx={{ flexGrow: 1 }}>
         <Typography variant="h3" gutterBottom sx={pageTitle}>
-          Welcome back, Professor Adam! 👋
+          {greetingName ? `Welcome back, ${greetingName}! 👋` : 'Welcome back! 👋'}
         </Typography>
         <Typography variant="h6" sx={{ ...pageSubtitle, mb: 4 }}>
           Here are your actionable insights for active cohorts.

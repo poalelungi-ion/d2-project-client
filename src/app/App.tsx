@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import {
@@ -15,21 +15,43 @@ import {
   ListItemText,
   Snackbar,
   Alert,
+  Avatar,
+  Divider,
+  IconButton,
+  Menu,
+  MenuItem,
+  Tooltip,
 } from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 import { getGlassTheme } from '../styles/theme';
-import { gradients, layout } from '../styles/tokens';
+import { gradients, layout, shadows } from '../styles/tokens';
 import { navItem } from '../styles/mixins';
-import { useThemeStore, useToastStore } from '../stores';
-import { NAV_ITEMS, isNavItemActive } from './navigation';
+import { useAuthStore, useThemeStore, useToastStore } from '../stores';
+import { initials } from '../utils/userName';
+import { NAV_ITEMS, ROUTES, isNavItemActive } from './navigation';
 
 export default function App() {
   const mode = useThemeStore((s) => s.mode);
   const toast = useToastStore((s) => s.toast);
   const dismissToast = useToastStore((s) => s.dismiss);
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
   const glassTheme = useMemo(() => getGlassTheme(mode), [mode]);
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const [accountMenu, setAccountMenu] = useState<HTMLElement | null>(null);
+
+  const handleSignOut = async () => {
+    setAccountMenu(null);
+    await logout();
+    // RequireAuth redirects on its own once the user is cleared; navigating
+    // explicitly keeps the login screen from being reached through a back step
+    // that still has the protected route in history.
+    void navigate(ROUTES.login, { replace: true });
+  };
+
+  const avatarInitials = initials(user?.name);
 
   return (
     <ThemeProvider theme={glassTheme}>
@@ -50,9 +72,65 @@ export default function App() {
             >
               Study Progress Analysis
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-              Software Systems Engineering
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: 'text.secondary', display: { xs: 'none', sm: 'block' } }}
+              >
+                Software Systems Engineering
+              </Typography>
+
+              {user && (
+                <>
+                  <Tooltip title={user.email}>
+                    <IconButton
+                      onClick={(e) => setAccountMenu(e.currentTarget)}
+                      size="small"
+                      aria-label="Account menu"
+                    >
+                      <Avatar
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          letterSpacing: '0.5px',
+                          color: 'common.white',
+                          background: gradients.avatar,
+                          boxShadow: shadows.avatar,
+                        }}
+                      >
+                        {avatarInitials}
+                      </Avatar>
+                    </IconButton>
+                  </Tooltip>
+
+                  <Menu
+                    anchorEl={accountMenu}
+                    open={!!accountMenu}
+                    onClose={() => setAccountMenu(null)}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                  >
+                    <Box sx={{ px: 2, py: 1 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                        {user.name}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        {user.email}
+                      </Typography>
+                    </Box>
+                    <Divider />
+                    <MenuItem onClick={() => void handleSignOut()}>
+                      <ListItemIcon>
+                        <LogoutIcon fontSize="small" />
+                      </ListItemIcon>
+                      Sign out
+                    </MenuItem>
+                  </Menu>
+                </>
+              )}
+            </Box>
           </Toolbar>
         </AppBar>
 

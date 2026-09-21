@@ -12,6 +12,58 @@
 
 export type ThemeMode = 'light' | 'dark';
 
+// === Authentication ===
+
+/** GET /api/auth/me and the `user` field of a login response. */
+export interface AuthenticatedUser {
+  user_id: number;
+  email: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface RegisterPayload extends LoginPayload {
+  name: string;
+}
+
+/**
+ * POST /api/auth/login and /api/auth/refresh.
+ *
+ * There is no refresh token in here by design: the backend returns it as an
+ * httpOnly cookie, so this app never holds it and no script on the page can
+ * read it.
+ */
+export interface SessionResponse {
+  access_token: string;
+  token_type: string;
+  /** Access token lifetime in seconds, used to schedule a pre-emptive refresh. */
+  expires_in: number;
+  user: AuthenticatedUser;
+}
+
+export interface LoginFormValues {
+  email: string;
+  password: string;
+}
+
+export type LoginFormErrors = Partial<Record<keyof LoginFormValues, string>>;
+
+export interface RegisterFormValues {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export type RegisterFormErrors = Partial<Record<keyof RegisterFormValues, string>>;
+
+
 /** Lifecycle states the backend stores on a student profile. */
 export type StudentStatus = 'active' | 'graduated' | 'dropped' | 'failed';
 
@@ -157,9 +209,20 @@ export interface UploadConfirmResponse {
   course_id?: number;
 }
 
-/** FastAPI's error envelope: `{"detail": "..."}`. */
+/** One entry of FastAPI's 422 body: the field that failed and why. */
+export interface ValidationProblem {
+  msg: string;
+  loc?: (string | number)[];
+  type?: string;
+}
+
+/**
+ * FastAPI's error envelope. `detail` is a string for a raised HTTPException
+ * and an array of field problems for a rejected request body, so both shapes
+ * have to be handled -- see errorDetail in api/errors.ts.
+ */
 export interface ApiError {
-  detail?: string;
+  detail?: string | ValidationProblem[];
 }
 
 // === Form state ===
