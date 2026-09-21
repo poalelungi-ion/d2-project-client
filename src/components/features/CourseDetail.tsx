@@ -236,6 +236,10 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
     [course.marks],
   );
 
+  // Derived from the prop, so the placeholder gives way to real metrics as soon as
+  // the first submission arrives and the course is refetched.
+  const hasSubmissions = course.total_attempts > 0;
+
   const getLongitudinalData = (): SemesterAverage[] => {
     if (!analyticsStudentTranscript.length) return [];
     const semMap: Record<string, { sum: number; count: number }> = {};
@@ -310,15 +314,19 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 3, mt: 1, flexWrap: 'wrap' }}>
-            <Typography variant="h6" sx={pageSubtitle}>
-              Average Grade: <strong>{course.avg_grade}</strong>
-            </Typography>
-            <Typography variant="h6" sx={pageSubtitle}>
-              Pass Rate:{' '}
-              <strong style={{ color: passRateColor(course.pass_rate) }}>
-                {course.pass_rate}%
-              </strong>
-            </Typography>
+            {hasSubmissions && (
+              <>
+                <Typography variant="h6" sx={pageSubtitle}>
+                  Average Grade: <strong>{course.avg_grade}</strong>
+                </Typography>
+                <Typography variant="h6" sx={pageSubtitle}>
+                  Pass Rate:{' '}
+                  <strong style={{ color: passRateColor(course.pass_rate) }}>
+                    {course.pass_rate}%
+                  </strong>
+                </Typography>
+              </>
+            )}
             <Typography variant="h6" sx={pageSubtitle}>
               Total Submissions: <strong>{course.total_attempts}</strong>
             </Typography>
@@ -377,161 +385,174 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
         </Box>
 
         {/* === ANALYTICS DASHBOARD SECTION === */}
-        <Box sx={{ display: 'flex', gap: 3, mb: 3, flexWrap: 'wrap' }}>
-          <Paper sx={{ p: 3, flex: 2, minWidth: 400, borderRadius: radii.xxl }}>
-            <Typography variant="h6" fontWeight="700" mb={2}>
-              Course Grade Distribution
-            </Typography>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={getGradeDistributionData()}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="grade" />
-                <YAxis allowDecimals={false} />
-                <RechartsTooltip />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                  {getGradeDistributionData().map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={
-                        analyticsStudent &&
-                        analyticsStudent.grade != null &&
-                        entry.grade === analyticsStudent.grade.toString()
-                          ? chart.highlight
-                          : chart.cohort
-                      }
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-            {analyticsStudent && (
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                display="block"
-                textAlign="center"
-                mt={1}
-              >
-                Highlighting <strong>{analyticsStudent.student_name}&apos;s</strong> grade (
-                {analyticsStudent.grade ?? analyticsStudent.absence_code ?? '—'})
-              </Typography>
-            )}
-          </Paper>
-
-          <Paper sx={{ p: 3, flex: 1, minWidth: 250, borderRadius: radii.xxl }}>
-            <Typography variant="h6" fontWeight="700" mb={2}>
-              Results
-            </Typography>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={getPassFailData()}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                >
-                  {getPassFailData().map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <RechartsTooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </Paper>
-
-          {analyticsStudent && (
-            <Paper sx={{ p: 3, flex: 3, minWidth: 400, borderRadius: radii.xxl }}>
-              <Typography variant="h6" fontWeight="700" mb={2}>
-                {analyticsStudent.student_name}&apos;s Longitudinal Trend
-              </Typography>
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={getLongitudinalData()}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="semester" />
-                  <YAxis
-                    domain={[1, 5]}
-                    reversed={true}
-                    label={{ value: 'Average Grade', angle: -90, position: 'insideLeft' }}
-                  />
-                  <RechartsTooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="average"
-                    stroke={chart.highlight}
-                    strokeWidth={3}
-                    dot={{ r: 5 }}
-                    activeDot={{ r: 8 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </Paper>
-          )}
-        </Box>
-
-        <Paper sx={{ p: 3, mb: 3, borderRadius: radii.xxl }}>
-          <Typography variant="h6" fontWeight="700" mb={0.5}>
-            Average grade by semester
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mb={2}>
-            Mean of numeric grades for this course in each offering. Excused sittings (AT) are
-            omitted.
-          </Typography>
-          {semesterAverages.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              No graded sittings yet.
-            </Typography>
-          ) : (
-            <>
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={semesterAverages}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="semester" />
-                  <YAxis
-                    domain={[1, 5]}
-                    reversed={true}
-                    label={{ value: 'Average Grade', angle: -90, position: 'insideLeft' }}
-                  />
-                  <RechartsTooltip
-                    formatter={(value: number, _name: string, item) => {
-                      const sittings = Number(item?.payload?.sittings ?? 0);
-                      const sittingLabel = sittings === 1 ? '1 sitting' : `${sittings} sittings`;
-                      return [`${value} (${sittingLabel})`, 'Average'];
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="average"
-                    stroke={chart.cohort}
-                    strokeWidth={3}
-                    dot={{ r: 5 }}
-                    activeDot={{ r: 8 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-              <Box sx={{ display: 'flex', gap: 3, mt: 2, flexWrap: 'wrap' }}>
-                {semesterAverages.map((row) => (
-                  <Typography key={row.semester} variant="body2" color="text.secondary">
-                    {row.semester}: <strong>{row.average}</strong>
+        {hasSubmissions ? (
+          <>
+            <Box sx={{ display: 'flex', gap: 3, mb: 3, flexWrap: 'wrap' }}>
+              <Paper sx={{ p: 3, flex: 2, minWidth: 400, borderRadius: radii.xxl }}>
+                <Typography variant="h6" fontWeight="700" mb={2}>
+                  Course Grade Distribution
+                </Typography>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={getGradeDistributionData()}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="grade" />
+                    <YAxis allowDecimals={false} />
+                    <RechartsTooltip />
+                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                      {getGradeDistributionData().map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            analyticsStudent &&
+                            analyticsStudent.grade != null &&
+                            entry.grade === analyticsStudent.grade.toString()
+                              ? chart.highlight
+                              : chart.cohort
+                          }
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                {analyticsStudent && (
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                    textAlign="center"
+                    mt={1}
+                  >
+                    Highlighting <strong>{analyticsStudent.student_name}&apos;s</strong> grade (
+                    {analyticsStudent.grade ?? analyticsStudent.absence_code ?? '—'})
                   </Typography>
-                ))}
-              </Box>
-            </>
-          )}
-        </Paper>
+                )}
+              </Paper>
 
-        {/* === COURSE EXAMS HEATMAP === */}
-        <Box sx={{ mb: 3 }}>
-          <ExamsHeatmap 
-            heatmapData={getCourseHeatmapData()} 
-            title="Course Attempts Activity" 
-            subtitle="Distribution of how many times students took this specific course's exams per semester." 
-          />
-        </Box>
+              <Paper sx={{ p: 3, flex: 1, minWidth: 250, borderRadius: radii.xxl }}>
+                <Typography variant="h6" fontWeight="700" mb={2}>
+                  Results
+                </Typography>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={getPassFailData()}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                    >
+                      {getPassFailData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Paper>
+
+              {analyticsStudent && (
+                <Paper sx={{ p: 3, flex: 3, minWidth: 400, borderRadius: radii.xxl }}>
+                  <Typography variant="h6" fontWeight="700" mb={2}>
+                    {analyticsStudent.student_name}&apos;s Longitudinal Trend
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={getLongitudinalData()}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="semester" />
+                      <YAxis
+                        domain={[1, 5]}
+                        reversed={true}
+                        label={{ value: 'Average Grade', angle: -90, position: 'insideLeft' }}
+                      />
+                      <RechartsTooltip />
+                      <Line
+                        type="monotone"
+                        dataKey="average"
+                        stroke={chart.highlight}
+                        strokeWidth={3}
+                        dot={{ r: 5 }}
+                        activeDot={{ r: 8 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Paper>
+              )}
+            </Box>
+
+            <Paper sx={{ p: 3, mb: 3, borderRadius: radii.xxl }}>
+              <Typography variant="h6" fontWeight="700" mb={0.5}>
+                Average grade by semester
+              </Typography>
+              <Typography variant="body2" color="text.secondary" mb={2}>
+                Mean of numeric grades for this course in each offering. Excused sittings (AT) are
+                omitted.
+              </Typography>
+              {semesterAverages.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No graded sittings yet.
+                </Typography>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={semesterAverages}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="semester" />
+                      <YAxis
+                        domain={[1, 5]}
+                        reversed={true}
+                        label={{ value: 'Average Grade', angle: -90, position: 'insideLeft' }}
+                      />
+                      <RechartsTooltip
+                        formatter={(value: number, _name: string, item) => {
+                          const sittings = Number(item?.payload?.sittings ?? 0);
+                          const sittingLabel = sittings === 1 ? '1 sitting' : `${sittings} sittings`;
+                          return [`${value} (${sittingLabel})`, 'Average'];
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="average"
+                        stroke={chart.cohort}
+                        strokeWidth={3}
+                        dot={{ r: 5 }}
+                        activeDot={{ r: 8 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                  <Box sx={{ display: 'flex', gap: 3, mt: 2, flexWrap: 'wrap' }}>
+                    {semesterAverages.map((row) => (
+                      <Typography key={row.semester} variant="body2" color="text.secondary">
+                        {row.semester}: <strong>{row.average}</strong>
+                      </Typography>
+                    ))}
+                  </Box>
+                </>
+              )}
+            </Paper>
+
+            {/* === COURSE EXAMS HEATMAP === */}
+            <Box sx={{ mb: 3 }}>
+              <ExamsHeatmap 
+                heatmapData={getCourseHeatmapData()} 
+                title="Course Attempts Activity" 
+                subtitle="Distribution of how many times students took this specific course's exams per semester." 
+              />
+            </Box>
+          </>
+        ) : (
+          <Paper sx={{ p: 3, mb: 3, borderRadius: radii.xxl }}>
+            <Typography variant="h6" fontWeight="700" mb={0.5}>
+              No submissions yet
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Upload exam data to see the pass rate, grade distribution and other statistics.
+            </Typography>
+          </Paper>
+        )}
 
         <Paper
           sx={{
