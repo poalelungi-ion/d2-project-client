@@ -28,10 +28,11 @@ WORKDIR /app
 # Vite inlines VITE_-prefixed variables at BUILD time, so the API the bundle
 # talks to is fixed here and cannot be changed by the running container.
 # Override with: docker build --build-arg VITE_API_BASE_URL=https://api.example/api
+#
+# There is no API token to bake in any more: the app authenticates per user
+# through its sign-in screen, so nothing secret ends up in the bundle.
 ARG VITE_API_BASE_URL=http://localhost:8000/api
-ARG VITE_API_TOKEN=sse-staff-token
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-ENV VITE_API_TOKEN=$VITE_API_TOKEN
 COPY . .
 # `npm run build` is `tsc -b && vite build`: a type error fails the image.
 RUN npm run build

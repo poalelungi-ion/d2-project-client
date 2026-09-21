@@ -1,14 +1,27 @@
-import { useRef, useState } from 'react';
-import { Box, Typography, Button, TextField, Paper, Fade, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { useMemo, useRef, useState } from 'react';
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Paper,
+  Fade,
+  ToggleButton,
+  ToggleButtonGroup,
+  Alert,
+  AlertTitle,
+} from '@mui/material';
 import {
   Restore as RestoreIcon,
   ChevronLeft as ChevronLeftIcon,
   CloudUpload as CloudUploadIcon,
   Archive as ArchiveIcon,
+  Edit as EditIcon,
+  Save as SaveIcon,
 } from '@mui/icons-material';
 import { AgGridReact } from 'ag-grid-react';
 import type { ICellRendererParams, RowClickedEvent } from 'ag-grid-community';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   BarChart,
   Bar,
@@ -27,12 +40,14 @@ import {
 import type { Course, CourseMark, TranscriptEntry } from '../../types';
 import { ROUTES } from '../../app/navigation';
 import { useApiMutations } from '../../hooks/useApi';
-import { chart, gradeOutcomeColor, passRateColor } from '../../styles/colors';
+import { useThemeStore } from '../../stores';
+import { chart, gradeOutcomeColor, passRateColor, surfaces } from '../../styles/colors';
 import { radii } from '../../styles/tokens';
-import { pageSubtitle, pageTitle } from '../../styles/mixins';
+import { metaChip, pageSubtitle, pageTitle } from '../../styles/mixins';
 import { ExamsHeatmap } from './ExamsHeatmap';
 import { formatGrade, outcomeLabel } from '../../utils/gradeOutcome';
-import { compareSemesters } from '../../utils/semester';
+import { CourseFormDialog } from '../forms/CourseFormDialog';
+import { averageGradeBySemester, compareSemesters } from '../../utils/semester';
 
 /** One bar of the course's grade histogram. */
 interface GradeBucket {
@@ -56,21 +71,31 @@ interface SemesterAverage {
 interface CourseDetailProps {
   /** Resolved from :courseId by the route before this screen is mounted. */
   course: Course;
+  /** Reloads course details and marks after an in-place edit or lecture-view grade save. */
+  onRefresh: () => Promise<void>;
 }
 
-export const CourseDetail = ({ course }: CourseDetailProps) => {
-  const { archiveCourse, loadTranscript } = useApiMutations();
+export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
+  const { archiveCourse, loadTranscript, saveTranscript } = useApiMutations();
+  const themeMode = useThemeStore((s) => s.mode);
   // Which student out of this roster is plotted against the cohort. Only this
   // screen cares, so it stays here.
   const [analyticsStudent, setAnalyticsStudent] = useState<CourseMark | null>(null);
   const [analyticsStudentTranscript, setAnalyticsStudentTranscript] = useState<
     TranscriptEntry[]
   >([]);
+  const [editing, setEditing] = useState(false);
 
   const [viewMode, setViewMode] = useState<'individual' | 'history'>('history');
   const courseGridRef = useRef<AgGridReact<CourseMark>>(null);
   const historyGridRef = useRef<AgGridReact<any>>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const routeState = location.state as Record<string, unknown> | null;
+  const [importBannerOpen, setImportBannerOpen] = useState<boolean>(() =>
+    Boolean(routeState?.importSuccess),
+  );
+  const importMessage = routeState?.importMessage as string | undefined;
 
   const clearAnalyticsStudent = () => {
     setAnalyticsStudent(null);
@@ -82,6 +107,18 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
     setAnalyticsStudentTranscript([]);
     if (mark.student_id == null) return;
     setAnalyticsStudentTranscript(await loadTranscript(mark.student_id));
+  };
+
+  const handleSaveMarks = async () => {
+    const api = courseGridRef.current?.api;
+    if (!api) return;
+    api.stopEditing();
+    const rows: CourseMark[] = [];
+    api.forEachNode((node) => {
+      if (node.data) rows.push(node.data);
+    });
+    const { shouldRefresh } = await saveTranscript(rows);
+    if (shouldRefresh) await onRefresh();
   };
 
   const getGradeDistributionData = (): GradeBucket[] => {
@@ -194,6 +231,11 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
     return heatmapData;
   };
 
+  const semesterAverages = useMemo(
+    () => averageGradeBySemester(course.marks ?? []),
+    [course.marks],
+  );
+
   const getLongitudinalData = (): SemesterAverage[] => {
     if (!analyticsStudentTranscript.length) return [];
     const semMap: Record<string, { sum: number; count: number }> = {};
@@ -214,6 +256,31 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
   return (
     <Fade in={true} timeout={800}>
       <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+        {editing && (
+          <CourseFormDialog
+            course={course}
+            onClose={() => setEditing(false)}
+            onSaved={(savedCourseId) => {
+              void onRefresh().then(() => {
+                if (savedCourseId !== String(course.course_id)) {
+                  void navigate(ROUTES.courseDetail(savedCourseId), { replace: true });
+                }
+              });
+            }}
+          />
+        )}
+        {importBannerOpen && (
+          <Fade in={importBannerOpen}>
+            <Alert
+              severity="success"
+              onClose={() => setImportBannerOpen(false)}
+              sx={{ mb: 3, borderRadius: radii.lg }}
+            >
+              <AlertTitle sx={{ fontWeight: 700 }}>Import Successful</AlertTitle>
+              {importMessage || 'Course exam data was imported successfully and all statistics have been updated.'}
+            </Alert>
+          </Fade>
+        )}
         <Box sx={{ mb: 3 }}>
           <Button
             startIcon={<ChevronLeftIcon />}
@@ -228,6 +295,20 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
           <Typography variant="h3" sx={pageTitle}>
             {course.course_name}
           </Typography>
+          <Box sx={{ display: 'flex', gap: 1, mt: 1.5, flexWrap: 'wrap' }}>
+            <Typography variant="caption" sx={metaChip}>
+              ID: {course.course_id}
+            </Typography>
+            <Typography variant="caption" sx={metaChip}>
+              {course.semester}
+            </Typography>
+            <Typography variant="caption" sx={metaChip}>
+              {course.study_program}
+            </Typography>
+            <Typography variant="caption" sx={metaChip}>
+              {course.assigned_professor}
+            </Typography>
+          </Box>
           <Box sx={{ display: 'flex', gap: 3, mt: 1, flexWrap: 'wrap' }}>
             <Typography variant="h6" sx={pageSubtitle}>
               Average Grade: <strong>{course.avg_grade}</strong>
@@ -242,6 +323,14 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
               Total Submissions: <strong>{course.total_attempts}</strong>
             </Typography>
             <Button
+              variant="outlined"
+              startIcon={<EditIcon />}
+              onClick={() => setEditing(true)}
+              sx={{ ml: 'auto' }}
+            >
+              Edit Course
+            </Button>
+            <Button
               variant="contained"
               color="success"
               startIcon={<CloudUploadIcon />}
@@ -252,7 +341,6 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
                   state: { courseId: course.course_id, courseName: course.course_name },
                 })
               }
-              sx={{ ml: 'auto' }}
             >
               Upload Exam Data
             </Button>
@@ -385,6 +473,57 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
           )}
         </Box>
 
+        <Paper sx={{ p: 3, mb: 3, borderRadius: radii.xxl }}>
+          <Typography variant="h6" fontWeight="700" mb={0.5}>
+            Average grade by semester
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Mean of numeric grades for this course in each offering. Excused sittings (AT) are
+            omitted.
+          </Typography>
+          {semesterAverages.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No graded sittings yet.
+            </Typography>
+          ) : (
+            <>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={semesterAverages}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="semester" />
+                  <YAxis
+                    domain={[1, 5]}
+                    reversed={true}
+                    label={{ value: 'Average Grade', angle: -90, position: 'insideLeft' }}
+                  />
+                  <RechartsTooltip
+                    formatter={(value: number, _name: string, item) => {
+                      const sittings = Number(item?.payload?.sittings ?? 0);
+                      const sittingLabel = sittings === 1 ? '1 sitting' : `${sittings} sittings`;
+                      return [`${value} (${sittingLabel})`, 'Average'];
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="average"
+                    stroke={chart.cohort}
+                    strokeWidth={3}
+                    dot={{ r: 5 }}
+                    activeDot={{ r: 8 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+              <Box sx={{ display: 'flex', gap: 3, mt: 2, flexWrap: 'wrap' }}>
+                {semesterAverages.map((row) => (
+                  <Typography key={row.semester} variant="body2" color="text.secondary">
+                    {row.semester}: <strong>{row.average}</strong>
+                  </Typography>
+                ))}
+              </Box>
+            </>
+          )}
+        </Paper>
+
         {/* === COURSE EXAMS HEATMAP === */}
         <Box sx={{ mb: 3 }}>
           <ExamsHeatmap 
@@ -417,10 +556,21 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
                 Detailed Course Marks
               </Typography>
               <Typography variant="body1" color="text.secondary">
-                {viewMode === 'history' ? 'Per-Person History across exam attempts.' : 'Marks per student per semester.'}
+                {viewMode === 'history'
+                  ? 'Per-Person History across exam attempts.'
+                  : 'Click a grade to edit, then save. Student profiles are read-only.'}
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+              {viewMode === 'individual' && (
+                <Button
+                  variant="contained"
+                  startIcon={<SaveIcon />}
+                  onClick={() => void handleSaveMarks()}
+                >
+                  Save Marks
+                </Button>
+              )}
               <ToggleButtonGroup
                 value={viewMode}
                 exclusive
@@ -452,23 +602,31 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
                 ref={courseGridRef}
                 domLayout="autoHeight"
                 rowData={course.marks}
+                stopEditingWhenCellsLoseFocus={true}
                 columnDefs={[
-                  { field: 'student_id', headerName: 'Student ID', flex: 1 },
-                  { field: 'student_name', headerName: 'Name', flex: 2 },
-                  { field: 'program', headerName: 'Study Program', flex: 2 },
-                  { field: 'semester', headerName: 'Semester', flex: 1 },
+                  { field: 'result_id', headerName: 'ID', hide: true },
+                  { field: 'student_id', headerName: 'Student ID', flex: 1, editable: false },
+                  { field: 'student_name', headerName: 'Name', flex: 2, editable: false },
+                  { field: 'program', headerName: 'Study Program', flex: 2, editable: false },
+                  { field: 'semester', headerName: 'Semester', flex: 1, editable: false },
                   {
                     field: 'grade',
                     headerName: 'Grade',
                     flex: 1,
+                    editable: true,
+                    type: 'numericColumn',
                     valueFormatter: (params) =>
                       formatGrade(params.value, params.data?.absence_code),
-                    cellStyle: { fontWeight: 'bold' },
+                    cellStyle: {
+                      fontWeight: 'bold',
+                      backgroundColor: surfaces.well[themeMode],
+                    },
                   },
                   {
                     colId: 'outcome',
                     headerName: 'Result',
                     flex: 1,
+                    editable: false,
                     valueGetter: (params) =>
                       params.data ? outcomeLabel(params.data.outcome, params.data.passed) : '',
                     cellRenderer: (params: ICellRendererParams<CourseMark, string>) => (
@@ -483,7 +641,7 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
                     ),
                   },
                 ]}
-                defaultColDef={{ resizable: true, sortable: true, filter: true }}
+                defaultColDef={{ resizable: true, sortable: true, filter: true, editable: false }}
                 animateRows={true}
                 pagination={true}
                 paginationPageSize={20}
@@ -531,7 +689,7 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
                     ),
                   },
                 ]}
-                defaultColDef={{ resizable: true, sortable: true, filter: true }}
+                defaultColDef={{ resizable: true, sortable: true, filter: true, editable: false }}
                 animateRows={true}
                 pagination={true}
                 paginationPageSize={20}

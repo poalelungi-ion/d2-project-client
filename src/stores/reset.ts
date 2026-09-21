@@ -1,3 +1,4 @@
+import { useAuthStore } from './authStore';
 import { useThemeStore } from './themeStore';
 import { useToastStore } from './toastStore';
 
@@ -16,6 +17,7 @@ const snapshot = <T,>(store: Resettable<T>): (() => void) => {
 };
 
 const RESETTERS = [
+  snapshot(useAuthStore),
   snapshot(useThemeStore),
   snapshot(useToastStore),
 ];
