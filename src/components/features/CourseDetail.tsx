@@ -5,6 +5,7 @@ import {
   ChevronLeft as ChevronLeftIcon,
   CloudUpload as CloudUploadIcon,
   Archive as ArchiveIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 import { AgGridReact } from 'ag-grid-react';
 import type { ICellRendererParams, RowClickedEvent } from 'ag-grid-community';
@@ -29,10 +30,11 @@ import { ROUTES } from '../../app/navigation';
 import { useApiMutations } from '../../hooks/useApi';
 import { chart, gradeOutcomeColor, passRateColor } from '../../styles/colors';
 import { radii } from '../../styles/tokens';
-import { pageSubtitle, pageTitle } from '../../styles/mixins';
+import { metaChip, pageSubtitle, pageTitle } from '../../styles/mixins';
 import { ExamsHeatmap } from './ExamsHeatmap';
 import { formatGrade, outcomeLabel } from '../../utils/gradeOutcome';
 import { compareSemesters } from '../../utils/semester';
+import { CourseFormDialog } from '../forms/CourseFormDialog';
 
 /** One bar of the course's grade histogram. */
 interface GradeBucket {
@@ -56,9 +58,11 @@ interface SemesterAverage {
 interface CourseDetailProps {
   /** Resolved from :courseId by the route before this screen is mounted. */
   course: Course;
+  /** Reloads the course list after an in-place edit so this page shows the new details. */
+  onRefresh: () => Promise<void>;
 }
 
-export const CourseDetail = ({ course }: CourseDetailProps) => {
+export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
   const { archiveCourse, loadTranscript } = useApiMutations();
   // Which student out of this roster is plotted against the cohort. Only this
   // screen cares, so it stays here.
@@ -66,6 +70,7 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
   const [analyticsStudentTranscript, setAnalyticsStudentTranscript] = useState<
     TranscriptEntry[]
   >([]);
+  const [editing, setEditing] = useState(false);
 
   const [viewMode, setViewMode] = useState<'individual' | 'history'>('history');
   const courseGridRef = useRef<AgGridReact<CourseMark>>(null);
@@ -214,6 +219,19 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
   return (
     <Fade in={true} timeout={800}>
       <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+        {editing && (
+          <CourseFormDialog
+            course={course}
+            onClose={() => setEditing(false)}
+            onSaved={(savedCourseId) => {
+              void onRefresh().then(() => {
+                if (savedCourseId !== String(course.course_id)) {
+                  void navigate(ROUTES.courseDetail(savedCourseId), { replace: true });
+                }
+              });
+            }}
+          />
+        )}
         <Box sx={{ mb: 3 }}>
           <Button
             startIcon={<ChevronLeftIcon />}
@@ -228,6 +246,20 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
           <Typography variant="h3" sx={pageTitle}>
             {course.course_name}
           </Typography>
+          <Box sx={{ display: 'flex', gap: 1, mt: 1.5, flexWrap: 'wrap' }}>
+            <Typography variant="caption" sx={metaChip}>
+              ID: {course.course_id}
+            </Typography>
+            <Typography variant="caption" sx={metaChip}>
+              {course.semester}
+            </Typography>
+            <Typography variant="caption" sx={metaChip}>
+              {course.study_program}
+            </Typography>
+            <Typography variant="caption" sx={metaChip}>
+              {course.assigned_professor}
+            </Typography>
+          </Box>
           <Box sx={{ display: 'flex', gap: 3, mt: 1, flexWrap: 'wrap' }}>
             <Typography variant="h6" sx={pageSubtitle}>
               Average Grade: <strong>{course.avg_grade}</strong>
@@ -242,6 +274,14 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
               Total Submissions: <strong>{course.total_attempts}</strong>
             </Typography>
             <Button
+              variant="outlined"
+              startIcon={<EditIcon />}
+              onClick={() => setEditing(true)}
+              sx={{ ml: 'auto' }}
+            >
+              Edit Course
+            </Button>
+            <Button
               variant="contained"
               color="success"
               startIcon={<CloudUploadIcon />}
@@ -252,7 +292,6 @@ export const CourseDetail = ({ course }: CourseDetailProps) => {
                   state: { courseId: course.course_id, courseName: course.course_name },
                 })
               }
-              sx={{ ml: 'auto' }}
             >
               Upload Exam Data
             </Button>
