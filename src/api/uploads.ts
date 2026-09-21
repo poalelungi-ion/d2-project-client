@@ -13,10 +13,6 @@ export interface UploadConfirmPayload {
   records: PreviewRecord[];
 }
 
-/** Legacy single-step upload used by the simple upload form. */
-export const uploadFile = (formData: FormData): Promise<Response> =>
-  postForm('/upload/', formData);
-
 /**
  * Parses a file or pasted table (the `paste` form field) and returns rows
  * for review without saving. Same endpoint either way.

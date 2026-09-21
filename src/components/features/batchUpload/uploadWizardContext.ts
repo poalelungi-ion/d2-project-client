@@ -8,20 +8,13 @@ export interface UploadWizardValue {
   paste: string;
   /** Filename, or "Pasted data", shown on later wizard steps. */
   sourceLabel: string;
-  demoFile: string;
   courseInfo: UploadCourseInfo;
-  /**
-   * The course was taken from the Course view this upload started in, so it is
-   * shown rather than asked for and cannot be edited into a different course.
-   */
-  courseLocked: boolean;
   nameSplitRule: NameSplitRule;
   preview: PreviewRecord[];
 
   setStep: (step: number) => void;
   setFile: (file: File | null) => void;
   setPaste: (text: string) => void;
-  setDemoFile: (name: string) => void;
   setCourseInfo: (patch: Partial<UploadCourseInfo>) => void;
   setNameSplitRule: (rule: NameSplitRule) => void;
   setGridApi: (api: GridApi<PreviewRecord> | null) => void;
