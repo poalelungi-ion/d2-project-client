@@ -5,7 +5,7 @@ import {
   ChevronLeft as ChevronLeftIcon,
   CloudUpload as CloudUploadIcon,
   Archive as ArchiveIcon,
-  Save as SaveIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 import { AgGridReact } from 'ag-grid-react';
 import type { ICellRendererParams, RowClickedEvent } from 'ag-grid-community';
@@ -28,8 +28,7 @@ import {
 import type { Course, CourseMark, TranscriptEntry } from '../../types';
 import { ROUTES } from '../../app/navigation';
 import { useApiMutations } from '../../hooks/useApi';
-import { useThemeStore } from '../../stores';
-import { chart, gradeOutcomeColor, passRateColor, surfaces } from '../../styles/colors';
+import { chart, gradeOutcomeColor, passRateColor } from '../../styles/colors';
 import { radii } from '../../styles/tokens';
 import { metaChip, pageSubtitle, pageTitle } from '../../styles/mixins';
 import { ExamsHeatmap } from './ExamsHeatmap';
@@ -58,13 +57,12 @@ interface SemesterAverage {
 interface CourseDetailProps {
   /** Resolved from :courseId by the route before this screen is mounted. */
   course: Course;
-  /** Reloads course marks after a lecture-view grade save. */
+  /** Reloads the course list after an in-place edit so this page shows the new details. */
   onRefresh: () => Promise<void>;
 }
 
 export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
-  const { archiveCourse, loadTranscript, saveTranscript } = useApiMutations();
-  const themeMode = useThemeStore((s) => s.mode);
+  const { archiveCourse, loadTranscript } = useApiMutations();
   // Which student out of this roster is plotted against the cohort. Only this
   // screen cares, so it stays here.
   const [analyticsStudent, setAnalyticsStudent] = useState<CourseMark | null>(null);
@@ -88,18 +86,6 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
     setAnalyticsStudentTranscript([]);
     if (mark.student_id == null) return;
     setAnalyticsStudentTranscript(await loadTranscript(mark.student_id));
-  };
-
-  const handleSaveMarks = async () => {
-    const api = courseGridRef.current?.api;
-    if (!api) return;
-    api.stopEditing();
-    const rows: CourseMark[] = [];
-    api.forEachNode((node) => {
-      if (node.data) rows.push(node.data);
-    });
-    const { shouldRefresh } = await saveTranscript(rows);
-    if (shouldRefresh) await onRefresh();
   };
 
   const getGradeDistributionData = (): GradeBucket[] => {
@@ -525,21 +511,10 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
                 Detailed Course Marks
               </Typography>
               <Typography variant="body1" color="text.secondary">
-                {viewMode === 'history'
-                  ? 'Per-Person History across exam attempts.'
-                  : 'Click a grade to edit, then save. Student profiles are read-only.'}
+                {viewMode === 'history' ? 'Per-Person History across exam attempts.' : 'Marks per student per semester.'}
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-              {viewMode === 'individual' && (
-                <Button
-                  variant="contained"
-                  startIcon={<SaveIcon />}
-                  onClick={() => void handleSaveMarks()}
-                >
-                  Save Marks
-                </Button>
-              )}
+            <Box sx={{ display: 'flex', gap: 2 }}>
               <ToggleButtonGroup
                 value={viewMode}
                 exclusive
@@ -571,31 +546,23 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
                 ref={courseGridRef}
                 domLayout="autoHeight"
                 rowData={course.marks}
-                stopEditingWhenCellsLoseFocus={true}
                 columnDefs={[
-                  { field: 'result_id', headerName: 'ID', hide: true },
-                  { field: 'student_id', headerName: 'Student ID', flex: 1, editable: false },
-                  { field: 'student_name', headerName: 'Name', flex: 2, editable: false },
-                  { field: 'program', headerName: 'Study Program', flex: 2, editable: false },
-                  { field: 'semester', headerName: 'Semester', flex: 1, editable: false },
+                  { field: 'student_id', headerName: 'Student ID', flex: 1 },
+                  { field: 'student_name', headerName: 'Name', flex: 2 },
+                  { field: 'program', headerName: 'Study Program', flex: 2 },
+                  { field: 'semester', headerName: 'Semester', flex: 1 },
                   {
                     field: 'grade',
                     headerName: 'Grade',
                     flex: 1,
-                    editable: true,
-                    type: 'numericColumn',
                     valueFormatter: (params) =>
                       formatGrade(params.value, params.data?.absence_code),
-                    cellStyle: {
-                      fontWeight: 'bold',
-                      backgroundColor: surfaces.well[themeMode],
-                    },
+                    cellStyle: { fontWeight: 'bold' },
                   },
                   {
                     colId: 'outcome',
                     headerName: 'Result',
                     flex: 1,
-                    editable: false,
                     valueGetter: (params) =>
                       params.data ? outcomeLabel(params.data.outcome, params.data.passed) : '',
                     cellRenderer: (params: ICellRendererParams<CourseMark, string>) => (
@@ -610,7 +577,7 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
                     ),
                   },
                 ]}
-                defaultColDef={{ resizable: true, sortable: true, filter: true, editable: false }}
+                defaultColDef={{ resizable: true, sortable: true, filter: true }}
                 animateRows={true}
                 pagination={true}
                 paginationPageSize={20}
@@ -658,7 +625,7 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
                     ),
                   },
                 ]}
-                defaultColDef={{ resizable: true, sortable: true, filter: true, editable: false }}
+                defaultColDef={{ resizable: true, sortable: true, filter: true }}
                 animateRows={true}
                 pagination={true}
                 paginationPageSize={20}
