@@ -23,12 +23,12 @@ export interface CourseArchivePayload {
 export const listCourses = (): Promise<Response> => get('/courses/');
 
 export const createCourse = (course: CourseCreatePayload): Promise<Response> =>
-  post('/courses/', course, { auth: true });
+  post('/courses/', course);
 
 export const updateCourse = (
   courseId: number | string,
   course: CourseUpdatePayload,
-): Promise<Response> => put(`/courses/${courseId}`, course, { auth: true });
+): Promise<Response> => put(`/courses/${courseId}`, course);
 
 export const setCourseArchived = (
   courseId: number,

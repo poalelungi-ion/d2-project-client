@@ -265,7 +265,7 @@ async function archiveCourse(
 
 async function loadTranscript(studentId: number): Promise<TranscriptEntry[]> {
   try {
-    const res = await getStudent(studentId, { auth: true });
+    const res = await getStudent(studentId);
     if (res.ok) {
       const data = (await res.json()) as StudentDetails;
       return data.transcript || [];

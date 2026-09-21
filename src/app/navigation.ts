@@ -4,6 +4,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import type { SvgIconComponent } from '@mui/icons-material';
 
 export const ROUTES = {
+  login: '/login',
+  register: '/register',
   dashboard: '/dashboard',
   upload: '/upload',
   courses: '/courses',
