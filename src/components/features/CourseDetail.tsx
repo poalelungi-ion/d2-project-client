@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Box, Typography, Button, TextField, Paper, Fade, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import {
   Restore as RestoreIcon,
@@ -33,8 +33,7 @@ import { radii } from '../../styles/tokens';
 import { metaChip, pageSubtitle, pageTitle } from '../../styles/mixins';
 import { ExamsHeatmap } from './ExamsHeatmap';
 import { formatGrade, outcomeLabel } from '../../utils/gradeOutcome';
-import { compareSemesters } from '../../utils/semester';
-import { CourseFormDialog } from '../forms/CourseFormDialog';
+import { averageGradeBySemester, compareSemesters } from '../../utils/semester';
 
 /** One bar of the course's grade histogram. */
 interface GradeBucket {
@@ -198,6 +197,11 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
     heatmapData.sort((a, b) => compareSemesters(a.semester, b.semester));
     return heatmapData;
   };
+
+  const semesterAverages = useMemo(
+    () => averageGradeBySemester(course.marks ?? []),
+    [course.marks],
+  );
 
   const getLongitudinalData = (): SemesterAverage[] => {
     if (!analyticsStudentTranscript.length) return [];
@@ -423,6 +427,57 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
             </Paper>
           )}
         </Box>
+
+        <Paper sx={{ p: 3, mb: 3, borderRadius: radii.xxl }}>
+          <Typography variant="h6" fontWeight="700" mb={0.5}>
+            Average grade by semester
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Mean of numeric grades for this course in each offering. Excused sittings (AT) are
+            omitted.
+          </Typography>
+          {semesterAverages.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No graded sittings yet.
+            </Typography>
+          ) : (
+            <>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={semesterAverages}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="semester" />
+                  <YAxis
+                    domain={[1, 5]}
+                    reversed={true}
+                    label={{ value: 'Average Grade', angle: -90, position: 'insideLeft' }}
+                  />
+                  <RechartsTooltip
+                    formatter={(value: number, _name: string, item) => {
+                      const sittings = Number(item?.payload?.sittings ?? 0);
+                      const sittingLabel = sittings === 1 ? '1 sitting' : `${sittings} sittings`;
+                      return [`${value} (${sittingLabel})`, 'Average'];
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="average"
+                    stroke={chart.cohort}
+                    strokeWidth={3}
+                    dot={{ r: 5 }}
+                    activeDot={{ r: 8 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+              <Box sx={{ display: 'flex', gap: 3, mt: 2, flexWrap: 'wrap' }}>
+                {semesterAverages.map((row) => (
+                  <Typography key={row.semester} variant="body2" color="text.secondary">
+                    {row.semester}: <strong>{row.average}</strong>
+                  </Typography>
+                ))}
+              </Box>
+            </>
+          )}
+        </Paper>
 
         {/* === COURSE EXAMS HEATMAP === */}
         <Box sx={{ mb: 3 }}>
