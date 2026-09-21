@@ -5,6 +5,7 @@ import {
   examsOf,
   filterLabel,
   filterMarks,
+  perStudentHistory,
   semestersOf,
   summariseMarks,
 } from './courseMarks';
@@ -165,5 +166,84 @@ describe('filterLabel', () => {
   it('names the semester alone, then the sitting once one is chosen', () => {
     expect(filterLabel('SOSE_25', ALL_EXAMS)).toBe('SOSE_25');
     expect(filterLabel('SOSE_25', 'Exam 2')).toBe('SOSE_25 · Exam 2');
+  });
+});
+
+describe('perStudentHistory exam columns', () => {
+  it('puts each sitting in the column matching its tag', () => {
+    const rows = perStudentHistory([
+      mark('SOSE_25', 4.0, 'Exam 1'),
+      mark('SOSE_25', 1.7, 'Exam 2'),
+    ].map((m) => ({ ...m, student_id: 500, student_name: 'Bruno Retake' })));
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].exam1_grade).toBe(4.0);
+    expect(rows[0].exam2_grade).toBe(1.7);
+  });
+
+  it('reports a retake as Exam 2 even when it is the only sitting', () => {
+    const rows = perStudentHistory([
+      { ...mark('SOSE_25', 1.7, 'Exam 2'), student_id: 500, student_name: 'Bruno Retake' },
+    ]);
+
+    expect(rows[0].exam1_grade).toBeNull();
+    expect(rows[0].exam2_grade).toBe(1.7);
+  });
+
+  it('does not report a skipped first sitting as Exam 1', () => {
+    // A student who missed Exam 1 entirely and only sat the retake.
+    const rows = perStudentHistory([
+      { ...mark('WISE_25', 2.3, 'Exam 2'), student_id: 501, student_name: 'Clara Skipped' },
+    ]);
+
+    expect(rows[0].exam1_grade).toBeNull();
+    expect(rows[0].exam2_grade).toBe(2.3);
+  });
+
+  it('keeps the tag even when the sittings arrive out of order', () => {
+    const rows = perStudentHistory([
+      { ...mark('SOSE_25', 1.7, 'Exam 2'), student_id: 502, student_name: 'Dana' },
+      { ...mark('SOSE_25', 5.0, 'Exam 1'), student_id: 502, student_name: 'Dana' },
+    ]);
+
+    expect(rows[0].exam1_grade).toBe(5.0);
+    expect(rows[0].exam2_grade).toBe(1.7);
+  });
+
+  it('falls back to chronological order for untagged legacy rows', () => {
+    // Everything imported before the tag existed comes back as "Other".
+    const rows = perStudentHistory([
+      { ...mark('SOSE_25', 5.0, 'Other'), student_id: 503, student_name: 'Legacy' },
+      { ...mark('WISE_25', 2.0, 'Other'), student_id: 503, student_name: 'Legacy' },
+    ]);
+
+    expect(rows[0].exam1_grade).toBe(5.0);
+    expect(rows[0].exam2_grade).toBe(2.0);
+  });
+
+  it('slots an untagged sitting into the column a tagged one left free', () => {
+    const rows = perStudentHistory([
+      { ...mark('SOSE_25', 3.0, 'Other'), student_id: 504, student_name: 'Mixed' },
+      { ...mark('SOSE_25', 1.0, 'Exam 2'), student_id: 504, student_name: 'Mixed' },
+    ]);
+
+    expect(rows[0].exam1_grade).toBe(3.0);
+    expect(rows[0].exam2_grade).toBe(1.0);
+  });
+
+  it('still reads the student name when there is no Exam 1 sitting', () => {
+    const rows = perStudentHistory([
+      { ...mark('SOSE_25', 1.7, 'Exam 2'), student_id: 505, student_name: 'Bruno Retake' },
+    ]);
+    expect(rows[0].student_name).toBe('Bruno Retake');
+    expect(rows[0].program).toBe('SE Master');
+  });
+
+  it('passes a student who only passed the retake', () => {
+    const rows = perStudentHistory([
+      { ...mark('SOSE_25', 5.0, 'Exam 1'), student_id: 506, student_name: 'Eve' },
+      { ...mark('SOSE_25', 2.0, 'Exam 2'), student_id: 506, student_name: 'Eve' },
+    ]);
+    expect(rows[0].final_status).toBe('Passed');
   });
 });

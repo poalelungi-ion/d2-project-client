@@ -169,19 +169,43 @@ export interface CourseHistoryRow {
 }
 
 /**
+ * Places a student's sittings into the Exam 1 and Exam 2 columns.
+ *
+ * Rows imported before the tag existed are all "Other", so those fall back to
+ * chronological order and fill whichever column is still free -- otherwise a
+ * course with only legacy data would show two empty columns.
+ */
+function intoExamColumns(
+  sittings: readonly CourseMark[],
+): { first: CourseMark | null; second: CourseMark | null } {
+  let first = sittings.find((m) => m.attempt_type === 'Exam 1') ?? null;
+  let second = sittings.find((m) => m.attempt_type === 'Exam 2') ?? null;
+
+  for (const mark of sittings) {
+    if (mark.attempt_type === 'Exam 1' || mark.attempt_type === 'Exam 2') continue;
+    if (!first) first = mark;
+    else if (!second) second = mark;
+  }
+  return { first, second };
+}
+
+/**
  * Collapses the per-sitting rows into one row per student, so a retake reads
  * next to the attempt it followed instead of as an unrelated second row.
  */
 export function perStudentHistory(marks: readonly CourseMark[]): CourseHistoryRow[] {
   const history: CourseHistoryRow[] = [];
   for (const [student_id, sittings] of groupByStudent(marks)) {
-    const [first, second] = sittings;
+    const { first, second } = intoExamColumns(sittings);
+    // groupByStudent never yields an empty list, so there is always a sitting
+    // to read the student's name off -- but it may not be the Exam 1 one.
+    const identity = sittings[0];
     history.push({
       student_id,
-      student_name: first.student_name,
-      program: first.program,
-      exam1_grade: first.grade,
-      exam1_absence: first.absence_code,
+      student_name: identity.student_name,
+      program: identity.program,
+      exam1_grade: first ? first.grade : null,
+      exam1_absence: first ? first.absence_code : null,
       exam2_grade: second ? second.grade : null,
       exam2_absence: second ? second.absence_code : null,
       final_status: sittings.some((m) => m.passed || m.outcome === 'passed')

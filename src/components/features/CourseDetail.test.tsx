@@ -190,3 +190,33 @@ describe('exam filter', () => {
     expect(screen.getByText('Showing WISE_25')).toBeInTheDocument();
   });
 });
+
+describe('per-person history columns', () => {
+  /** Reads a rendered AG Grid cell by its column id. */
+  const cell = (colId: string): string =>
+    (document.querySelector(`[col-id="${colId}"][role="gridcell"]`)?.textContent ?? '').trim();
+
+  /** Both sittings must belong to one student, or they become two rows. */
+  const bruno = (): CourseMark[] =>
+    [
+      mark('SOSE_25', 'Exam 1', 'Bruno Retake', 5.0),
+      mark('SOSE_25', 'Exam 2', 'Bruno Retake', 1.7),
+    ].map((m) => ({ ...m, student_id: 500 }));
+
+  it('shows a retake under Exam 2 when the grid is filtered to Exam 2', () => {
+    renderDetail(bruno());
+
+    choose(semesterSelect(), 'SOSE_25');
+    choose(examSelect()!, 'Exam 2');
+
+    expect(cell('exam2_grade')).toBe('1.7');
+    expect(cell('exam1_grade')).toBe('—');
+  });
+
+  it('keeps both sittings in their own columns when unfiltered', () => {
+    renderDetail(bruno());
+
+    expect(cell('exam1_grade')).toBe('5');
+    expect(cell('exam2_grade')).toBe('1.7');
+  });
+});
