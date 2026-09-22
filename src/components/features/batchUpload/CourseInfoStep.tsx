@@ -1,4 +1,5 @@
 import {
+  Autocomplete,
   Box,
   Typography,
   Button,
@@ -12,6 +13,11 @@ import { useUploadWizard } from './uploadWizardContext';
 import { fieldLabel, monoChip, toneSurface } from '../../../styles/mixins';
 import { semantic } from '../../../styles/colors';
 import { radii } from '../../../styles/tokens';
+import {
+  generateSemesters,
+  getCurrentSemester,
+  isValidSemester,
+} from '../../../utils/semester';
 
 const ATTEMPT_TYPES: readonly AttemptType[] = [
   'Exam 1',
@@ -19,24 +25,13 @@ const ATTEMPT_TYPES: readonly AttemptType[] = [
   'Other',
 ];
 
-/**
- * Predefined semester options in chronological order.
- *
- * Keeping semester values predefined prevents free-form input,
- * avoids typos and ensures consistent semester formatting.
- */
-const SEMESTERS = [
-  'WiSe23/24',
-  'SoSe24',
-  'WiSe24/25',
-  'SoSe25',
-  'WiSe25/26',
-  'SoSe26',
-  'WiSe26/27',
-  'SoSe27',
-  'WiSe27/28',
-  'SoSe28',
-] as const;
+const SEMESTERS = generateSemesters();
+const CURRENT_SEMESTER = getCurrentSemester();
+
+const SEMESTER_OPTIONS = [
+  CURRENT_SEMESTER,
+  ...SEMESTERS.filter((semester) => semester !== CURRENT_SEMESTER),
+];
 
 export const CourseInfoStep = () => {
   const {
@@ -46,6 +41,10 @@ export const CourseInfoStep = () => {
     setCourseInfo: setUploadCourseInfo,
     setStep: setActiveStep,
   } = useUploadWizard();
+
+  const semesterIsValid =
+    uploadCourseInfo.semester === '' ||
+    isValidSemester(uploadCourseInfo.semester);
 
   return (
     <Box>
@@ -58,11 +57,12 @@ export const CourseInfoStep = () => {
           maxWidth: 800,
         }}
       >
-        A table is always for one course and one semester &mdash; that can&apos;t vary within
-        one import.{' '}
+        A table is always for one course and one semester &mdash; that can&apos;t
+        vary within one import.{' '}
         {courseLocked ? (
           <>
-            The course is already settled below; tell us which semester and sitting{' '}
+            The course is already settled below; tell us which semester and
+            sitting{' '}
             <Box component="span" sx={{ ...monoChip, px: 1 }}>
               {sourceLabel}
             </Box>{' '}
@@ -79,20 +79,40 @@ export const CourseInfoStep = () => {
         )}
       </Typography>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, maxWidth: 600 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 3,
+          maxWidth: 600,
+        }}
+      >
         {courseLocked ? (
           <Box>
             <Typography variant="overline" sx={fieldLabel}>
               COURSE
             </Typography>
-            <Box sx={{ ...toneSurface(semantic.success), p: 2, borderRadius: radii.lg }}>
+
+            <Box
+              sx={{
+                ...toneSurface(semantic.success),
+                p: 2,
+                borderRadius: radii.lg,
+              }}
+            >
               <Typography variant="subtitle1" fontWeight={700}>
                 {uploadCourseInfo.courseName}
               </Typography>
+
               <Typography
                 variant="body2"
                 color="text.secondary"
-                sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  mt: 0.5,
+                }}
               >
                 Course number
                 <Box component="span" sx={{ ...monoChip, px: 1 }}>
@@ -100,14 +120,18 @@ export const CourseInfoStep = () => {
                 </Box>
               </Typography>
             </Box>
+
             <Typography
               variant="caption"
               color="text.secondary"
-              sx={{ mt: 0.5, display: 'block' }}
+              sx={{
+                mt: 0.5,
+                display: 'block',
+              }}
             >
-              Taken from the course you started this upload in and attached to every row,
-              so there is nothing to type. A course or course-number column in the file is
-              ignored.
+              Taken from the course you started this upload in and attached to
+              every row, so there is nothing to type. A course or course-number
+              column in the file is ignored.
             </Typography>
           </Box>
         ) : (
@@ -116,31 +140,40 @@ export const CourseInfoStep = () => {
               <Typography variant="overline" sx={fieldLabel}>
                 COURSE NUMBER
               </Typography>
+
               <TextField
                 fullWidth
                 variant="outlined"
                 value={uploadCourseInfo.courseNumber}
-                onChange={(e) => setUploadCourseInfo({ courseNumber: e.target.value })}
+                onChange={(e) =>
+                  setUploadCourseInfo({
+                    courseNumber: e.target.value,
+                  })
+                }
               />
             </Box>
+
             <Box>
               <Typography variant="overline" sx={fieldLabel}>
                 COURSE NAME
               </Typography>
+
               <TextField
                 fullWidth
                 variant="outlined"
                 value={uploadCourseInfo.courseName}
-                onChange={(e) => setUploadCourseInfo({ courseName: e.target.value })}
+                onChange={(e) =>
+                  setUploadCourseInfo({
+                    courseName: e.target.value,
+                  })
+                }
               />
             </Box>
           </>
         )}
+
         <Box>
-          <Typography
-            variant="overline"
-            sx={fieldLabel}
-          >
+          <Typography variant="overline" sx={fieldLabel}>
             ECTS (CREDITS FOR THIS COURSE)
           </Typography>
 
@@ -190,10 +223,7 @@ export const CourseInfoStep = () => {
             }
           >
             {ATTEMPT_TYPES.map((attempt) => (
-              <MenuItem
-                key={attempt}
-                value={attempt}
-              >
+              <MenuItem key={attempt} value={attempt}>
                 {attempt}
               </MenuItem>
             ))}
@@ -213,49 +243,44 @@ export const CourseInfoStep = () => {
         </Box>
 
         <Box>
-          <Typography
-            variant="overline"
-            sx={fieldLabel}
-            id="semester-label"
-          >
+          <Typography variant="overline" sx={fieldLabel}>
             SEMESTER
           </Typography>
 
-          <Select
+          <Autocomplete
             fullWidth
-            variant="outlined"
-            labelId="semester-label"
-            value={uploadCourseInfo.semester}
-            displayEmpty
-            onChange={(e) =>
-              setUploadCourseInfo({
-                semester: e.target.value,
-              })
+            options={SEMESTER_OPTIONS}
+            value={
+              isValidSemester(uploadCourseInfo.semester)
+                ? uploadCourseInfo.semester
+                : null
             }
-            MenuProps={{
-              PaperProps: {
+            onChange={(_, newValue) => {
+              setUploadCourseInfo({
+                semester: newValue ?? '',
+              });
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="outlined"
+                placeholder="Select or search semester"
+                error={!semesterIsValid}
+                helperText={
+                  !semesterIsValid
+                    ? 'Please select a valid semester.'
+                    : undefined
+                }
+              />
+            )}
+            slotProps={{
+              paper: {
                 sx: {
                   maxHeight: 320,
                 },
               },
             }}
-          >
-            <MenuItem
-              value=""
-              disabled
-            >
-              Select semester
-            </MenuItem>
-
-            {SEMESTERS.map((semester) => (
-              <MenuItem
-                key={semester}
-                value={semester}
-              >
-                {semester}
-              </MenuItem>
-            ))}
-          </Select>
+          />
 
           <Typography
             variant="caption"
@@ -265,7 +290,7 @@ export const CourseInfoStep = () => {
               display: 'block',
             }}
           >
-            Select the required semester from the predefined list.
+            Select or type to search for a semester.
           </Typography>
         </Box>
       </Box>
@@ -287,13 +312,17 @@ export const CourseInfoStep = () => {
         </Button>
 
         <Button
-          variant="contained"
-          size="large"
-          onClick={() => setActiveStep(2)}
-          sx={{ px: 4 }}
-        >
-          Continue &rarr;
-        </Button>
+  variant="contained"
+  size="large"
+  disabled={
+    !uploadCourseInfo.semester ||
+    !isValidSemester(uploadCourseInfo.semester)
+  }
+  onClick={() => setActiveStep(2)}
+  sx={{ px: 4 }}
+>
+  Continue &rarr;
+</Button>
       </Box>
     </Box>
   );
