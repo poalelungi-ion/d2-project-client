@@ -9,8 +9,10 @@ import {
   ALL_EXAMS,
   ALL_SEMESTERS,
   EMPTY_SELECTION,
+  examsOf,
   filterLabel,
   filterMarks,
+  semestersOf,
   summariseMarks,
 } from '../../utils/courseMarks';
 import type { ExamSelection } from '../../utils/courseMarks';
@@ -57,6 +59,13 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
   });
 
   const allMarks = useMemo(() => course.marks ?? [], [course.marks]);
+  // Derived once here rather than in each of the two places the filter is
+  // drawn, so both copies of the control offer exactly the same choices.
+  const semesterOptions = useMemo(() => semestersOf(allMarks), [allMarks]);
+  const examOptions = useMemo(
+    () => (semesterFilter === ALL_SEMESTERS ? [] : examsOf(allMarks, semesterFilter)),
+    [allMarks, semesterFilter],
+  );
 
   const marks = useMemo(
     () => filterMarks(allMarks, semesterFilter, examFilter),
@@ -120,6 +129,8 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
         />
         <CourseFilterBar
           allMarks={allMarks}
+          semesterOptions={semesterOptions}
+          examOptions={examOptions}
           mode={mode}
           onSelectMode={setMode}
           semesterFilter={semesterFilter}
@@ -150,10 +161,17 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
             </Typography>
           </Paper>
         )}
-        {/* The table stays on the filter above it whichever mode is showing:
-            comparing is a reading of the course, not a change to the roster. */}
+        {/* The table carries its own copy of the filter and stays on it in
+            either mode: comparing is a reading of the course, not a change to
+            the roster. */}
         <CourseMarksTable
           marks={marks}
+          semesterOptions={semesterOptions}
+          examOptions={examOptions}
+          semesterFilter={semesterFilter}
+          examFilter={examFilter}
+          onSelectSemester={selectSemester}
+          onSelectExam={setExamFilter}
           activeFilter={activeFilter}
           onSelectStudent={selectAnalyticsStudent}
           onRefresh={onRefresh}

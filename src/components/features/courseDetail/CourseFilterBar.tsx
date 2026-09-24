@@ -1,16 +1,20 @@
-import { Box, Chip, MenuItem, Paper, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import {
+  Box,
+  Chip,
+  MenuItem,
+  Paper,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from '@mui/material';
 import type { CourseMark } from '../../../types';
 import { chart } from '../../../styles/colors';
 import { radii } from '../../../styles/tokens';
 import { fieldLabel } from '../../../styles/mixins';
-import {
-  ALL_EXAMS,
-  ALL_SEMESTERS,
-  examsOf,
-  semestersOf,
-  sittingCount,
-} from '../../../utils/courseMarks';
+import { ALL_EXAMS, ALL_SEMESTERS, examsOf, sittingCount } from '../../../utils/courseMarks';
 import type { ExamSelection } from '../../../utils/courseMarks';
+import { SemesterExamFilter } from './SemesterExamFilter';
 
 /** Which question the screen is answering: one sitting, or two against each other. */
 export type CourseViewMode = 'single' | 'compare';
@@ -95,6 +99,9 @@ const SittingPicker = ({
 interface CourseFilterBarProps {
   /** Every sitting ever recorded, which is what both modes choose from. */
   allMarks: readonly CourseMark[];
+  /** Options for the single-exam filter, shared with the marks table's copy. */
+  semesterOptions: readonly string[];
+  examOptions: readonly string[];
   mode: CourseViewMode;
   onSelectMode: (mode: CourseViewMode) => void;
   /** Single mode: the filter the figures, charts and marks table follow. */
@@ -109,6 +116,8 @@ interface CourseFilterBarProps {
 
 export const CourseFilterBar = ({
   allMarks,
+  semesterOptions,
+  examOptions,
   mode,
   onSelectMode,
   semesterFilter,
@@ -118,7 +127,6 @@ export const CourseFilterBar = ({
   compare,
   onSelectCompare,
 }: CourseFilterBarProps) => {
-  const semesterOptions = semestersOf(allMarks);
   // One sitting is nothing to compare against, so the mode is not offered
   // until the course has held a second exam.
   const canCompare = sittingCount(allMarks) > 1;
@@ -126,10 +134,15 @@ export const CourseFilterBar = ({
   // examsOf anyway would answer with every sitting of every semester.
   const sittingsIn = (semester: string): string[] =>
     !semester || semester === ALL_SEMESTERS ? [] : examsOf(allMarks, semester);
-  const singleExamOptions = sittingsIn(semesterFilter);
 
   return (
-    <Paper sx={{ p: 2.5, mb: 3, borderRadius: radii.xxl }}>
+    <Paper
+      component="section"
+      // Named so the mirrored copy in the marks table below is a separate,
+      // addressable control rather than an indistinguishable duplicate.
+      aria-label="Course filters"
+      sx={{ p: 2.5, mb: 3, borderRadius: radii.xxl }}
+    >
       <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', flexWrap: 'wrap' }}>
         {canCompare && (
           <ToggleButtonGroup
@@ -146,42 +159,14 @@ export const CourseFilterBar = ({
         )}
 
         {mode === 'single' ? (
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-            <TextField
-              select
-              size="small"
-              label="Semester"
-              value={semesterFilter}
-              onChange={(event) => onSelectSemester(event.target.value)}
-              disabled={semesterOptions.length === 0}
-              sx={{ width: 200 }}
-            >
-              <MenuItem value={ALL_SEMESTERS}>All semesters</MenuItem>
-              {semesterOptions.map((semester) => (
-                <MenuItem key={semester} value={semester}>
-                  {semester}
-                </MenuItem>
-              ))}
-            </TextField>
-
-            {singleExamOptions.length > 1 && (
-              <TextField
-                select
-                size="small"
-                label="Exam"
-                value={examFilter}
-                onChange={(event) => onSelectExam(event.target.value)}
-                sx={{ width: 170 }}
-              >
-                <MenuItem value={ALL_EXAMS}>All exams</MenuItem>
-                {singleExamOptions.map((exam) => (
-                  <MenuItem key={exam} value={exam}>
-                    {exam}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          </Box>
+          <SemesterExamFilter
+            semesterOptions={semesterOptions}
+            examOptions={examOptions}
+            semester={semesterFilter}
+            exam={examFilter}
+            onSelectSemester={onSelectSemester}
+            onSelectExam={onSelectExam}
+          />
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             <Typography variant="caption" sx={fieldLabel} mb={0}>

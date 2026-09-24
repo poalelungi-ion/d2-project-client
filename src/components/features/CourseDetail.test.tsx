@@ -81,8 +81,21 @@ const renderCourse = (current: Course) => {
 const statFor = (label: RegExp): string =>
   (screen.getByText(label).textContent ?? '').replace(/\s+/g, ' ').trim();
 
-const semesterSelect = () => screen.getByRole('combobox', { name: /^semester$/i });
-const examSelect = () => screen.queryByRole('combobox', { name: /^exam$/i });
+/**
+ * The filter is drawn twice -- in the bar at the top and in the marks table's
+ * header -- so every lookup has to say which copy it means.
+ */
+const filterBar = () => screen.getByRole('region', { name: /course filters/i });
+const marksPanel = (): HTMLElement =>
+  screen.getByText('Detailed Course Marks').closest('.MuiPaper-root') as HTMLElement;
+
+const semesterSelect = () =>
+  within(filterBar()).getByRole('combobox', { name: /^semester$/i });
+const examSelect = () => within(filterBar()).queryByRole('combobox', { name: /^exam$/i });
+const tableSemesterSelect = () =>
+  within(marksPanel()).getByRole('combobox', { name: /^semester$/i });
+const tableExamSelect = () =>
+  within(marksPanel()).queryByRole('combobox', { name: /^exam$/i });
 
 /** Opens a MUI select and clicks one of its options. */
 const choose = (select: HTMLElement, option: RegExp | string) => {
@@ -282,6 +295,52 @@ describe('empty course state', () => {
     expect(screen.getByText('Pass Rate:')).toBeInTheDocument();
     expect(screen.getByText('Average Grade:')).toBeInTheDocument();
     expect(container.querySelector('.recharts-responsive-container')).not.toBeNull();
+  });
+});
+
+describe('mirrored filter', () => {
+  it('draws the same filter in the bar and in the marks table', () => {
+    renderDetail();
+    expect(semesterSelect()).toBeInTheDocument();
+    expect(tableSemesterSelect()).toBeInTheDocument();
+  });
+
+  it('moves both copies when the bar is used', () => {
+    renderDetail();
+    choose(semesterSelect(), 'SOSE_25');
+
+    expect(tableSemesterSelect()).toHaveTextContent('SOSE_25');
+    expect(screen.getByText('Showing SOSE_25')).toBeInTheDocument();
+  });
+
+  it('moves both copies when the table is used', () => {
+    renderDetail();
+    fireEvent.click(screen.getByRole('button', { name: /individual marks/i }));
+    choose(tableSemesterSelect(), 'SOSE_25');
+
+    expect(semesterSelect()).toHaveTextContent('SOSE_25');
+    expect(screen.queryByText('Clara Later')).not.toBeInTheDocument();
+  });
+
+  it('reveals the exam dropdown in both copies together', () => {
+    renderDetail();
+    expect(examSelect()).not.toBeInTheDocument();
+    expect(tableExamSelect()).not.toBeInTheDocument();
+
+    choose(tableSemesterSelect(), 'SOSE_25');
+
+    expect(examSelect()).toBeInTheDocument();
+    expect(tableExamSelect()).toBeInTheDocument();
+  });
+
+  it('keeps the table copy usable while the top bar is comparing', () => {
+    renderDetail();
+    fireEvent.click(screen.getByRole('button', { name: /compare exams/i }));
+    // The bar has given its space over to the A/B pickers.
+    expect(examSelect()).not.toBeInTheDocument();
+
+    choose(tableSemesterSelect(), 'WISE_25');
+    expect(screen.getByText('Showing WISE_25')).toBeInTheDocument();
   });
 });
 
