@@ -82,6 +82,11 @@ export interface CourseMark {
   /** System-calculated status. Never taken from a Passed/Failed file column. */
   outcome: GradeOutcome;
   absence_code: string | null;
+  /**
+   * Which sitting of this semester's offering the mark came from, tagged once
+   * per upload. Rows imported before the tag existed come back as "Other".
+   */
+  attempt_type: AttemptType;
   version: number;
 }
 
