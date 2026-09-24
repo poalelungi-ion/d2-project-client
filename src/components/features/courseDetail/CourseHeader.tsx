@@ -19,6 +19,7 @@ interface CourseHeaderProps {
   course: Course;
   /** Recomputed from the visible marks, so it follows the active filter. */
   summary: MarksSummary;
+  hasSubmissions: boolean;
   /** Label of the active filter, or null when every semester is shown. */
   activeFilter: string | null;
   onSelectSemester: (value: string) => void;
@@ -29,6 +30,7 @@ interface CourseHeaderProps {
 export const CourseHeader = ({
   course,
   summary,
+  hasSubmissions,
   activeFilter,
   onSelectSemester,
   onEdit,
@@ -70,15 +72,19 @@ export const CourseHeader = ({
         </Typography>
       </Box>
       <Box sx={{ display: 'flex', gap: 3, mt: 1, flexWrap: 'wrap' }}>
-        <Typography variant="h6" sx={pageSubtitle}>
-          Average Grade: <strong>{summary.avgGrade}</strong>
-        </Typography>
-        <Typography variant="h6" sx={pageSubtitle}>
-          Pass Rate:{' '}
-          <strong style={{ color: passRateColor(summary.passRate) }}>
-            {summary.passRate}%
-          </strong>
-        </Typography>
+        {hasSubmissions && (
+          <>
+            <Typography variant="h6" sx={pageSubtitle}>
+              Average Grade: <strong>{summary.avgGrade}</strong>
+            </Typography>
+            <Typography variant="h6" sx={pageSubtitle}>
+              Pass Rate:{' '}
+              <strong style={{ color: passRateColor(summary.passRate) }}>
+                {summary.passRate}%
+              </strong>
+            </Typography>
+          </>
+        )}
         <Typography variant="h6" sx={pageSubtitle}>
           Total Submissions: <strong>{summary.totalAttempts}</strong>
         </Typography>
