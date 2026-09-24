@@ -18,6 +18,7 @@ import type {
   StudentStatus,
 } from '../../types';
 import { useApiMutations } from '../../hooks/useApi';
+import { StudyProgramSelect } from './StudyProgramSelect';
 
 interface StudentFormDialogProps {
   /** The student being edited, or null to create a new one. */
@@ -123,14 +124,9 @@ export function StudentFormDialog({ student, onClose, onSaved }: StudentFormDial
           helperText={errors.last_name}
           sx={{ mb: 2 }}
         />
-        <TextField
-          margin="dense"
-          label="Study Program"
-          type="text"
-          fullWidth
-          variant="outlined"
+        <StudyProgramSelect
           value={values.program}
-          onChange={(e) => update({ program: e.target.value })}
+          onChange={(program) => update({ program })}
           error={!!errors.program}
           helperText={errors.program}
           sx={{ mb: 2 }}

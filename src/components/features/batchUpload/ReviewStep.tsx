@@ -15,6 +15,7 @@ import {
   isOfficialAbsenceCell,
   outcomeLabel,
 } from '../../../utils/gradeOutcome';
+import { STUDY_PROGRAM_OPTIONS } from '../../../utils/studyProgram';
 
 export const ReviewStep = () => {
   const {
@@ -70,7 +71,15 @@ export const ReviewStep = () => {
             },
             { field: 'first_name', headerName: 'First Name', editable: true, flex: 1, minWidth: 110 },
             { field: 'last_name', headerName: 'Last Name', editable: true, flex: 1, minWidth: 110 },
-            { field: 'program', headerName: 'Program', editable: true, flex: 1.2, minWidth: 130 },
+            {
+              field: 'program',
+              headerName: 'Study Program',
+              editable: true,
+              flex: 1.4,
+              minWidth: 180,
+              cellEditor: 'agSelectCellEditor',
+              cellEditorParams: { values: STUDY_PROGRAM_OPTIONS },
+            },
             { field: 'semester', headerName: 'Semester', editable: true, flex: 0.8, minWidth: 100 },
             { field: 'grade', headerName: 'Grade', editable: true, flex: 0.6, minWidth: 90 },
             {

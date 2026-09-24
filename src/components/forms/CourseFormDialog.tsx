@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
 import type { Course, CourseFormErrors, CourseFormValues } from '../../types';
 import { useApiMutations } from '../../hooks/useApi';
+import { StudyProgramSelect } from './StudyProgramSelect';
 
 interface CourseFormDialogProps {
   /** The course being edited, or null to create a new one. */
@@ -104,14 +105,9 @@ export function CourseFormDialog({ course, onClose, onSaved }: CourseFormDialogP
           helperText={errors.semester}
           sx={{ mb: 2 }}
         />
-        <TextField
-          margin="dense"
-          label="Study Program"
-          type="text"
-          fullWidth
-          variant="outlined"
+        <StudyProgramSelect
           value={values.study_program}
-          onChange={(e) => update({ study_program: e.target.value })}
+          onChange={(study_program) => update({ study_program })}
           error={!!errors.study_program}
           helperText={errors.study_program}
           sx={{ mb: 2 }}
