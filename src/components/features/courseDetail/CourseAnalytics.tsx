@@ -51,6 +51,9 @@ export const CourseAnalytics = ({
     [studentTranscript],
   );
 
+  // No submissions, nothing to chart; the header already says so.
+  if (allMarks.length === 0) return null;
+
   const outcomeSlices = [
     { name: 'Passed', value: outcomes.passed, fill: chart.pass },
     { name: 'Failed', value: outcomes.failed, fill: chart.fail },
