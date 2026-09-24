@@ -2,11 +2,19 @@ import { describe, expect, it } from 'vitest';
 import {
   ALL_EXAMS,
   ALL_SEMESTERS,
+  EMPTY_SELECTION,
+  alignDistribution,
   examsOf,
   filterLabel,
   filterMarks,
+  gradeDistribution,
+  isSameSelection,
+  marksOfSelection,
   perStudentHistory,
+  selectionLabel,
   semestersOf,
+  sharedGrades,
+  sittingCount,
   summariseMarks,
 } from './courseMarks';
 import type { AttemptType, CourseMark } from '../types';
@@ -245,5 +253,100 @@ describe('perStudentHistory exam columns', () => {
       { ...mark('SOSE_25', 2.0, 'Exam 2'), student_id: 506, student_name: 'Eve' },
     ]);
     expect(rows[0].final_status).toBe('Passed');
+  });
+});
+
+describe('sittingCount', () => {
+  it('counts a retake as a sitting of its own', () => {
+    expect(
+      sittingCount([
+        mark('SOSE_25', 1.0, 'Exam 1'),
+        mark('SOSE_25', 1.3, 'Exam 1'),
+        mark('SOSE_25', 5.0, 'Exam 2'),
+        mark('WISE_25', 2.0, 'Exam 1'),
+      ]),
+    ).toBe(3);
+  });
+
+  it('is below two for a course with a single sitting, which cannot be compared', () => {
+    expect(sittingCount([mark('SOSE_25', 1.0), mark('SOSE_25', 2.0)])).toBe(1);
+    expect(sittingCount([])).toBe(0);
+  });
+});
+
+describe('marksOfSelection', () => {
+  const marks = [
+    mark('SOSE_25', 1.0, 'Exam 1'),
+    mark('SOSE_25', 5.0, 'Exam 2'),
+    mark('WISE_25', 3.0, 'Exam 1'),
+  ];
+
+  it('covers the whole semester until an exam narrows it', () => {
+    const grades = marksOfSelection(marks, { semester: 'SOSE_25', exam: ALL_EXAMS });
+    expect(grades.map((m) => m.grade)).toEqual([1.0, 5.0]);
+  });
+
+  it('narrows to one sitting of that semester', () => {
+    const grades = marksOfSelection(marks, { semester: 'SOSE_25', exam: 'Exam 2' });
+    expect(grades.map((m) => m.grade)).toEqual([5.0]);
+  });
+
+  it('covers nothing while no semester is chosen', () => {
+    expect(marksOfSelection(marks, EMPTY_SELECTION)).toEqual([]);
+  });
+});
+
+describe('selectionLabel', () => {
+  it('names the semester alone when the whole semester is selected', () => {
+    expect(selectionLabel({ semester: 'SOSE_25', exam: ALL_EXAMS })).toBe('SOSE_25');
+  });
+
+  it('names the sitting once an exam narrows it', () => {
+    expect(selectionLabel({ semester: 'SOSE_25', exam: 'Exam 2' })).toBe('SOSE_25 · Exam 2');
+  });
+
+  it('is null while no semester is chosen', () => {
+    expect(selectionLabel(EMPTY_SELECTION)).toBeNull();
+  });
+});
+
+describe('isSameSelection', () => {
+  it('spots the two sides landing on one sitting', () => {
+    const sel = { semester: 'SOSE_25', exam: 'Exam 1' };
+    expect(isSameSelection(sel, { ...sel })).toBe(true);
+  });
+
+  it('keeps the same exam in different semesters apart', () => {
+    expect(
+      isSameSelection(
+        { semester: 'SOSE_25', exam: 'Exam 1' },
+        { semester: 'WISE_25', exam: 'Exam 1' },
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('sharedGrades / alignDistribution', () => {
+  it('spans the grades of both sittings, best first', () => {
+    const left = gradeDistribution([mark('SOSE_25', 1.0), mark('SOSE_25', 3.0)]);
+    const right = gradeDistribution([mark('WISE_25', 2.0), mark('WISE_25', 3.0)]);
+
+    expect(sharedGrades(left, right)).toEqual(['1', '2', '3']);
+  });
+
+  it('pads a sitting with zeroes where it never awarded a grade', () => {
+    const left = gradeDistribution([mark('SOSE_25', 1.0), mark('SOSE_25', 1.0)]);
+    const right = gradeDistribution([mark('WISE_25', 3.0)]);
+    const grades = sharedGrades(left, right);
+
+    // Without the padding a 3.0 would sit in the first slot of the left chart.
+    expect(alignDistribution(left, grades)).toEqual([
+      { grade: '1', count: 2 },
+      { grade: '3', count: 0 },
+    ]);
+    expect(alignDistribution(right, grades)).toEqual([
+      { grade: '1', count: 0 },
+      { grade: '3', count: 1 },
+    ]);
   });
 });
