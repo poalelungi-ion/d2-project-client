@@ -70,18 +70,27 @@ export const CourseHeader = ({
         </Typography>
       </Box>
       <Box sx={{ display: 'flex', gap: 3, mt: 1, flexWrap: 'wrap' }}>
-        <Typography variant="h6" sx={pageSubtitle}>
-          Average Grade: <strong>{summary.avgGrade}</strong>
-        </Typography>
-        <Typography variant="h6" sx={pageSubtitle}>
-          Pass Rate:{' '}
-          <strong style={{ color: passRateColor(summary.passRate) }}>
-            {summary.passRate}%
-          </strong>
-        </Typography>
-        <Typography variant="h6" sx={pageSubtitle}>
-          Total Submissions: <strong>{summary.totalAttempts}</strong>
-        </Typography>
+        {summary.totalAttempts === 0 ? (
+          // Nothing to summarise yet -- a 0% pass rate would read as a real result.
+          <Typography variant="h6" sx={pageSubtitle}>
+            No submissions yet – upload exam data to see course statistics.
+          </Typography>
+        ) : (
+          <>
+            <Typography variant="h6" sx={pageSubtitle}>
+              Average Grade: <strong>{summary.avgGrade}</strong>
+            </Typography>
+            <Typography variant="h6" sx={pageSubtitle}>
+              Pass Rate:{' '}
+              <strong style={{ color: passRateColor(summary.passRate) }}>
+                {summary.passRate}%
+              </strong>
+            </Typography>
+            <Typography variant="h6" sx={pageSubtitle}>
+              Total Submissions: <strong>{summary.totalAttempts}</strong>
+            </Typography>
+          </>
+        )}
         {activeFilter && (
           <Chip
             label={`Showing ${activeFilter}`}

@@ -52,14 +52,15 @@ const MARKS = [
   mark('WISE_25', 'Exam 1', 'Clara Later', 3.0),
 ];
 
-const renderDetail = (marks: CourseMark[] = MARKS) =>
-  render(
-    <ThemeProvider theme={getGlassTheme('light')}>
-      <MemoryRouter>
-        <CourseDetail course={course(marks)} onRefresh={() => Promise.resolve()} />
-      </MemoryRouter>
-    </ThemeProvider>,
-  );
+const detail = (marks: CourseMark[]) => (
+  <ThemeProvider theme={getGlassTheme('light')}>
+    <MemoryRouter>
+      <CourseDetail course={course(marks)} onRefresh={() => Promise.resolve()} />
+    </MemoryRouter>
+  </ThemeProvider>
+);
+
+const renderDetail = (marks: CourseMark[] = MARKS) => render(detail(marks));
 
 /**
  * Reads one headline figure. Each renders as "<label>: <value>" inside a
@@ -147,6 +148,32 @@ describe('semester filter', () => {
     // The chip's delete control returns to the unfiltered view.
     fireEvent.click(screen.getByTestId('CancelIcon'));
     expect(screen.getByText(/showing every semester/i)).toBeInTheDocument();
+  });
+});
+
+describe('course without submissions', () => {
+  it('shows a placeholder instead of the headline figures and charts', () => {
+    const consoleError = vi.spyOn(console, 'error');
+    renderDetail([]);
+
+    expect(screen.getByText(/No submissions yet/)).toBeInTheDocument();
+    expect(screen.queryByText(/Pass Rate/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Average Grade:/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Course Grade Distribution')).not.toBeInTheDocument();
+    // The way out of the empty state stays reachable.
+    expect(screen.getByRole('button', { name: /upload exam data/i })).toBeInTheDocument();
+    expect(consoleError).not.toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it('shows the figures once the first submission arrives', () => {
+    const { rerender } = renderDetail([]);
+
+    rerender(detail([mark('WISE_25', 'Exam 1', 'Clara Later', 3.0)]));
+
+    expect(screen.queryByText(/No submissions yet/)).not.toBeInTheDocument();
+    expect(statFor(/Pass Rate/)).toBe('Pass Rate: 100%');
+    expect(screen.getByText('Course Grade Distribution')).toBeInTheDocument();
   });
 });
 
