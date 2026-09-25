@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Box, Typography, Button, TextField, Divider, useTheme } from '@mui/material';
 import { Download as DownloadIcon, ContentPaste as ContentPasteIcon } from '@mui/icons-material';
 import { useUploadWizard } from './uploadWizardContext';
@@ -9,10 +9,22 @@ import { dropZone, fieldLabel } from '../../../styles/mixins';
 
 export const SelectFileStep = () => {
   const { file, setFile, paste, setPaste, setStep: setActiveStep } = useUploadWizard();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const theme = useTheme();
   const hasPaste = Boolean(paste.trim());
   const [pasteError, setPasteError] = useState<string | null>(null);
+
+  // Browsers skip change when the same filename is picked again. Clear after
+  // each selection (and when the wizard resets) so identical names can be uploaded.
+  useEffect(() => {
+    if (!file && fileInputRef.current) fileInputRef.current.value = '';
+  }, [file]);
+
+  const acceptFile = (next: File | null) => {
+    setFile(next);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const continueToCourse = () => {
     if (file) {
@@ -51,17 +63,16 @@ export const SelectFileStep = () => {
         onDrop={(e) => {
           e.preventDefault();
           const droppedFile = e.dataTransfer.files?.[0];
-          if (droppedFile) {
-            setFile(droppedFile);
-          }
+          if (droppedFile) acceptFile(droppedFile);
         }}
       >
         <input
+          ref={fileInputRef}
           accept=".xlsx, .xls, .csv, .tsv, .ods"
           style={{ display: 'none' }}
           id="excel-upload-file"
           type="file"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          onChange={(e) => acceptFile(e.target.files?.[0] ?? null)}
         />
         <label
           htmlFor="excel-upload-file"
