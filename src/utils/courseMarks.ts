@@ -19,6 +19,9 @@ export const ALL_EXAMS = '__all_exams__';
  */
 const EXAM_ORDER: readonly string[] = ['Exam 1', 'Exam 2', 'Other'];
 
+/** Joins a history row's semesters into one cell. */
+const SEMESTER_SEPARATOR = ', ';
+
 const examOf = (mark: CourseMark): string => mark.attempt_type || 'Other';
 
 const byExamOrder = (a: string, b: string): number => {
@@ -35,6 +38,13 @@ const byExamOrder = (a: string, b: string): number => {
 export function semestersOf(marks: readonly CourseMark[]): string[] {
   return [...new Set(marks.map((m) => m.semester).filter(Boolean))].sort(compareSemesters);
 }
+
+/**
+ * Orders semester cells oldest first, not alphabetically. A history row lists
+ * several semesters (see perStudentHistory); its earliest one decides.
+ */
+export const bySemesterOrder = (a = '', b = ''): number =>
+  compareSemesters(a.split(SEMESTER_SEPARATOR)[0], b.split(SEMESTER_SEPARATOR)[0]);
 
 /**
  * Distinct sittings within one semester.
@@ -159,6 +169,8 @@ export interface CourseHistoryRow {
   student_id: number;
   student_name: string;
   program: string;
+  /** Every semester the student sat this course in, oldest first, e.g. "SOSE_25, WISE_25". */
+  semester: string;
   exam1_grade: number | null;
   exam1_absence: string | null;
   exam2_grade: number | null;
@@ -204,6 +216,7 @@ export function perStudentHistory(marks: readonly CourseMark[]): CourseHistoryRo
       student_id,
       student_name: identity.student_name,
       program: identity.program,
+      semester: semestersOf(sittings).join(SEMESTER_SEPARATOR),
       exam1_grade: first ? first.grade : null,
       exam1_absence: first ? first.absence_code : null,
       exam2_grade: second ? second.grade : null,
