@@ -105,7 +105,6 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
         <CourseHeader
           course={course}
           summary={summary}
-          hasSubmissions={hasSubmissions}
           activeFilter={activeFilter}
           onSelectSemester={selectSemester}
           onEdit={() => setEditing(true)}

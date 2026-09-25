@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Box, Typography, Button, TextField, Paper, Divider, Fade } from '@mui/material';
+import { Box, Typography, Button, Paper, Divider, Fade } from '@mui/material';
 import {
   Restore as RestoreIcon,
   ChevronLeft as ChevronLeftIcon,
@@ -14,6 +14,8 @@ import { useApiMutations } from '../../hooks/useApi';
 import { radii } from '../../styles/tokens';
 import { pageTitle } from '../../styles/mixins';
 import { transcriptColumns } from './columns';
+import { StudyProgramSelect } from '../forms/StudyProgramSelect';
+import { UNASSIGNED_PROGRAM } from '../../utils/studyProgram';
 
 interface StudentDetailProps {
   /** Fetched by the route from :studentId, transcript included. */
@@ -58,15 +60,17 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
               ID: {student.student_id}
             </Typography>
             <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-            <TextField
+            <StudyProgramSelect
               size="small"
               label="Learning Program"
               value={program}
-              onChange={(e) => setProgram(e.target.value)}
+              onChange={setProgram}
               sx={{ width: 250 }}
-              error={program === 'Unknown'}
+              error={program === 'Unknown' || program === UNASSIGNED_PROGRAM}
               helperText={
-                program === 'Unknown' ? 'Action required: Update program' : ''
+                program === 'Unknown' || program === UNASSIGNED_PROGRAM
+                  ? 'Action required: Update program'
+                  : ''
               }
             />
             <Button
