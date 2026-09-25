@@ -193,6 +193,8 @@ export interface PreviewRecord {
   semester: string;
   grade: string;
   missing_fields: string[];
+  /** Present values that are not on the allowed list, e.g. a typed-in study program. */
+  invalid_fields: string[];
   is_valid: boolean;
   outcome?: GradeOutcome;
   absence_code?: string | null;
