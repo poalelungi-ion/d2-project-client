@@ -62,6 +62,18 @@ const detail = (marks: CourseMark[]) => (
 
 const renderDetail = (marks: CourseMark[] = MARKS) => render(detail(marks));
 
+const renderCourse = (current: Course) => {
+  const ui = (next: Course) => (
+    <ThemeProvider theme={getGlassTheme('light')}>
+      <MemoryRouter>
+        <CourseDetail course={next} onRefresh={() => Promise.resolve()} />
+      </MemoryRouter>
+    </ThemeProvider>
+  );
+  const view = render(ui(current));
+  return { ...view, update: (next: Course) => view.rerender(ui(next)) };
+};
+
 /**
  * Reads one headline figure. Each renders as "<label>: <value>" inside a
  * single Typography, so matching the label finds the pair.
@@ -245,5 +257,30 @@ describe('per-person history columns', () => {
 
     expect(cell('exam1_grade')).toBe('5');
     expect(cell('exam2_grade')).toBe('1.7');
+  });
+});
+
+describe('empty course state', () => {
+  it('shows a placeholder instead of empty metrics and charts', () => {
+    const { container } = renderCourse(course([]));
+
+    expect(screen.getByText('No submissions yet')).toBeInTheDocument();
+    expect(screen.queryByText('Pass Rate:')).not.toBeInTheDocument();
+    expect(screen.queryByText('Average Grade:')).not.toBeInTheDocument();
+    expect(container.querySelector('.recharts-responsive-container')).toBeNull();
+    expect(screen.getByRole('button', { name: /upload exam data/i })).toBeInTheDocument();
+  });
+
+  it('shows metrics when the first submission arrives', () => {
+    const { container, update } = renderCourse(course([]));
+    expect(screen.getByText('No submissions yet')).toBeInTheDocument();
+
+    const firstMark = mark('WISE_25', 'Exam 1', 'Lena Schneider', 1.7);
+    update(course([firstMark]));
+
+    expect(screen.queryByText('No submissions yet')).not.toBeInTheDocument();
+    expect(screen.getByText('Pass Rate:')).toBeInTheDocument();
+    expect(screen.getByText('Average Grade:')).toBeInTheDocument();
+    expect(container.querySelector('.recharts-responsive-container')).not.toBeNull();
   });
 });

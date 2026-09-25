@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Box, Fade } from '@mui/material';
+import { Box, Fade, Paper, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import type { Course, CourseMark, TranscriptEntry } from '../../types';
 import { ROUTES } from '../../app/navigation';
@@ -63,6 +63,7 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
   // every semester at once, so they would contradict a filtered table.
   const summary = useMemo(() => summariseMarks(marks), [marks]);
   const activeFilter = filterLabel(semesterFilter, examFilter);
+  const hasSubmissions = course.total_attempts > 0;
 
   const selectSemester = (value: string) => {
     setSemesterFilter(value);
@@ -109,12 +110,23 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
           onEdit={() => setEditing(true)}
           onBack={returnToList}
         />
-        <CourseAnalytics
-          marks={marks}
-          allMarks={allMarks}
-          student={analyticsStudent}
-          studentTranscript={analyticsStudentTranscript}
-        />
+        {hasSubmissions ? (
+          <CourseAnalytics
+            marks={marks}
+            allMarks={allMarks}
+            student={analyticsStudent}
+            studentTranscript={analyticsStudentTranscript}
+          />
+        ) : (
+          <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+            <Typography variant="h6" fontWeight="700" mb={0.5}>
+              No submissions yet
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Upload exam data to see the pass rate, grade distribution and other statistics.
+            </Typography>
+          </Paper>
+        )}
         <CourseMarksTable
           marks={marks}
           semesterOptions={semesterOptions}
