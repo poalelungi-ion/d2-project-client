@@ -2,7 +2,6 @@ import { useMemo, useRef, useState } from 'react';
 import {
   Box,
   Button,
-  MenuItem,
   Paper,
   TextField,
   ToggleButton,
@@ -18,21 +17,28 @@ import { useThemeStore } from '../../../stores';
 import { chart, gradeOutcomeColor, surfaces } from '../../../styles/colors';
 import { radii } from '../../../styles/tokens';
 import { formatGrade, outcomeLabel } from '../../../utils/gradeOutcome';
-import { ALL_EXAMS, ALL_SEMESTERS, perStudentHistory } from '../../../utils/courseMarks';
+import { perStudentHistory } from '../../../utils/courseMarks';
 import type { CourseHistoryRow } from '../../../utils/courseMarks';
+import { SemesterExamFilter } from './SemesterExamFilter';
 
 const DEFAULT_COL_DEF = { resizable: true, sortable: true, filter: true, editable: false };
 
 interface CourseMarksTableProps {
   /** The rows the filters left visible. */
   marks: CourseMark[];
-  semesterOptions: string[];
-  examOptions: string[];
+  /**
+   * The same filter the bar at the top of the screen holds. The table carries
+   * its own copy of the control so a lecturer scrolled down to the grid does
+   * not have to go back up to change what it shows.
+   */
+  semesterOptions: readonly string[];
+  examOptions: readonly string[];
   semesterFilter: string;
   examFilter: string;
-  activeFilter: string | null;
   onSelectSemester: (value: string) => void;
   onSelectExam: (value: string) => void;
+  /** Label of the active filter, or null for every semester. */
+  activeFilter: string | null;
   /** Plots this student against the cohort in the panels above. */
   onSelectStudent: (mark: CourseMark) => void;
   /** Reloads the course after grades are saved from the individual view. */
@@ -45,9 +51,9 @@ export const CourseMarksTable = ({
   examOptions,
   semesterFilter,
   examFilter,
-  activeFilter,
   onSelectSemester,
   onSelectExam,
+  activeFilter,
   onSelectStudent,
   onRefresh,
 }: CourseMarksTableProps) => {
@@ -107,7 +113,7 @@ export const CourseMarksTable = ({
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {activeFilter
               ? `Showing ${activeFilter} only -- the figures and charts above follow this selection.`
-              : 'Showing every semester. Pick one below to read a single sitting.'}
+              : 'Showing every semester. Pick one to read a single sitting.'}
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -131,42 +137,14 @@ export const CourseMarksTable = ({
             <ToggleButton value="history">Per-Person History</ToggleButton>
             <ToggleButton value="individual">Individual Marks</ToggleButton>
           </ToggleButtonGroup>
-          <TextField
-            select
-            size="small"
-            label="Semester"
-            value={semesterFilter}
-            onChange={(e) => onSelectSemester(e.target.value)}
-            disabled={semesterOptions.length === 0}
-            sx={{ width: 180 }}
-          >
-            <MenuItem value={ALL_SEMESTERS}>All semesters</MenuItem>
-            {semesterOptions.map((semester) => (
-              <MenuItem key={semester} value={semester}>
-                {semester}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          {/* Only worth offering once a semester actually held more than
-              one sitting -- otherwise there is nothing to choose between. */}
-          {examOptions.length > 1 && (
-            <TextField
-              select
-              size="small"
-              label="Exam"
-              value={examFilter}
-              onChange={(e) => onSelectExam(e.target.value)}
-              sx={{ width: 160 }}
-            >
-              <MenuItem value={ALL_EXAMS}>All exams</MenuItem>
-              {examOptions.map((exam) => (
-                <MenuItem key={exam} value={exam}>
-                  {exam}
-                </MenuItem>
-              ))}
-            </TextField>
-          )}
+          <SemesterExamFilter
+            semesterOptions={semesterOptions}
+            examOptions={examOptions}
+            semester={semesterFilter}
+            exam={examFilter}
+            onSelectSemester={onSelectSemester}
+            onSelectExam={onSelectExam}
+          />
           <TextField
             label="Quick Search..."
             size="small"

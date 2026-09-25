@@ -81,8 +81,21 @@ const renderCourse = (current: Course) => {
 const statFor = (label: RegExp): string =>
   (screen.getByText(label).textContent ?? '').replace(/\s+/g, ' ').trim();
 
-const semesterSelect = () => screen.getByRole('combobox', { name: /^semester$/i });
-const examSelect = () => screen.queryByRole('combobox', { name: /^exam$/i });
+/**
+ * The filter is drawn twice -- in the bar at the top and in the marks table's
+ * header -- so every lookup has to say which copy it means.
+ */
+const filterBar = () => screen.getByRole('region', { name: /course filters/i });
+const marksPanel = (): HTMLElement =>
+  screen.getByText('Detailed Course Marks').closest('.MuiPaper-root') as HTMLElement;
+
+const semesterSelect = () =>
+  within(filterBar()).getByRole('combobox', { name: /^semester$/i });
+const examSelect = () => within(filterBar()).queryByRole('combobox', { name: /^exam$/i });
+const tableSemesterSelect = () =>
+  within(marksPanel()).getByRole('combobox', { name: /^semester$/i });
+const tableExamSelect = () =>
+  within(marksPanel()).queryByRole('combobox', { name: /^exam$/i });
 
 /** Opens a MUI select and clicks one of its options. */
 const choose = (select: HTMLElement, option: RegExp | string) => {
@@ -168,7 +181,7 @@ describe('course without submissions', () => {
     const consoleError = vi.spyOn(console, 'error');
     renderDetail([]);
 
-    expect(screen.getByText(/No submissions yet/)).toBeInTheDocument();
+    expect(screen.getAllByText(/No submissions yet/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Pass Rate/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Average Grade:/)).not.toBeInTheDocument();
     expect(screen.queryByText('Course Grade Distribution')).not.toBeInTheDocument();
@@ -282,5 +295,171 @@ describe('empty course state', () => {
     expect(screen.getByText('Pass Rate:')).toBeInTheDocument();
     expect(screen.getByText('Average Grade:')).toBeInTheDocument();
     expect(container.querySelector('.recharts-responsive-container')).not.toBeNull();
+  });
+});
+
+describe('mirrored filter', () => {
+  it('draws the same filter in the bar and in the marks table', () => {
+    renderDetail();
+    expect(semesterSelect()).toBeInTheDocument();
+    expect(tableSemesterSelect()).toBeInTheDocument();
+  });
+
+  it('moves both copies when the bar is used', () => {
+    renderDetail();
+    choose(semesterSelect(), 'SOSE_25');
+
+    expect(tableSemesterSelect()).toHaveTextContent('SOSE_25');
+    expect(screen.getByText('Showing SOSE_25')).toBeInTheDocument();
+  });
+
+  it('moves both copies when the table is used', () => {
+    renderDetail();
+    fireEvent.click(screen.getByRole('button', { name: /individual marks/i }));
+    choose(tableSemesterSelect(), 'SOSE_25');
+
+    expect(semesterSelect()).toHaveTextContent('SOSE_25');
+    expect(screen.queryByText('Clara Later')).not.toBeInTheDocument();
+  });
+
+  it('reveals the exam dropdown in both copies together', () => {
+    renderDetail();
+    expect(examSelect()).not.toBeInTheDocument();
+    expect(tableExamSelect()).not.toBeInTheDocument();
+
+    choose(tableSemesterSelect(), 'SOSE_25');
+
+    expect(examSelect()).toBeInTheDocument();
+    expect(tableExamSelect()).toBeInTheDocument();
+  });
+
+  it('keeps the table copy usable while the top bar is comparing', () => {
+    renderDetail();
+    fireEvent.click(screen.getByRole('button', { name: /compare exams/i }));
+    // The bar has given its space over to the A/B pickers.
+    expect(examSelect()).not.toBeInTheDocument();
+
+    choose(tableSemesterSelect(), 'WISE_25');
+    expect(screen.getByText('Showing WISE_25')).toBeInTheDocument();
+  });
+});
+
+describe('exam comparison', () => {
+  const compareMode = () => screen.getByRole('button', { name: /compare exams/i });
+  const semesterA = () => screen.getByRole('combobox', { name: /semester a/i });
+  const semesterB = () => screen.getByRole('combobox', { name: /semester b/i });
+  const examA = () => screen.queryByRole('combobox', { name: /^exam a$/i });
+  const examB = () => screen.queryByRole('combobox', { name: /^exam b$/i });
+
+  /** The comparison panel only, so its figures never collide with the header's. */
+  const panel = (): HTMLElement =>
+    screen.getByText(/ vs /).closest('.MuiPaper-root') as HTMLElement;
+
+  /** Every "<label>: <value>" line inside the panel matching `label`. */
+  const panelStats = (label: RegExp): string[] =>
+    within(panel())
+      .getAllByText(label)
+      .map((el) => (el.textContent ?? '').replace(/\s+/g, ' ').trim());
+
+  it('is not offered while the course has held only one sitting', () => {
+    renderDetail([
+      mark('SOSE_25', 'Exam 1', 'Anna Early', 1.0),
+      mark('SOSE_25', 'Exam 1', 'Bruno Second', 2.0),
+    ]);
+    expect(screen.queryByRole('button', { name: /compare exams/i })).not.toBeInTheDocument();
+  });
+
+  it('asks for a semester on each side before it compares anything', () => {
+    renderDetail();
+    fireEvent.click(compareMode());
+
+    expect(screen.getByText(/pick a semester for a and for b/i)).toBeInTheDocument();
+    // Semester comes first: there is nothing to narrow until one is chosen.
+    expect(examA()).not.toBeInTheDocument();
+  });
+
+  it('compares whole semesters once both are chosen', () => {
+    renderDetail();
+    fireEvent.click(compareMode());
+    choose(semesterA(), 'SOSE_25');
+    choose(semesterB(), 'WISE_25');
+
+    // SOSE_25 held a 1.0 pass and a 5.0 fail; WISE_25 a single 3.0 pass.
+    expect(within(panel()).getByText('SOSE_25 vs WISE_25')).toBeInTheDocument();
+    expect(panelStats(/Pass Rate:/)).toEqual(['Pass Rate: 50%', 'Pass Rate: 100%']);
+    expect(panelStats(/^Submissions:/)).toEqual(['Submissions: 2', 'Submissions: 1']);
+  });
+
+  it('offers the individual exams only for a semester that held more than one', () => {
+    renderDetail();
+    fireEvent.click(compareMode());
+
+    choose(semesterA(), 'SOSE_25');
+    expect(examA()).toBeInTheDocument();
+
+    choose(semesterB(), 'WISE_25');
+    expect(examB()).not.toBeInTheDocument();
+  });
+
+  it('narrows a side to one sitting of the semester already chosen', () => {
+    renderDetail();
+    fireEvent.click(compareMode());
+    choose(semesterA(), 'SOSE_25');
+    choose(semesterB(), 'SOSE_25');
+    expect(screen.getByText(/same sitting/i)).toBeInTheDocument();
+
+    choose(examA()!, 'Exam 1');
+    choose(examB()!, 'Exam 2');
+
+    expect(within(panel()).getByText('SOSE_25 · Exam 1 vs SOSE_25 · Exam 2')).toBeInTheDocument();
+    expect(panelStats(/Pass Rate:/)).toEqual(['Pass Rate: 100%', 'Pass Rate: 0%']);
+    expect(panelStats(/Average Grade:/)).toEqual(['Average Grade: 1', 'Average Grade: 0']);
+  });
+
+  it('reports the change from A to B', () => {
+    renderDetail();
+    fireEvent.click(compareMode());
+    choose(semesterA(), 'SOSE_25');
+    choose(semesterB(), 'SOSE_25');
+    choose(examA()!, 'Exam 1');
+    choose(examB()!, 'Exam 2');
+
+    expect(panelStats(/Pass rate:/)).toEqual(['Pass rate: -100%']);
+  });
+
+  it('drops the exam when its semester changes, since sittings do not carry over', () => {
+    renderDetail();
+    fireEvent.click(compareMode());
+    choose(semesterA(), 'SOSE_25');
+    choose(examA()!, 'Exam 2');
+    choose(semesterB(), 'WISE_25');
+    expect(within(panel()).getByText('SOSE_25 · Exam 2 vs WISE_25')).toBeInTheDocument();
+
+    // WISE_25 never held an Exam 2, so A falls back to the whole semester.
+    choose(semesterA(), 'WISE_25');
+    expect(screen.getByText(/same sitting/i)).toBeInTheDocument();
+  });
+
+  it('leaves the marks table on its own filter', () => {
+    renderDetail();
+    // The table was narrowed to WISE_25 before the lecturer went comparing.
+    choose(semesterSelect(), 'WISE_25');
+    fireEvent.click(screen.getByRole('button', { name: /individual marks/i }));
+    fireEvent.click(compareMode());
+    choose(semesterA(), 'SOSE_25');
+    choose(semesterB(), 'WISE_25');
+
+    expect(screen.getByText('Showing WISE_25')).toBeInTheDocument();
+    expect(screen.getByText('Clara Later')).toBeInTheDocument();
+    expect(screen.queryByText('Anna Early')).not.toBeInTheDocument();
+  });
+
+  it('keeps the single-exam filter to come back to', () => {
+    renderDetail();
+    choose(semesterSelect(), 'SOSE_25');
+    fireEvent.click(compareMode());
+    fireEvent.click(screen.getByRole('button', { name: /single exam/i }));
+
+    expect(semesterSelect()).toHaveTextContent('SOSE_25');
   });
 });
