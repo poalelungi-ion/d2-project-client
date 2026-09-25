@@ -59,7 +59,17 @@ export const individualMarksColumnDefs = (themeMode: ThemeMode): ColDef<CourseMa
     headerName: 'Grade',
     flex: 1,
     editable: true,
-    valueFormatter: (params) => formatGrade(params.value, params.data?.absence_code),
+    // Grade is stored as a number, so AG Grid would otherwise use a numeric
+    // editor that refuses NE/EX/AT. Keep a text cell and parse on commit.
+    cellDataType: false,
+    cellEditor: 'agTextCellEditor',
+    valueParser: (params) => params.newValue,
+    valueGetter: (params) => {
+      if (!params.data) return '';
+      if (params.data.absence_code) return params.data.absence_code;
+      return params.data.grade ?? '';
+    },
+    valueFormatter: (params) => formatGrade(params.data?.grade, params.data?.absence_code),
     valueSetter: applyGradeCell,
     cellStyle: {
       fontWeight: 'bold',

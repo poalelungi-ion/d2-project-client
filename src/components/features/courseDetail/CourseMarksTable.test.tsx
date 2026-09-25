@@ -19,10 +19,15 @@ const sitting = (grade: number): CourseMark => ({
 
 describe('individual marks columns', () => {
   it('lets the lecturer edit only the Grade column', () => {
-    const editable = individualMarksColumnDefs('light')
+    const cols = individualMarksColumnDefs('light');
+    const editable = cols
       .filter((col) => col.editable === true)
       .map((col) => col.field ?? col.colId);
     expect(editable).toEqual(['grade']);
+
+    const gradeCol = cols.find((col) => col.field === 'grade');
+    expect(gradeCol?.cellDataType).toBe(false);
+    expect(gradeCol?.cellEditor).toBe('agTextCellEditor');
   });
 
   it('applies the same grade rules as upload and keeps other fields intact', () => {
