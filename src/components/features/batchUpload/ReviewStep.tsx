@@ -1,5 +1,6 @@
 import { AgGridReact } from 'ag-grid-react';
 import type {
+  CellValueChangedEvent,
   GridReadyEvent,
   ICellRendererParams,
   RowClassParams,
@@ -15,7 +16,11 @@ import {
   isOfficialAbsenceCell,
   outcomeLabel,
 } from '../../../utils/gradeOutcome';
-import { STUDY_PROGRAM_OPTIONS } from '../../../utils/studyProgram';
+import {
+  STUDY_PROGRAM_OPTIONS,
+  formatValidationIssues,
+  isAllowedStudyProgram,
+} from '../../../utils/studyProgram';
 
 export const ReviewStep = () => {
   const {
@@ -57,6 +62,24 @@ export const ReviewStep = () => {
               if (!node.data) return;
               if (node.data.is_valid) node.setSelected(true);
             });
+          }}
+          onCellValueChanged={(event: CellValueChangedEvent<PreviewRecord>) => {
+            if (event.colDef.field !== 'program' || !event.data) return;
+            const invalid = (event.data.invalid_fields ?? []).filter(
+              (field) => field !== 'Study Program',
+            );
+            event.data.invalid_fields = isAllowedStudyProgram(String(event.newValue ?? ''))
+              ? invalid
+              : [...invalid, 'Study Program'];
+            event.data.is_valid =
+              (event.data.missing_fields?.length ?? 0) === 0 &&
+              event.data.invalid_fields.length === 0;
+            event.api.refreshCells({
+              rowNodes: [event.node],
+              columns: ['validationIssues'],
+              force: true,
+            });
+            event.api.redrawRows({ rowNodes: [event.node] });
           }}
           rowSelection="multiple"
           columnDefs={[
@@ -110,18 +133,23 @@ export const ReviewStep = () => {
               },
             },
             {
-              field: 'missing_fields',
+              colId: 'validationIssues',
               headerName: 'Validation Issues',
               flex: 2,
               minWidth: 240,
-              cellRenderer: (params: ICellRendererParams<PreviewRecord, string[]>) => {
-                if (!params.value || params.value.length === 0)
+              valueGetter: (params) =>
+                formatValidationIssues(
+                  params.data?.missing_fields,
+                  params.data?.invalid_fields,
+                ),
+              cellRenderer: (params: ICellRendererParams<PreviewRecord, string | null>) => {
+                if (!params.value)
                   return (
                     <span style={{ color: semantic.success, fontWeight: 'bold' }}>Valid</span>
                   );
                 return (
                   <span style={{ color: semantic.error, fontWeight: 'bold' }}>
-                    Missing: {params.value.join(', ')}
+                    {params.value}
                   </span>
                 );
               },
