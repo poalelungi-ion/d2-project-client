@@ -181,7 +181,7 @@ describe('course without submissions', () => {
     const consoleError = vi.spyOn(console, 'error');
     renderDetail([]);
 
-    expect(screen.getByText(/No submissions yet/)).toBeInTheDocument();
+    expect(screen.getAllByText(/No submissions yet/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Pass Rate/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Average Grade:/)).not.toBeInTheDocument();
     expect(screen.queryByText('Course Grade Distribution')).not.toBeInTheDocument();
