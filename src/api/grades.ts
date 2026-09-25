@@ -4,7 +4,8 @@ import { post } from './client';
 export interface GradeSaveRow {
   result_id: number;
   version: number;
-  grade: number;
+  /** Numeric 1.0–5.0, or the same NE/EX/AT cell the upload parser accepts. */
+  grade: number | string;
 }
 
 /** Persists a batch of edited grade rows. */

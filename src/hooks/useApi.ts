@@ -39,7 +39,12 @@ import type {
   UploadPreviewResponse,
 } from '../types';
 import { notify } from '../stores';
-import { withoutIgnoredColumns } from '../utils/gradeOutcome';
+import {
+  GRADE_CONSTRAINT_MESSAGE,
+  gradeSaveValue,
+  parseGradeInput,
+  withoutIgnoredColumns,
+} from '../utils/gradeOutcome';
 
 const EMPTY_STATS: Stats = { kpis: {}, toughest_courses: [], atRisk: [] };
 
@@ -277,20 +282,29 @@ async function loadTranscript(studentId: number): Promise<TranscriptEntry[]> {
 }
 
 async function saveTranscript(
-  rows: Array<{ result_id: number; version: number; grade: number | null }>,
+  rows: Array<{
+    result_id: number;
+    version: number;
+    grade: number | null;
+    absence_code?: string | null;
+  }>,
 ): Promise<TranscriptSaveResult> {
+  const payload: Array<{ result_id: number; version: number; grade: number | string }> = [];
+  for (const row of rows) {
+    const value = gradeSaveValue(row);
+    if (value == null || !parseGradeInput(value).ok) {
+      notify(GRADE_CONSTRAINT_MESSAGE, 'error');
+      return { saved: false, shouldRefresh: false };
+    }
+    payload.push({
+      result_id: row.result_id,
+      version: row.version,
+      grade: value,
+    });
+  }
+
   try {
-    // Excused sittings have no numeric grade; the system keeps them unless
-    // the lecturer types a mark over the AT placeholder.
-    const res = await saveGrades(
-      rows
-        .filter((row): row is { result_id: number; version: number; grade: number } => row.grade != null)
-        .map((row) => ({
-          result_id: row.result_id,
-          version: row.version,
-          grade: row.grade,
-        })),
-    );
+    const res = await saveGrades(payload);
     if (res.ok) {
       notify('Database updated successfully!');
       return { saved: true, shouldRefresh: true };
