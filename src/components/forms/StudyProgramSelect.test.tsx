@@ -24,9 +24,8 @@ describe('StudyProgramSelect', () => {
       .getAllByRole('option')
       .map((option) => option.textContent);
 
-    expect(options.filter((label) => label !== 'Select a study program')).toEqual([
-      ...STUDY_PROGRAMS,
-    ]);
+    expect(options).toEqual([...STUDY_PROGRAMS]);
+    expect(screen.queryByText('Select a study program')).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 

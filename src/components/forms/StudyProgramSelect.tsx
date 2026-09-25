@@ -1,4 +1,12 @@
-import { TextField, MenuItem } from '@mui/material';
+import { useId } from 'react';
+import {
+  FormControl,
+  FormHelperText,
+  InputLabel,
+  MenuItem,
+  Select,
+} from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import type { SxProps, Theme } from '@mui/material/styles';
 import { STUDY_PROGRAMS, UNASSIGNED_PROGRAM } from '../../utils/studyProgram';
 
@@ -28,38 +36,29 @@ export function StudyProgramSelect({
   size,
   sx,
 }: StudyProgramSelectProps) {
+  const labelId = useId();
   const options = allowUnassigned
     ? [...STUDY_PROGRAMS, UNASSIGNED_PROGRAM]
     : [...STUDY_PROGRAMS];
   const items = value && !options.includes(value) ? [value, ...options] : options;
 
   return (
-    <TextField
-      select
-      fullWidth
-      size={size}
-      margin="dense"
-      label={label}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      error={error}
-      helperText={helperText}
-      sx={sx}
-      SelectProps={{
-        displayEmpty: true,
-      }}
-      inputProps={{ 'aria-label': label }}
-    >
-      {!value && (
-        <MenuItem value="" disabled>
-          Select a study program
-        </MenuItem>
-      )}
-      {items.map((program) => (
-        <MenuItem key={program} value={program}>
-          {program}
-        </MenuItem>
-      ))}
-    </TextField>
+    <FormControl fullWidth size={size} margin="dense" error={error} sx={sx}>
+      <InputLabel id={labelId}>{label}</InputLabel>
+      <Select
+        labelId={labelId}
+        label={label}
+        value={value}
+        onChange={(event: SelectChangeEvent<string>) => onChange(event.target.value)}
+      >
+        {value === '' && <MenuItem value="" disabled sx={{ display: 'none' }} />}
+        {items.map((program) => (
+          <MenuItem key={program} value={program}>
+            {program}
+          </MenuItem>
+        ))}
+      </Select>
+      {helperText ? <FormHelperText>{helperText}</FormHelperText> : null}
+    </FormControl>
   );
 }
