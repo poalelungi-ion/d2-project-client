@@ -463,3 +463,16 @@ describe('exam comparison', () => {
     expect(semesterSelect()).toHaveTextContent('SOSE_25');
   });
 });
+
+describe('lecture-view grade edits', () => {
+  it('offers Save Marks on Individual Marks, where Grade is the editable column', () => {
+    renderDetail();
+    expect(screen.queryByRole('button', { name: /save marks/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /individual marks/i }));
+
+    expect(screen.getByRole('button', { name: /save marks/i })).toBeInTheDocument();
+    expect(within(marksPanel()).getByText('Grade')).toBeInTheDocument();
+    expect(screen.getByText(/click a grade to edit/i)).toBeInTheDocument();
+  });
+});
