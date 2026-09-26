@@ -271,6 +271,11 @@ describe('per-person history columns', () => {
     expect(cell('exam1_grade')).toBe('5');
     expect(cell('exam2_grade')).toBe('1.7');
   });
+
+  it('shows the semester the sittings took place in', () => {
+    renderDetail(bruno());
+    expect(cell('semester')).toBe('SOSE_25');
+  });
 });
 
 describe('empty course state', () => {
