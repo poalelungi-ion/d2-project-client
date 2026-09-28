@@ -1,4 +1,4 @@
-stages: [quality]
+stages: [quality, e2e]
 
 .quality_base: &quality_base
   stage: quality
@@ -72,3 +72,57 @@ require_approval:
     - apk add --no-cache curl jq
   script:
     - sh scripts/require-approval.sh
+
+# End-to-end suite: a real browser against the built client, the published
+# backend image and a real PostgreSQL. 
+#
+# A merge request is tested against the backend's :main image, not its own:
+# this repository holds only the client. A backend change is therefore covered
+# once it lands on main, not while it is in review.
+e2e:
+  stage: e2e
+  image: mcr.microsoft.com/playwright:v1.63.0-noble
+  interruptible: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  variables:
+    # Without this, GitLab services can only be reached from the job container
+    # and not from each other 
+    FF_NETWORK_PER_BUILD: "true"
+
+    POSTGRES_USER: spa_user
+    POSTGRES_PASSWORD: spa_password
+    POSTGRES_DB: spa_e2e
+
+    # Consumed by the backend service container.
+    DATABASE_URL: postgresql://spa_user:spa_password@db/spa_e2e
+    JWT_SECRET: ci-only-not-a-real-secret
+    SEED_ON_STARTUP: "false"
+    COOKIE_SECURE: "false"
+
+    E2E_API_TARGET: http://api:8000
+    BACKEND_IMAGE: "$CI_REGISTRY/sudarshan.bashyal/d2-project-backend:main"
+  services:
+    - name: "postgres:15-alpine"
+      alias: db
+    # Published by the backend repository's publish_image job.
+    - name: "$BACKEND_IMAGE"
+      alias: api
+  script:
+    - npm ci --cache .npm --prefer-offline
+    - npm run build:e2e
+    # `|| true` so a failing run still reaches the summary below, which prints
+    # the table and decides the exit code -- same shape as unit_tests above.
+    - npx playwright test || true
+    - npm run test:e2e:summary
+  artifacts:
+    when: always
+    # Traces and videos are large, and this is a shared instance.
+    expire_in: 1 week
+    paths:
+      - playwright-report/
+      - test-results/
+    reports:
+      junit: e2e-junit.xml
