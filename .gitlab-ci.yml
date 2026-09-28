@@ -88,16 +88,7 @@ e2e:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_PIPELINE_SOURCE == "schedule"
   variables:
-    # Without this, GitLab services can only be reached from the job container
-    # and not from each other 
-    FF_NETWORK_PER_BUILD: "true"
-
-    POSTGRES_USER: spa_user
-    POSTGRES_PASSWORD: spa_password
-    POSTGRES_DB: spa_e2e
-
-    # Consumed by the backend service container.
-    DATABASE_URL: postgresql://spa_user:spa_password@db/spa_e2e
+    DATABASE_URL: "sqlite:////tmp/e2e.db"
     JWT_SECRET: ci-only-not-a-real-secret
     SEED_ON_STARTUP: "false"
     COOKIE_SECURE: "false"
@@ -105,8 +96,6 @@ e2e:
     E2E_API_TARGET: http://api:8000
     BACKEND_IMAGE: "$CI_REGISTRY/sudarshan.bashyal/d2-project-backend:main"
   services:
-    - name: "postgres:15-alpine"
-      alias: db
     # Published by the backend repository's publish_image job.
     - name: "$BACKEND_IMAGE"
       alias: api
