@@ -1,16 +1,21 @@
 import { useState } from 'react';
 import {
+  Autocomplete,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
   Button,
-  MenuItem,
 } from '@mui/material';
 
 import type { Course, CourseFormErrors, CourseFormValues } from '../../types';
 import { useApiMutations } from '../../hooks/useApi';
+import {
+  generateSemesters,
+  getCurrentSemester,
+  isValidSemester,
+} from '../../utils/semester';
 
 interface CourseFormDialogProps {
   /** The course being edited, or null to create a new one. */
@@ -20,18 +25,13 @@ interface CourseFormDialogProps {
   onSaved: () => void;
 }
 
-const SEMESTERS = [
-  'WiSe23/24',
-  'SoSe24',
-  'WiSe24/25',
-  'SoSe25',
-  'WiSe25/26',
-  'SoSe26',
-  'WiSe26/27',
-  'SoSe27',
-  'WiSe27/28',
-  'SoSe28',
-] as const;
+const SEMESTERS = generateSemesters();
+const CURRENT_SEMESTER = getCurrentSemester();
+
+const SEMESTER_OPTIONS = [
+  CURRENT_SEMESTER,
+  ...SEMESTERS.filter((semester) => semester !== CURRENT_SEMESTER),
+];
 
 const EMPTY_FORM: CourseFormValues = {
   course_id: '',
@@ -65,6 +65,10 @@ const validate = (values: CourseFormValues): CourseFormErrors => {
 
   if (!values.semester.trim()) {
     errors.semester = 'Semester is mandatory';
+  } else if (!isValidSemester(values.semester)) {
+    errors.semester = 'Please select a valid semester';
+  } else if (!SEMESTER_OPTIONS.includes(values.semester)) {
+    errors.semester = 'Future semesters cannot be selected';
   }
 
   if (!values.study_program.trim()) {
@@ -144,28 +148,46 @@ export function CourseFormDialog({
           sx={{ mb: 2 }}
         />
 
-        <TextField
-          select
-          margin="dense"
-          label="Semester"
+        <Autocomplete
           fullWidth
-          variant="outlined"
-          value={values.semester}
-          onChange={(e) => update({ semester: e.target.value })}
-          error={!!errors.semester}
-          helperText={errors.semester}
-          sx={{ mb: 2 }}
-        >
-          <MenuItem value="" disabled>
-            Select semester
-          </MenuItem>
+          options={SEMESTER_OPTIONS}
+          value={
+            SEMESTER_OPTIONS.includes(values.semester)
+              ? values.semester
+              : null
+          }
+          onChange={(_, newValue) => {
+            update({
+              semester: newValue ?? '',
+            });
 
-          {SEMESTERS.map((semester) => (
-            <MenuItem key={semester} value={semester}>
-              {semester}
-            </MenuItem>
-          ))}
-        </TextField>
+            if (errors.semester) {
+              setErrors((current) => ({
+                ...current,
+                semester: undefined,
+              }));
+            }
+          }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              margin="dense"
+              label="Semester"
+              variant="outlined"
+              placeholder="Select or search semester"
+              error={!!errors.semester}
+              helperText={errors.semester}
+              sx={{ mb: 2 }}
+            />
+          )}
+          slotProps={{
+            paper: {
+              sx: {
+                maxHeight: 320,
+              },
+            },
+          }}
+        />
 
         <TextField
           margin="dense"

@@ -112,20 +112,29 @@ export function getCurrentSemester(date: Date = new Date()): string {
 
 export function generateSemesters(
   date: Date = new Date(),
-  yearsBefore = 3,
-  yearsAfter = 2,
+  yearsBefore = 10,
 ): string[] {
   const currentYear = date.getFullYear();
+  const currentSemester = getCurrentSemester(date);
   const semesters: string[] = [];
 
   for (
     let year = currentYear - yearsBefore;
-    year <= currentYear + yearsAfter;
+    year <= currentYear;
     year += 1
   ) {
-    semesters.push(`SoSe${shortYear(year)}`);
-    semesters.push(`WiSe${shortYear(year)}/${shortYear(year + 1)}`);
+    const summerSemester = `SoSe${shortYear(year)}`;
+    const winterSemester =
+      `WiSe${shortYear(year)}/${shortYear(year + 1)}`;
+
+    semesters.push(summerSemester);
+    semesters.push(winterSemester);
   }
 
-  return semesters.sort(compareSemesters);
+  return semesters
+    .filter(
+      (semester) =>
+        compareSemesters(semester, currentSemester) <= 0,
+    )
+    .sort(compareSemesters);
 }
