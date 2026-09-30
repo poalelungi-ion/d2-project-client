@@ -1,43 +1,78 @@
 /**
- * Semester parsing and chronological comparison utilities (Ticket #99881).
- * 
- * In the German academic calendar:
- * - Sommersemester (SoSe/SS): starts ~April (spring) -> term 1
- * - Wintersemester (WiSe/WS): starts ~October (fall) -> term 2
- * 
- * Example chronological order:
- *   WiSe23/24 (Oct 2023) < SoSe24 (Apr 2024) < WiSe24/25 (Oct 2024) < SOSE_25 (Apr 2025) < WISE_25 (Oct 2025)
+ * Semester parsing, validation, generation and chronological comparison
+ * utilities (Ticket #99881).
+ *
+ * Standard semester format:
+ * - Summer semester: SoSeYY
+ * - Winter semester: WiSeYY/YY
  */
+
 export interface ParsedSemester {
   year: number;
-  term: number; // 1 for Summer, 2 for Winter, 0 for unknown
+  term: number;
 }
 
-const WINTER_PATTERN = /^(W|.*(WISE|WS|WINTER))/i;
-const SUMMER_PATTERN = /^(S|.*(SOSE|SS|SOMMER|SUMMER))/i;
+const WINTER_MARKERS = ['WISE', 'WS', 'WINTER'];
+const SUMMER_MARKERS = ['SOSE', 'SS', 'SOMMER', 'SUMMER'];
 
-function extractTerm(upper: string): number {
-  if (WINTER_PATTERN.test(upper)) return 2;
-  if (SUMMER_PATTERN.test(upper)) return 1;
+const SEMESTER_PATTERN = /^(SoSe\d{2}|WiSe\d{2}\/\d{2})$/;
+
+function getSemesterTerm(value: string): number {
+  if (
+    value.startsWith('W') ||
+    WINTER_MARKERS.some((marker) => value.includes(marker))
+  ) {
+    return 2;
+  }
+
+  if (
+    value.startsWith('S') ||
+    SUMMER_MARKERS.some((marker) => value.includes(marker))
+  ) {
+    return 1;
+  }
+
   return 0;
 }
 
-function extractYear(clean: string): number {
-  const matches = clean.match(/\d+/g);
-  if (!matches || matches.length === 0) return 0;
-  const raw = parseInt(matches[0], 10);
-  if (isNaN(raw)) return 0;
-  return raw < 100 ? (raw <= 70 ? 2000 + raw : 1900 + raw) : raw;
+function normalizeYear(raw: number): number {
+  if (raw >= 100) {
+    return raw;
+  }
+
+  if (raw <= 70) {
+    return 2000 + raw;
+  }
+
+  return 1900 + raw;
+}
+
+function shortYear(year: number): string {
+  return String(year % 100).padStart(2, '0');
 }
 
 export function parseSemester(s: string): ParsedSemester {
-  if (!s) return { year: 0, term: 0 };
+  if (!s) {
+    return { year: 0, term: 0 };
+  }
+
   const clean = String(s).trim();
-  const upper = clean.toUpperCase();
+  const term = getSemesterTerm(clean.toUpperCase());
+  const firstNumber = clean.match(/\d+/)?.[0];
+
+  if (!firstNumber) {
+    return { year: 0, term };
+  }
+
+  const raw = Number.parseInt(firstNumber, 10);
+
+  if (Number.isNaN(raw)) {
+    return { year: 0, term };
+  }
 
   return {
-    year: extractYear(clean),
-    term: extractTerm(upper),
+    year: normalizeYear(raw),
+    term,
   };
 }
 
@@ -48,10 +83,60 @@ export function compareSemesters(a: string, b: string): number {
   if (semA.year !== semB.year) {
     return semA.year - semB.year;
   }
+
   if (semA.term !== semB.term) {
     return semA.term - semB.term;
   }
+
   return String(a).localeCompare(String(b));
+}
+
+export function isValidSemester(value: string): boolean {
+  return SEMESTER_PATTERN.test(value.trim());
+}
+
+export function getCurrentSemester(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+
+  if (month >= 4 && month <= 9) {
+    return `SoSe${shortYear(year)}`;
+  }
+
+  if (month >= 10) {
+    return `WiSe${shortYear(year)}/${shortYear(year + 1)}`;
+  }
+
+  return `WiSe${shortYear(year - 1)}/${shortYear(year)}`;
+}
+
+export function generateSemesters(
+  date: Date = new Date(),
+  yearsBefore = 10,
+): string[] {
+  const currentYear = date.getFullYear();
+  const currentSemester = getCurrentSemester(date);
+  const semesters: string[] = [];
+
+  for (
+    let year = currentYear - yearsBefore;
+    year <= currentYear;
+    year += 1
+  ) {
+    const summerSemester = `SoSe${shortYear(year)}`;
+    const winterSemester =
+      `WiSe${shortYear(year)}/${shortYear(year + 1)}`;
+
+    semesters.push(summerSemester);
+    semesters.push(winterSemester);
+  }
+
+  return semesters
+    .filter(
+      (semester) =>
+        compareSemesters(semester, currentSemester) <= 0,
+    )
+    .sort(compareSemesters);
 }
 
 /** Mean numeric grade for one offering of a course. */
@@ -69,13 +154,20 @@ export function averageGradeBySemester(
   marks: readonly { semester: string; grade: number | null }[],
 ): SemesterGradeAverage[] {
   const bySemester = new Map<string, { sum: number; count: number }>();
+
   for (const mark of marks) {
     if (mark.grade == null) continue;
-    const bucket = bySemester.get(mark.semester) ?? { sum: 0, count: 0 };
+
+    const bucket = bySemester.get(mark.semester) ?? {
+      sum: 0,
+      count: 0,
+    };
+
     bucket.sum += mark.grade;
     bucket.count += 1;
     bySemester.set(mark.semester, bucket);
   }
+
   return [...bySemester.entries()]
     .sort(([left], [right]) => compareSemesters(left, right))
     .map(([semester, { sum, count }]) => ({
@@ -84,4 +176,3 @@ export function averageGradeBySemester(
       sittings: count,
     }));
 }
-
