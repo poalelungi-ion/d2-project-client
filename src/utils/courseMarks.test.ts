@@ -4,6 +4,7 @@ import {
   ALL_SEMESTERS,
   EMPTY_SELECTION,
   alignDistribution,
+  bySemesterOrder,
   examsOf,
   filterLabel,
   filterMarks,
@@ -55,6 +56,13 @@ describe('semestersOf', () => {
 
   it('is empty for a course with no marks', () => {
     expect(semestersOf([])).toEqual([]);
+  });
+});
+
+describe('bySemesterOrder', () => {
+  it('sorts chronologically, a multi-semester cell by its earliest', () => {
+    const cells = ['WISE_25', 'SOSE_25, WISE_25', 'WISE_24'];
+    expect(cells.sort(bySemesterOrder)).toEqual(['WISE_24', 'SOSE_25, WISE_25', 'WISE_25']);
   });
 });
 
@@ -253,6 +261,22 @@ describe('perStudentHistory exam columns', () => {
       { ...mark('SOSE_25', 2.0, 'Exam 2'), student_id: 506, student_name: 'Eve' },
     ]);
     expect(rows[0].final_status).toBe('Passed');
+  });
+
+  it('lists the semesters of every sitting, oldest first', () => {
+    const rows = perStudentHistory([
+      { ...mark('WISE_25', 2.0, 'Exam 2'), student_id: 507, student_name: 'Finn' },
+      { ...mark('SOSE_25', 5.0, 'Exam 1'), student_id: 507, student_name: 'Finn' },
+    ]);
+    expect(rows[0].semester).toBe('SOSE_25, WISE_25');
+  });
+
+  it('names a semester once when both sittings fell in it', () => {
+    const rows = perStudentHistory([
+      { ...mark('SOSE_25', 5.0, 'Exam 1'), student_id: 508, student_name: 'Gina' },
+      { ...mark('SOSE_25', 2.0, 'Exam 2'), student_id: 508, student_name: 'Gina' },
+    ]);
+    expect(rows[0].semester).toBe('SOSE_25');
   });
 });
 

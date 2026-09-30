@@ -27,7 +27,7 @@ import {
   outcomeLabel,
   parseGradeInput,
 } from '../../../utils/gradeOutcome';
-import { perStudentHistory } from '../../../utils/courseMarks';
+import { bySemesterOrder, perStudentHistory } from '../../../utils/courseMarks';
 import type { CourseHistoryRow } from '../../../utils/courseMarks';
 import { SemesterExamFilter } from './SemesterExamFilter';
 
@@ -53,7 +53,7 @@ export const individualMarksColumnDefs = (themeMode: ThemeMode): ColDef<CourseMa
   { field: 'student_id', headerName: 'Student ID', flex: 1, editable: false },
   { field: 'student_name', headerName: 'Name', flex: 2, editable: false },
   { field: 'program', headerName: 'Study Program', flex: 2, editable: false },
-  { field: 'semester', headerName: 'Semester', flex: 1, editable: false },
+  { field: 'semester', headerName: 'Semester', flex: 1, editable: false, comparator: bySemesterOrder },
   {
     field: 'grade',
     headerName: 'Grade',
@@ -260,6 +260,7 @@ export const CourseMarksTable = ({
               { field: 'student_id', headerName: 'Student ID', flex: 1, editable: false },
               { field: 'student_name', headerName: 'Student Name', flex: 2, editable: false },
               { field: 'program', headerName: 'Study Program', flex: 2, editable: false },
+              { field: 'semester', headerName: 'Semester', flex: 1, editable: false, comparator: bySemesterOrder },
               {
                 field: 'exam1_grade',
                 headerName: 'Exam 1 Grade',
