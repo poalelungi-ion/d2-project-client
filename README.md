@@ -26,7 +26,8 @@ the backend only over HTTP, through `src/api/`.
 ```
 src/
   api/                 the only code that knows the backend exists
-    client.ts          base URL, auth token, fetch helpers
+    client.ts          base URL, access token, fetch + refresh-on-401
+    auth.ts            sign in, register, sign out
     courses.ts         one module per backend router
     grades.ts
     stats.ts
@@ -39,7 +40,9 @@ src/
     features/          screens (AnalysisHub, BatchUploadWizard, ...)
     forms/             dialogs for creating and editing
   types.ts             the shapes the backend returns, and the form shapes
-  utils/constants.ts   static UI values
+  stores/
+    authStore.ts       the signed-in user and the session lifecycle
+  utils/constants.ts   static UI values, incl. the university email domain
   theme.ts             MUI theme, light and dark
   App.tsx              layout, navigation, screen switching
   vite-env.d.ts        the VITE_ variables this app reads
@@ -98,20 +101,67 @@ backend.
 | Variable | Default | Purpose |
 | :--- | :--- | :--- |
 | `VITE_API_BASE_URL` | `http://localhost:8000/api` | Root of the backend API |
-| `VITE_API_TOKEN` | `sse-staff-token` | Bearer token for mutating endpoints |
 
-`VITE_API_TOKEN` must match the backend's `API_TOKEN`.
-
-Three things to know about these values:
+Two things to know about this value:
 
 * Vite inlines `VITE_`-prefixed variables **at build time**. A production image
-  must be built with the values it will run against; setting them on an
-  existing build has no effect. The Dockerfile takes both as build args.
-* `VITE_API_BASE_URL` is resolved by the **browser**, not from inside the
-  container, so it must be an address the user's browser can reach.
-* `VITE_API_TOKEN` ends up **inside the JavaScript bundle**, which anyone can
-  read. It gates casual access, not determined access; treat it as public and
-  do not reuse it as a secret anywhere else.
+  must be built with the value it will run against; setting it on an existing
+  build has no effect. The Dockerfile takes it as a build arg.
+* It is resolved by the **browser**, not from inside the container, so it must
+  be an address the user's browser can reach.
+
+There is no API token here any more. Access is per-account: the user signs in,
+and nothing secret is compiled into the bundle. See **Authentication** below.
+
+The backend must be configured to match: its `CORS_ORIGINS` has to name the
+origin this app is served from (a wildcard does not work for the credentialed
+refresh request), and its `COOKIE_SECURE` has to be `true` once that origin is
+HTTPS.
+
+## Authentication
+
+Everything below `/` except `/login` and `/register` requires a signed-in
+user. `src/app/SessionGate.tsx` holds the three layout routes that arrange it:
+`SessionGate` restores the session once on load, `RequireAuth` redirects anyone
+without one, and `GuestOnly` keeps a signed-in user off the two forms.
+
+### Where the tokens live
+
+The **access token** is a module variable in `src/api/client.ts` and nowhere
+else -- not `localStorage`, not a readable cookie. Both of those survive a page
+load, which sounds convenient but means any script running on the page can read
+the credential and keep it. A closure variable dies with the tab.
+
+The **refresh token** is an `httpOnly` cookie the backend sets, scoped to
+`/api/auth`. This app never sees it; `fetch` is called with
+`credentials: 'include'` so the browser attaches it to the two endpoints that
+need it.
+
+So after a reload there is no credential at all, and `SessionGate` trades the
+cookie for a new pair before any screen renders -- which is why there is a brief
+spinner rather than a flash of the login form.
+
+### Keeping the session alive
+
+Access tokens last minutes. Two things renew them:
+
+* `authStore` arms a timer from each response's `expires_in` and refreshes
+  shortly before expiry, so a long upload is not interrupted.
+* `client.ts` retries once on a 401, refreshing first. A failed refresh means
+  the session is genuinely over, and the store clears the user so `RequireAuth`
+  redirects.
+
+Refresh tokens are single-use on the backend, and a second exchange of the same
+one is treated as a stolen cookie -- it ends every session for that account. So
+`refreshSession()` coalesces concurrent callers onto one in-flight request:
+three panels loading at once must produce one rotation, not three.
+
+### The email domain
+
+`UNIVERSITY_EMAIL_DOMAIN` in `src/utils/constants.ts` mirrors the backend's
+value of the same name. It exists to flag a wrong address before a round trip
+and enforces nothing -- the backend re-checks every registration. Change both
+together.
 
 ## Docker
 
@@ -130,9 +180,7 @@ matches what the compose files already expose.
 To build against a different backend:
 
 ```bash
-docker build \
-  --build-arg VITE_API_BASE_URL=https://api.example.org/api \
-  --build-arg VITE_API_TOKEN=... .
+docker build --build-arg VITE_API_BASE_URL=https://api.example.org/api .
 ```
 
 The root `docker-compose.yml` builds the `dev` target and bind-mounts the

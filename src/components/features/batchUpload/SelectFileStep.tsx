@@ -1,56 +1,30 @@
-import { useState } from 'react';
-import { Box, Typography, Grid, Card, Button, TextField, Divider, useTheme } from '@mui/material';
-import {
-  Download as DownloadIcon,
-  CheckCircle as CheckCircleIcon,
-  TableChart as TableChartIcon,
-  ContentPaste as ContentPasteIcon,
-} from '@mui/icons-material';
+import { useEffect, useRef, useState } from 'react';
+import { Box, Typography, Button, TextField, Divider, useTheme } from '@mui/material';
+import { Download as DownloadIcon, ContentPaste as ContentPasteIcon } from '@mui/icons-material';
 import { useUploadWizard } from './uploadWizardContext';
 import { notify } from '../../../stores';
 import { isTabularPaste } from '../../../utils/tabularPaste';
 import { radii, typography } from '../../../styles/tokens';
-import { dropZone, fieldLabel, selectableTile, warningBadge } from '../../../styles/mixins';
-
-/** The sample spreadsheets offered on this step, each exercising a different mess. */
-const DEMO_FILES = [
-  {
-    name: 'Klausur_DBS_WS2425.xlsx',
-    description: 'Single "Name" column (Last, First). Fachsemester given as a plain integer.',
-    columns: 'Matrikelnr - Name - Studiengang - Fachsemester - Note',
-    issues: 'name not split · format issues',
-  },
-  {
-    name: 'results_export.csv',
-    description: 'Names already split, a percentage slipped into one grade.',
-    columns: 'MatrNr - Vorname - Nachname - Program - Fachsemester - Grade',
-    issues: 'invalid grade value',
-  },
-  {
-    name: 'ExamPoints-example.xlsx',
-    description:
-      'Real exam-points export — per-question point columns and no Fachsemester column, so that required field stays empty.',
-    columns:
-      'Matrikelnr. - Last Name - First Name - Study Program - 1a - 1b - 2a - 2b - 3a - 3b - 4a - 4b - Points - Grade - Attended - Publish - Attest - Notes',
-    issues: 'missing required columns · extra point columns',
-  },
-] as const;
+import { dropZone, fieldLabel } from '../../../styles/mixins';
 
 export const SelectFileStep = () => {
-  const {
-    file,
-    setFile,
-    paste,
-    setPaste,
-    demoFile: selectedDemoFile,
-    setDemoFile: setSelectedDemoFile,
-    setStep: setActiveStep,
-  } = useUploadWizard();
+  const { file, setFile, paste, setPaste, setStep: setActiveStep } = useUploadWizard();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const theme = useTheme();
-  const brandColor = theme.palette.primary.main;
   const hasPaste = Boolean(paste.trim());
   const [pasteError, setPasteError] = useState<string | null>(null);
+
+  // Browsers skip change when the same filename is picked again. Clear after
+  // each selection (and when the wizard resets) so identical names can be uploaded.
+  useEffect(() => {
+    if (!file && fileInputRef.current) fileInputRef.current.value = '';
+  }, [file]);
+
+  const acceptFile = (next: File | null) => {
+    setFile(next);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const continueToCourse = () => {
     if (file) {
@@ -89,17 +63,16 @@ export const SelectFileStep = () => {
         onDrop={(e) => {
           e.preventDefault();
           const droppedFile = e.dataTransfer.files?.[0];
-          if (droppedFile) {
-            setFile(droppedFile);
-          }
+          if (droppedFile) acceptFile(droppedFile);
         }}
       >
         <input
+          ref={fileInputRef}
           accept=".xlsx, .xls, .csv, .tsv, .ods"
           style={{ display: 'none' }}
           id="excel-upload-file"
           type="file"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          onChange={(e) => acceptFile(e.target.files?.[0] ?? null)}
         />
         <label
           htmlFor="excel-upload-file"
@@ -183,54 +156,6 @@ export const SelectFileStep = () => {
           }}
         />
       </Box>
-
-      <Typography variant="overline" sx={{ ...fieldLabel, mb: 2 }}>
-        DEMO FILES - PICK ONE TO SIMULATE AN UPLOAD
-      </Typography>
-
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {DEMO_FILES.map((demo) => {
-          const selected = selectedDemoFile === demo.name;
-          return (
-            <Grid item xs={12} md={4} key={demo.name}>
-              <Card
-                variant="outlined"
-                onClick={() => setSelectedDemoFile(demo.name)}
-                sx={{ ...selectableTile(selected, brandColor), p: 2, height: '100%' }}
-              >
-                {selected && (
-                  <CheckCircleIcon
-                    color="primary"
-                    sx={{ position: 'absolute', top: 16, right: 16 }}
-                  />
-                )}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <TableChartIcon sx={{ color: 'grey.600', mr: 1 }} />
-                  <Typography variant="subtitle1" fontWeight="700">
-                    {demo.name}
-                  </Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {demo.description}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: 'grey.500',
-                    display: 'block',
-                    mb: 2,
-                    fontFamily: typography.mono,
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {demo.columns}
-                </Typography>
-                <Box sx={warningBadge}>{demo.issues}</Box>
-              </Card>
-            </Grid>
-          );
-        })}
-      </Grid>
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 'auto', pt: 2 }}>
         <Button variant="contained" size="large" onClick={continueToCourse} sx={{ px: 4 }}>

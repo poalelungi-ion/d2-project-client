@@ -24,7 +24,7 @@ const COLUMN_MAPPINGS = [
   },
   {
     source: 'Studiengang',
-    example: 'e.g. B.Sc. AINF',
+    example: 'e.g. SE Master',
     target: 'Study program',
     status: 'Mapped',
     tone: semantic.success,

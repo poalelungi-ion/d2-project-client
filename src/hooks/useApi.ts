@@ -39,7 +39,12 @@ import type {
   UploadPreviewResponse,
 } from '../types';
 import { notify } from '../stores';
-import { withoutIgnoredColumns } from '../utils/gradeOutcome';
+import {
+  GRADE_CONSTRAINT_MESSAGE,
+  gradeSaveValue,
+  parseGradeInput,
+  withoutIgnoredColumns,
+} from '../utils/gradeOutcome';
 
 const EMPTY_STATS: Stats = { kpis: {}, toughest_courses: [], atRisk: [] };
 
@@ -68,7 +73,6 @@ export function useCourses() {
   const [loading, setLoading] = useState(true);
 
   const refetch = useCallback(async () => {
-    setLoading(true);
     try {
       const res = await listCourses();
       setCourses((await res.json()) as Course[]);
@@ -266,7 +270,7 @@ async function archiveCourse(
 
 async function loadTranscript(studentId: number): Promise<TranscriptEntry[]> {
   try {
-    const res = await getStudent(studentId, { auth: true });
+    const res = await getStudent(studentId);
     if (res.ok) {
       const data = (await res.json()) as StudentDetails;
       return data.transcript || [];
@@ -277,11 +281,30 @@ async function loadTranscript(studentId: number): Promise<TranscriptEntry[]> {
   return [];
 }
 
-async function saveTranscript(rows: TranscriptEntry[]): Promise<TranscriptSaveResult> {
+async function saveTranscript(
+  rows: Array<{
+    result_id: number;
+    version: number;
+    grade: number | null;
+    absence_code?: string | null;
+  }>,
+): Promise<TranscriptSaveResult> {
+  const payload: Array<{ result_id: number; version: number; grade: number | string }> = [];
+  for (const row of rows) {
+    const value = gradeSaveValue(row);
+    if (value == null || !parseGradeInput(value).ok) {
+      notify(GRADE_CONSTRAINT_MESSAGE, 'error');
+      return { saved: false, shouldRefresh: false };
+    }
+    payload.push({
+      result_id: row.result_id,
+      version: row.version,
+      grade: value,
+    });
+  }
+
   try {
-    // Excused sittings have no numeric grade; the system keeps them unless
-    // the lecturer types a mark over the AT placeholder.
-    const res = await saveGrades(rows.filter((row) => row.grade != null));
+    const res = await saveGrades(payload);
     if (res.ok) {
       notify('Database updated successfully!');
       return { saved: true, shouldRefresh: true };
@@ -365,10 +388,16 @@ async function previewImport(
   return null;
 }
 
+export interface ConfirmImportResult {
+  success: boolean;
+  courseId?: number;
+  message?: string;
+}
+
 async function confirmImport(
   courseInfo: UploadCourseInfo,
   records: PreviewRecord[],
-): Promise<boolean> {
+): Promise<ConfirmImportResult> {
   try {
     const res = await confirmUpload({
       // Non-null when the upload started inside a course: the backend then
@@ -383,14 +412,20 @@ async function confirmImport(
     });
     const data = (await res.json()) as UploadConfirmResponse;
     if (res.ok) {
-      notify(data.message ?? 'Upload successful!');
-      return true;
+      const message = data.message ?? 'Upload successful!';
+      notify(message);
+      const parsedNum = courseInfo.courseNumber ? parseInt(courseInfo.courseNumber, 10) : undefined;
+      const courseId =
+        data.course_id ??
+        courseInfo.courseId ??
+        (parsedNum != null && !isNaN(parsedNum) ? parsedNum : undefined);
+      return { success: true, courseId, message };
     }
     notify(`Error: ${data.detail}`, 'error');
   } catch {
     notify('Network error', 'error');
   }
-  return false;
+  return { success: false };
 }
 
 const MUTATIONS = {

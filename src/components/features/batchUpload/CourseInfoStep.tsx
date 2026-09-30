@@ -37,7 +37,6 @@ export const CourseInfoStep = () => {
   const {
     sourceLabel,
     courseInfo: uploadCourseInfo,
-    courseLocked,
     setCourseInfo: setUploadCourseInfo,
     setStep: setActiveStep,
   } = useUploadWizard();
@@ -59,24 +58,11 @@ export const CourseInfoStep = () => {
       >
         A table is always for one course and one semester &mdash; that can&apos;t
         vary within one import.{' '}
-        {courseLocked ? (
-          <>
-            The course is already settled below; tell us which semester and
-            sitting{' '}
-            <Box component="span" sx={{ ...monoChip, px: 1 }}>
-              {sourceLabel}
-            </Box>{' '}
-            covers.
-          </>
-        ) : (
-          <>
-            Tell us which one{' '}
-            <Box component="span" sx={{ ...monoChip, px: 1 }}>
-              {sourceLabel}
-            </Box>{' '}
-            is for.
-          </>
-        )}
+        The course is already settled below; tell us which semester and sitting{' '}
+        <Box component="span" sx={{ ...monoChip, px: 1 }}>
+          {sourceLabel}
+        </Box>{' '}
+        covers.
       </Typography>
 
       <Box
@@ -87,90 +73,52 @@ export const CourseInfoStep = () => {
           maxWidth: 600,
         }}
       >
-        {courseLocked ? (
-          <Box>
-            <Typography variant="overline" sx={fieldLabel}>
-              COURSE
+        <Box>
+          <Typography variant="overline" sx={fieldLabel}>
+            COURSE
+          </Typography>
+
+          <Box
+            sx={{
+              ...toneSurface(semantic.success),
+              p: 2,
+              borderRadius: radii.lg,
+            }}
+          >
+            <Typography variant="subtitle1" fontWeight={700}>
+              {uploadCourseInfo.courseName}
             </Typography>
-
-            <Box
-              sx={{
-                ...toneSurface(semantic.success),
-                p: 2,
-                borderRadius: radii.lg,
-              }}
-            >
-              <Typography variant="subtitle1" fontWeight={700}>
-                {uploadCourseInfo.courseName}
-              </Typography>
-
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  mt: 0.5,
-                }}
-              >
-                Course number
-                <Box component="span" sx={{ ...monoChip, px: 1 }}>
-                  {uploadCourseInfo.courseNumber}
-                </Box>
-              </Typography>
-            </Box>
 
             <Typography
-              variant="caption"
+              variant="body2"
               color="text.secondary"
               sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
                 mt: 0.5,
-                display: 'block',
               }}
             >
-              Taken from the course you started this upload in and attached to
-              every row, so there is nothing to type. A course or course-number
-              column in the file is ignored.
+              Course number
+              <Box component="span" sx={{ ...monoChip, px: 1 }}>
+                {uploadCourseInfo.courseNumber}
+              </Box>
             </Typography>
           </Box>
-        ) : (
-          <>
-            <Box>
-              <Typography variant="overline" sx={fieldLabel}>
-                COURSE NUMBER
-              </Typography>
 
-              <TextField
-                fullWidth
-                variant="outlined"
-                value={uploadCourseInfo.courseNumber}
-                onChange={(e) =>
-                  setUploadCourseInfo({
-                    courseNumber: e.target.value,
-                  })
-                }
-              />
-            </Box>
-
-            <Box>
-              <Typography variant="overline" sx={fieldLabel}>
-                COURSE NAME
-              </Typography>
-
-              <TextField
-                fullWidth
-                variant="outlined"
-                value={uploadCourseInfo.courseName}
-                onChange={(e) =>
-                  setUploadCourseInfo({
-                    courseName: e.target.value,
-                  })
-                }
-              />
-            </Box>
-          </>
-        )}
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              mt: 0.5,
+              display: 'block',
+            }}
+          >
+            Taken from the course you started this upload in and attached to
+            every row, so there is nothing to type. A course or course-number
+            column in the file is ignored.
+          </Typography>
+        </Box>
 
         <Box>
           <Typography variant="overline" sx={fieldLabel}>
@@ -196,9 +144,8 @@ export const CourseInfoStep = () => {
               display: 'block',
             }}
           >
-            {courseLocked
-              ? 'Recorded with the import. The course itself is fixed by the tab you came from, so the credits here never split it into a second course.'
-              : 'Same course number but different credits (e.g. 6 vs 8) counts as a separate course instance.'}
+            Recorded with the import. The course itself is fixed by the tab you
+            came from, so the credits here never split it into a second course.
           </Typography>
         </Box>
 
@@ -312,17 +259,17 @@ export const CourseInfoStep = () => {
         </Button>
 
         <Button
-  variant="contained"
-  size="large"
-  disabled={
-    !uploadCourseInfo.semester ||
-    !isValidSemester(uploadCourseInfo.semester)
-  }
-  onClick={() => setActiveStep(2)}
-  sx={{ px: 4 }}
->
-  Continue &rarr;
-</Button>
+          variant="contained"
+          size="large"
+          disabled={
+            !uploadCourseInfo.semester ||
+            !isValidSemester(uploadCourseInfo.semester)
+          }
+          onClick={() => setActiveStep(2)}
+          sx={{ px: 4 }}
+        >
+          Continue &rarr;
+        </Button>
       </Box>
     </Box>
   );

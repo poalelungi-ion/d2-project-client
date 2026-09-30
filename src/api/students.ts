@@ -34,18 +34,16 @@ export interface AddGradePayload {
 export const listStudents = (): Promise<Response> => get('/students/');
 
 /** Full profile including the transcript. */
-export const getStudent = (
-  studentId: number,
-  { auth = false }: { auth?: boolean } = {},
-): Promise<Response> => get(`/students/${studentId}`, { auth });
+export const getStudent = (studentId: number): Promise<Response> =>
+  get(`/students/${studentId}`);
 
 export const createStudent = (student: StudentCreatePayload): Promise<Response> =>
-  post('/students/', student, { auth: true });
+  post('/students/', student);
 
 export const updateStudent = (
   studentId: number | string,
   student: StudentUpdatePayload,
-): Promise<Response> => put(`/students/${studentId}`, student, { auth: true });
+): Promise<Response> => put(`/students/${studentId}`, student);
 
 export const updateStudentStatus = (
   studentId: number,

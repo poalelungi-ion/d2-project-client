@@ -11,6 +11,7 @@ import {
 
 import type { Course, CourseFormErrors, CourseFormValues } from '../../types';
 import { useApiMutations } from '../../hooks/useApi';
+import { StudyProgramSelect } from './StudyProgramSelect';
 import {
   generateSemesters,
   getCurrentSemester,
@@ -21,8 +22,8 @@ interface CourseFormDialogProps {
   /** The course being edited, or null to create a new one. */
   course: Course | null;
   onClose: () => void;
-  /** Called after a successful save so the caller can reload its list. */
-  onSaved: () => void;
+  /** Called after a successful save so the caller can reload. Receives the id that was saved. */
+  onSaved: (savedCourseId: string) => void;
 }
 
 const SEMESTERS = generateSemesters();
@@ -79,8 +80,8 @@ const validate = (values: CourseFormValues): CourseFormErrors => {
 };
 
 /**
- * Mounted by CoursesAdmin only while open, so the field values below start
- * fresh on every open without needing a reset effect.
+ * Fresh field values on every open: the parent unmounts this dialog when it
+ * closes, so there is no reset effect.
  */
 export function CourseFormDialog({
   course,
@@ -90,7 +91,7 @@ export function CourseFormDialog({
   const { saveCourse } = useApiMutations();
 
   const [values, setValues] = useState<CourseFormValues>(() =>
-    toFormValues(course)
+    toFormValues(course),
   );
 
   const [errors, setErrors] = useState<CourseFormErrors>({});
@@ -109,7 +110,7 @@ export function CourseFormDialog({
     if (Object.keys(found).length > 0) return;
 
     if (await saveCourse(values, course?.version)) {
-      onSaved();
+      onSaved(values.course_id.trim());
       onClose();
     }
   };
@@ -189,14 +190,9 @@ export function CourseFormDialog({
           }}
         />
 
-        <TextField
-          margin="dense"
-          label="Study Program"
-          type="text"
-          fullWidth
-          variant="outlined"
+        <StudyProgramSelect
           value={values.study_program}
-          onChange={(e) => update({ study_program: e.target.value })}
+          onChange={(study_program) => update({ study_program })}
           error={!!errors.study_program}
           helperText={errors.study_program}
           sx={{ mb: 2 }}
