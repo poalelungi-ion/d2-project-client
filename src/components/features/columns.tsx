@@ -1,8 +1,8 @@
 import { IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
-import type { Course, Student, StudentStatus, TranscriptEntry } from '../../types';
-import { gradeOutcomeColor, passRateColor, studentStatusColor } from '../../styles/colors';
+import type { Course, Student, TranscriptEntry } from '../../types';
+import { gradeOutcomeColor, passRateColor } from '../../styles/colors';
 import { formatGrade, outcomeLabel } from '../../utils/gradeOutcome';
 import { compareSemesters } from '../../utils/semester';
 
