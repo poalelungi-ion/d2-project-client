@@ -1,8 +1,8 @@
 import { IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
-import type { Course, Student, StudentStatus, TranscriptEntry } from '../../types';
-import { gradeOutcomeColor, passRateColor, studentStatusColor } from '../../styles/colors';
+import type { Course, Student, TranscriptEntry } from '../../types';
+import { gradeOutcomeColor, passRateColor } from '../../styles/colors';
 import { formatGrade, outcomeLabel } from '../../utils/gradeOutcome';
 import { compareSemesters } from '../../utils/semester';
 
@@ -51,21 +51,6 @@ export const studentColumns = (onEdit: (student: Student) => void): ColDef<Stude
   { field: 'program', headerName: 'Study Program', flex: 2 },
   { field: 'total_exams', headerName: 'Exams Taken', flex: 1 },
   { field: 'avg_grade', headerName: 'Avg Grade', flex: 1 },
-  {
-    field: 'status',
-    headerName: 'Status',
-    flex: 1,
-    cellRenderer: (params: ICellRendererParams<Student, StudentStatus>) => (
-      <span
-        style={{
-          color: params.value ? studentStatusColor(params.value) : 'inherit',
-          fontWeight: 'bold',
-        }}
-      >
-        {params.value?.toUpperCase()}
-      </span>
-    ),
-  },
   { ...editAction(onEdit), flex: 1 },
 ];
 
