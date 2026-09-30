@@ -14,7 +14,7 @@ export default tseslint.config(
       globals: globals.browser,
       parserOptions: {
         // Type-aware linting: the rules below need the same program tsc builds.
-        project: ['./tsconfig.app.json', './tsconfig.node.json'],
+        project: ['./tsconfig.app.json', './tsconfig.node.json', './tsconfig.e2e.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -32,5 +32,16 @@ export default tseslint.config(
     // The config file itself is linted without type information.
     files: ['eslint.config.js'],
     extends: [tseslint.configs.disableTypeChecked],
+  },
+  {
+    // Playwright fixtures are not React. Its `use(value)` callback trips the
+    // rules-of-hooks check, and a fixture that depends on nothing still has to
+    // declare an empty destructuring pattern for Playwright to read.
+    files: ['tests/e2e/**/*.ts', 'playwright.config.ts'],
+    languageOptions: { globals: globals.node },
+    rules: {
+      'react-hooks/rules-of-hooks': 'off',
+      'no-empty-pattern': 'off',
+    },
   },
 );

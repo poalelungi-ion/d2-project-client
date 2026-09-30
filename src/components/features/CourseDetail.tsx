@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Box, Fade } from '@mui/material';
+import { Box, Fade, Paper, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import type { Course, CourseMark, TranscriptEntry } from '../../types';
 import { ROUTES } from '../../app/navigation';
@@ -8,15 +8,20 @@ import { CourseFormDialog } from '../forms/CourseFormDialog';
 import {
   ALL_EXAMS,
   ALL_SEMESTERS,
+  EMPTY_SELECTION,
   examsOf,
   filterLabel,
   filterMarks,
   semestersOf,
   summariseMarks,
 } from '../../utils/courseMarks';
+import type { ExamSelection } from '../../utils/courseMarks';
 import { CourseAnalytics } from './courseDetail/CourseAnalytics';
+import { CourseFilterBar } from './courseDetail/CourseFilterBar';
+import type { ComparePair, CompareSide, CourseViewMode } from './courseDetail/CourseFilterBar';
 import { CourseHeader } from './courseDetail/CourseHeader';
 import { CourseMarksTable } from './courseDetail/CourseMarksTable';
+import { ExamComparison } from './courseDetail/ExamComparison';
 import { ImportSuccessBanner } from './courseDetail/ImportSuccessBanner';
 
 interface CourseDetailProps {
@@ -44,11 +49,19 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
   const [semesterFilter, setSemesterFilter] = useState<string>(ALL_SEMESTERS);
   const [examFilter, setExamFilter] = useState<string>(ALL_EXAMS);
 
-  const allMarks = useMemo(() => course.marks ?? [], [course.marks]);
-  const semesterOptions = useMemo(() => semestersOf(allMarks), [allMarks]);
+  // Comparison mode is a second reading of the same course, not a second
+  // filter: it names two sittings of its own and leaves the one above alone,
+  // so returning to the single view lands back where the lecturer left it.
+  const [mode, setMode] = useState<CourseViewMode>('single');
+  const [compare, setCompare] = useState<ComparePair>({
+    left: EMPTY_SELECTION,
+    right: EMPTY_SELECTION,
+  });
 
-  // Sittings available inside the chosen semester. Two or more means the
-  // lecturer can narrow further; one means there is nothing to choose between.
+  const allMarks = useMemo(() => course.marks ?? [], [course.marks]);
+  // Derived once here rather than in each of the two places the filter is
+  // drawn, so both copies of the control offer exactly the same choices.
+  const semesterOptions = useMemo(() => semestersOf(allMarks), [allMarks]);
   const examOptions = useMemo(
     () => (semesterFilter === ALL_SEMESTERS ? [] : examsOf(allMarks, semesterFilter)),
     [allMarks, semesterFilter],
@@ -63,12 +76,17 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
   // every semester at once, so they would contradict a filtered table.
   const summary = useMemo(() => summariseMarks(marks), [marks]);
   const activeFilter = filterLabel(semesterFilter, examFilter);
+  const hasSubmissions = course.total_attempts > 0;
 
   const selectSemester = (value: string) => {
     setSemesterFilter(value);
     // "Exam 2" in one semester is a different sitting from "Exam 2" in the
     // next, and may not exist there at all, so the choice does not carry over.
     setExamFilter(ALL_EXAMS);
+  };
+
+  const selectCompare = (side: CompareSide, selection: ExamSelection) => {
+    setCompare((current) => ({ ...current, [side]: selection }));
   };
 
   const selectAnalyticsStudent = (mark: CourseMark) => {
@@ -109,21 +127,52 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
           onEdit={() => setEditing(true)}
           onBack={returnToList}
         />
-        <CourseAnalytics
-          marks={marks}
+        <CourseFilterBar
           allMarks={allMarks}
-          student={analyticsStudent}
-          studentTranscript={analyticsStudentTranscript}
+          semesterOptions={semesterOptions}
+          examOptions={examOptions}
+          mode={mode}
+          onSelectMode={setMode}
+          semesterFilter={semesterFilter}
+          examFilter={examFilter}
+          onSelectSemester={selectSemester}
+          onSelectExam={setExamFilter}
+          compare={compare}
+          onSelectCompare={selectCompare}
         />
+        {hasSubmissions ? (
+          mode === 'single' ? (
+            <CourseAnalytics
+              marks={marks}
+              allMarks={allMarks}
+              student={analyticsStudent}
+              studentTranscript={analyticsStudentTranscript}
+            />
+          ) : (
+            <ExamComparison allMarks={allMarks} left={compare.left} right={compare.right} />
+          )
+        ) : (
+          <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+            <Typography variant="h6" fontWeight="700" mb={0.5}>
+              No submissions yet
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Upload exam data to see the pass rate, grade distribution and other statistics.
+            </Typography>
+          </Paper>
+        )}
+        {/* The table carries its own copy of the filter and stays on it in
+            either mode: comparing is a reading of the course, not a change to
+            the roster. */}
         <CourseMarksTable
           marks={marks}
           semesterOptions={semesterOptions}
           examOptions={examOptions}
           semesterFilter={semesterFilter}
           examFilter={examFilter}
-          activeFilter={activeFilter}
           onSelectSemester={selectSemester}
           onSelectExam={setExamFilter}
+          activeFilter={activeFilter}
           onSelectStudent={selectAnalyticsStudent}
           onRefresh={onRefresh}
         />

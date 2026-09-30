@@ -248,3 +248,69 @@ export function attemptsBySemester(marks: readonly CourseMark[]): SemesterAttemp
   }
   return [...bySemester.values()].sort((a, b) => compareSemesters(a.semester, b.semester));
 }
+
+export interface ExamSelection {
+  /** Empty until a semester is chosen. There is no "all semesters" here. */
+  semester: string;
+  /** ALL_EXAMS means the whole semester, retakes included. */
+  exam: string;
+}
+
+export const EMPTY_SELECTION: ExamSelection = { semester: '', exam: ALL_EXAMS };
+
+/** The marks one side covers. Empty while its semester is unchosen. */
+export function marksOfSelection(
+  marks: readonly CourseMark[],
+  selection: ExamSelection,
+): CourseMark[] {
+  if (!selection.semester) return [];
+  return filterMarks(marks, selection.semester, selection.exam);
+}
+
+/** "SOSE_25" or "SOSE_25 · Exam 2", or null while nothing is chosen. */
+export function selectionLabel(selection: ExamSelection): string | null {
+  if (!selection.semester) return null;
+  return filterLabel(selection.semester, selection.exam);
+}
+
+export function isSameSelection(a: ExamSelection, b: ExamSelection): boolean {
+  return a.semester === b.semester && a.exam === b.exam;
+}
+
+/**
+ * How many distinct sittings this course has held, counting a semester's
+ * retake separately. Below two there is nothing to compare, and the whole
+ * comparison mode stays off the screen.
+ */
+export function sittingCount(marks: readonly CourseMark[]): number {
+  const sittings = new Set<string>();
+  for (const mark of marks) {
+    if (mark.semester) sittings.add(`${mark.semester}::${examOf(mark)}`);
+  }
+  return sittings.size;
+}
+
+/**
+ * The grades awarded in either of two sittings, best first.
+ *
+ * Two histograms drawn over their own grades are not comparable -- a 4.0 sits
+ * in a different place on each axis, and a grade missing from one exam simply
+ * vanishes rather than reading as zero. Both charts are drawn over this list
+ * instead, so the bars line up.
+ */
+export function sharedGrades(
+  left: readonly GradeBucket[],
+  right: readonly GradeBucket[],
+): string[] {
+  const grades = new Set([...left, ...right].map((bucket) => bucket.grade));
+  return [...grades].sort((a, b) => parseFloat(a) - parseFloat(b));
+}
+
+/** Pads a distribution with zeroes so it covers every grade in `grades`. */
+export function alignDistribution(
+  buckets: readonly GradeBucket[],
+  grades: readonly string[],
+): GradeBucket[] {
+  const counts = new Map(buckets.map((bucket) => [bucket.grade, bucket.count]));
+  return grades.map((grade) => ({ grade, count: counts.get(grade) ?? 0 }));
+}

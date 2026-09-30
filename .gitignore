@@ -38,3 +38,9 @@ vitest-results.json
 /coverage.xml
 /coverage.json
 .coverage
+
+# Playwright
+playwright-report/
+test-results/
+playwright-results.json
+e2e-junit.xml
