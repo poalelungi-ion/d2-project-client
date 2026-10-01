@@ -36,8 +36,15 @@ unit_tests() {
   COVERAGE_FLOOR="$coverage_floor" npm run test:summary
 }
 
+# The e2e job's build step. Its `tsc -b` covers src/, the e2e specs and the
+# config files, with noUnusedLocals/noUnusedParameters on, so this is what
+# catches unused variables -- the complexity job's ESLint run doesn't gate on them.
+build() {
+  npm run build:e2e
+}
+
 failed=()
-for gate in lockfile duplication complexity unit_tests; do
+for gate in lockfile duplication complexity unit_tests build; do
   printf '%-12s ' "$gate"
   if ESLINT_CODE_QUALITY_REPORT=gl-code-quality-report.json "$gate" > "$gate.log" 2>&1; then
     echo "passed"
