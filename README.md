@@ -196,3 +196,13 @@ npm run test:watch
 
 `src/api/client.test.ts` covers the contract with the backend: the URL each
 call builds, its method, and whether it carries the bearer token.
+
+### Pre-commit hook
+
+`.githooks/pre-commit` runs the pipeline's `quality` jobs (duplication,
+complexity, unit tests) with the same commands and coverage floor, plus the
+lockfile check `npm ci` makes and the e2e job's `npm run build:e2e`. That build
+type-checks with `noUnusedLocals`/`noUnusedParameters` on, so it catches
+unused variables. `npm install` enables it. It checks the staged files only,
+so unstaged edits can't make it pass. It doesn't run the e2e tests themselves
+or the approval check. Skip it once with `git commit --no-verify`.
