@@ -3,7 +3,6 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import App from './App';
 import { ROUTES } from './navigation';
 import { GuestOnly, RequireAuth, SessionGate } from './SessionGate';
-import { Dashboard } from '../routes/Dashboard';
 import { BatchUpload } from '../routes/BatchUpload';
 import { Courses } from '../routes/Courses';
 import { CourseDetail } from '../routes/CourseDetail';
@@ -37,8 +36,7 @@ export const routes = [
           {
             element: <App />,
             children: [
-              { index: true, element: <Navigate to={ROUTES.dashboard} replace /> },
-              { path: 'dashboard', element: <Dashboard /> },
+              { index: true, element: <Navigate to={ROUTES.courses} replace /> },
               { path: 'upload', element: <BatchUpload /> },
               { path: 'courses', element: <Courses /> },
               { path: 'courses/:courseId', element: <CourseDetail /> },

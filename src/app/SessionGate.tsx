@@ -43,7 +43,7 @@ export function RequireAuth() {
 
   if (!user) {
     // Remember the destination so signing in lands where the user was headed
-    // rather than dumping everyone on the dashboard.
+    // rather than dumping everyone on the courses page.
     return <Navigate to={ROUTES.login} replace state={{ from: location.pathname + location.search }} />;
   }
   return <Outlet />;
@@ -52,6 +52,6 @@ export function RequireAuth() {
 /** Keeps a signed-in user off the login and registration screens. */
 export function GuestOnly() {
   const user = useAuthStore((s) => s.user);
-  if (user) return <Navigate to={ROUTES.dashboard} replace />;
+  if (user) return <Navigate to={ROUTES.courses} replace />;
   return <Outlet />;
 }

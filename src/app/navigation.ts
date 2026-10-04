@@ -1,4 +1,3 @@
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import SchoolIcon from '@mui/icons-material/School';
 import PersonIcon from '@mui/icons-material/Person';
 import type { SvgIconComponent } from '@mui/icons-material';
@@ -6,7 +5,6 @@ import type { SvgIconComponent } from '@mui/icons-material';
 export const ROUTES = {
   login: '/login',
   register: '/register',
-  dashboard: '/dashboard',
   upload: '/upload',
   courses: '/courses',
   courseDetail: (courseId: number | string) => `/courses/${courseId}`,
@@ -22,7 +20,6 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: readonly NavItem[] = [
-  { label: 'Dashboard', path: ROUTES.dashboard, icon: DashboardIcon },
   { label: 'Courses', path: ROUTES.courses, icon: SchoolIcon },
   { label: 'Students', path: ROUTES.students, icon: PersonIcon },
 ];

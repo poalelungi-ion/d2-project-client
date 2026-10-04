@@ -5,7 +5,6 @@ import {
   createCourse,
   createStudent,
   errorDetail,
-  getStats,
   getStudent,
   listCourses,
   listStudents,
@@ -28,7 +27,6 @@ import type {
   CourseFormValues,
   NameSplitRule,
   PreviewRecord,
-  Stats,
   Student,
   StudentDetails,
   StudentFormValues,
@@ -45,8 +43,6 @@ import {
   parseGradeInput,
   withoutIgnoredColumns,
 } from '../utils/gradeOutcome';
-
-const EMPTY_STATS: Stats = { kpis: {}, toughest_courses: [], atRisk: [] };
 
 const COLUMN_MAPPING: Record<string, string> = {
   Name: 'name',
@@ -111,29 +107,6 @@ export function useStudents() {
   }, [refetch]);
 
   return { students, loading, refetch };
-}
-
-export function useStats() {
-  const [stats, setStats] = useState<Stats>(EMPTY_STATS);
-  const [loading, setLoading] = useState(true);
-
-  const refetch = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await getStats();
-      setStats((await res.json()) as Stats);
-    } catch (e) {
-      console.error('Failed to load stats', e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refetch();
-  }, [refetch]);
-
-  return { stats, loading, refetch };
 }
 
 export function useStudentDetails(studentId: number | null) {
