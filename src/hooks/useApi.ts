@@ -144,7 +144,6 @@ async function saveCourse(values: CourseFormValues, version?: number): Promise<b
     course_id: values.course_id,
     course_name: values.course_name,
     semester: values.semester,
-    study_program: values.study_program,
     professor: values.professor || 'Not Assigned',
   };
 

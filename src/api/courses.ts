@@ -5,7 +5,7 @@ export interface CourseCreatePayload {
   course_id: number | string;
   course_name: string;
   semester: string;
-  study_program: string;
+  study_program?: string | null;
   professor: string;
 }
 
