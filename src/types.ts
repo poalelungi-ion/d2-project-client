@@ -208,7 +208,6 @@ export interface CourseFormValues {
   course_id: string;
   course_name: string;
   semester: string;
-  study_program: string;
   professor: string;
 }
 

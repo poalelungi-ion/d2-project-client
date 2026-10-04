@@ -11,7 +11,6 @@ import {
 
 import type { Course, CourseFormErrors, CourseFormValues } from '../../types';
 import { useApiMutations } from '../../hooks/useApi';
-import { StudyProgramSelect } from './StudyProgramSelect';
 import {
   generateSemesters,
   getCurrentSemester,
@@ -38,7 +37,6 @@ const EMPTY_FORM: CourseFormValues = {
   course_id: '',
   course_name: '',
   semester: '',
-  study_program: '',
   professor: '',
 };
 
@@ -48,7 +46,6 @@ const toFormValues = (course: Course | null): CourseFormValues =>
         course_id: course.course_id?.toString() ?? '',
         course_name: course.course_name || '',
         semester: course.semester || '',
-        study_program: course.study_program || '',
         professor: course.assigned_professor || '',
       }
     : EMPTY_FORM;
@@ -70,10 +67,6 @@ const validate = (values: CourseFormValues): CourseFormErrors => {
     errors.semester = 'Please select a valid semester';
   } else if (!SEMESTER_OPTIONS.includes(values.semester)) {
     errors.semester = 'Future semesters cannot be selected';
-  }
-
-  if (!values.study_program.trim()) {
-    errors.study_program = 'Study Program is mandatory';
   }
 
   return errors;
@@ -188,14 +181,6 @@ export function CourseFormDialog({
               },
             },
           }}
-        />
-
-        <StudyProgramSelect
-          value={values.study_program}
-          onChange={(study_program) => update({ study_program })}
-          error={!!errors.study_program}
-          helperText={errors.study_program}
-          sx={{ mb: 2 }}
         />
 
         <TextField
