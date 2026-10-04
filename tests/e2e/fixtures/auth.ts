@@ -57,7 +57,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
       await page.goto('/login');
       await fillCredentials(page, account.email, account.password);
       await page.getByRole('button', { name: 'Sign in' }).click();
-      await expect(page).toHaveURL(/\/dashboard$/);
+      await expect(page).toHaveURL(/\/courses$/);
     });
   },
 });

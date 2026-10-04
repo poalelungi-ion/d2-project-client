@@ -4,15 +4,15 @@ import { expect, fillCredentials, test } from '../fixtures/auth';
  * Authentication, end to end.
  */
 
-const DASHBOARD = /\/dashboard$/;
+const COURSES = /\/courses$/;
 const LOGIN = /\/login$/;
 
 test.describe('signing in', () => {
-  test('valid credentials reach the dashboard', async ({ page, account, signIn }) => {
+  test('valid credentials reach courses', async ({ page, account, signIn }) => {
     await signIn(page);
 
-    await expect(page).toHaveURL(DASHBOARD);
-    await expect(page.getByRole('heading', { name: /Welcome back/ })).toBeVisible();
+    await expect(page).toHaveURL(COURSES);
+    await expect(page.getByRole('heading', { name: /Analysis Hub/ })).toBeVisible();
     // Proves the session belongs to this account rather than merely existing.
     await page.getByRole('button', { name: 'Account menu' }).click();
     await expect(page.getByText(account.email)).toBeVisible();
@@ -45,7 +45,7 @@ test.describe('signing in', () => {
 test.describe('registering', () => {
   test('a new university account lands signed in', async ({ page }) => {
     // authStore.register() calls login() with the same credentials on success,
-    // so a successful registration ends on the dashboard, not back at the form.
+    // so a successful registration ends on the courses page, not back at the form.
     const email = `e2e.signup.${Date.now().toString(36)}@uni-hildesheim.de`;
 
     await page.goto('/register');
@@ -55,8 +55,8 @@ test.describe('registering', () => {
     await page.getByLabel('Confirm password').fill('e2e-password-1234');
     await page.getByRole('button', { name: 'Create account' }).click();
 
-    await expect(page).toHaveURL(DASHBOARD);
-    await expect(page.getByRole('heading', { name: /Welcome back/ })).toBeVisible();
+    await expect(page).toHaveURL(COURSES);
+    await expect(page.getByRole('heading', { name: /Analysis Hub/ })).toBeVisible();
   });
 
   test('an address outside the university domain is rejected', async ({ page }) => {
@@ -98,7 +98,7 @@ test.describe('route guards', () => {
     await fillCredentials(page, account.email, account.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
 
-    // Back to the original destination, not the dashboard.
+    // Back to the original destination.
     await expect(page).toHaveURL(/\/courses$/);
   });
 
@@ -107,7 +107,7 @@ test.describe('route guards', () => {
 
     await page.goto('/login');
 
-    await expect(page).toHaveURL(DASHBOARD);
+    await expect(page).toHaveURL(COURSES);
   });
 });
 
@@ -119,8 +119,8 @@ test.describe('session lifetime', () => {
 
     // Nothing persists the access token, so surviving a reload proves the
     // refresh cookie was exchanged for a new session by SessionGate.
-    await expect(page).toHaveURL(DASHBOARD);
-    await expect(page.getByRole('heading', { name: /Welcome back/ })).toBeVisible();
+    await expect(page).toHaveURL(COURSES);
+    await expect(page.getByRole('heading', { name: /Analysis Hub/ })).toBeVisible();
   });
 
   test('the refresh token is httpOnly, path-scoped, and invisible to scripts', async ({
