@@ -5,6 +5,7 @@ import {
   createCourse,
   createStudent,
   errorDetail,
+  getCourse,
   getStudent,
   listCourses,
   listStudents,
@@ -71,9 +72,23 @@ export function useCourses() {
   const refetch = useCallback(async () => {
     try {
       const res = await listCourses();
+      if (res.status === 408 || res.status === 504) {
+        notify('Request timed out. Please refresh the page.', 'error');
+        return;
+      }
       setCourses((await res.json()) as Course[]);
-    } catch (e) {
-      console.error('Failed to load courses', e);
+    } catch (e: unknown) {
+      const err = e as { name?: string; message?: string };
+      if (
+        err?.name === 'TimeoutError' ||
+        err?.name === 'AbortError' ||
+        err?.message?.toLowerCase().includes('timeout') ||
+        err?.message?.toLowerCase().includes('timed out')
+      ) {
+        notify('Request timed out. Please refresh the page.', 'error');
+      } else {
+        console.error('Failed to load courses', e);
+      }
     } finally {
       setLoading(false);
     }
@@ -84,6 +99,58 @@ export function useCourses() {
   }, [refetch]);
 
   return { courses, loading, refetch };
+}
+
+export function useCourseDetails(courseId: number | string | null) {
+  const [course, setCourse] = useState<Course | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  const refetch = useCallback(async () => {
+    if (courseId === null || courseId === undefined || courseId === '') {
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setNotFound(false);
+    try {
+      const res = await getCourse(courseId);
+      if (res.status === 404) {
+        setNotFound(true);
+        setCourse(null);
+      } else if (res.status === 408 || res.status === 504) {
+        notify('Request timed out. Please refresh the page.', 'error');
+        setCourse(null);
+      } else if (res.ok) {
+        setCourse((await res.json()) as Course);
+      } else {
+        setCourse(null);
+      }
+    } catch (e: unknown) {
+      const err = e as { name?: string; message?: string };
+      if (
+        err?.name === 'TimeoutError' ||
+        err?.name === 'AbortError' ||
+        err?.message?.toLowerCase().includes('timeout') ||
+        err?.message?.toLowerCase().includes('timed out')
+      ) {
+        notify('Request timed out. Please refresh the page.', 'error');
+      } else {
+        console.error('Failed to load course details', e);
+      }
+      setCourse(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [courseId]);
+
+  useEffect(() => {
+    setCourse(null);
+    void refetch();
+  }, [refetch]);
+
+  return { course, loading, notFound, refetch };
 }
 
 export function useStudents() {

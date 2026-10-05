@@ -22,6 +22,9 @@ export interface CourseArchivePayload {
 
 export const listCourses = (): Promise<Response> => get('/courses/');
 
+export const getCourse = (courseId: number | string): Promise<Response> =>
+  get(`/courses/${courseId}`);
+
 export const createCourse = (course: CourseCreatePayload): Promise<Response> =>
   post('/courses/', course);
 

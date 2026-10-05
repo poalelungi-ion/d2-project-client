@@ -1,10 +1,11 @@
-import { Box, Button, Chip, Typography } from '@mui/material';
+import { Box, Breadcrumbs, Button, Chip, Link as MuiLink, Typography } from '@mui/material';
 import {
   Restore as RestoreIcon,
   ChevronLeft as ChevronLeftIcon,
   CloudUpload as CloudUploadIcon,
   Archive as ArchiveIcon,
   Edit as EditIcon,
+  NavigateNext as NavigateNextIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import type { Course } from '../../../types';
@@ -45,6 +46,32 @@ export const CourseHeader = ({
 
   return (
     <Box sx={{ mb: 3 }}>
+      <Breadcrumbs
+        separator={<NavigateNextIcon fontSize="small" />}
+        aria-label="breadcrumb"
+        sx={{ mb: 1.5 }}
+      >
+        <MuiLink
+          component="button"
+          underline="hover"
+          color="inherit"
+          onClick={onBack}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            cursor: 'pointer',
+            fontSize: '0.875rem',
+            background: 'none',
+            border: 'none',
+            p: 0,
+          }}
+        >
+          Courses
+        </MuiLink>
+        <Typography color="text.primary" sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
+          {course.course_name}
+        </Typography>
+      </Breadcrumbs>
       <Button
         startIcon={<ChevronLeftIcon />}
         onClick={onBack}
