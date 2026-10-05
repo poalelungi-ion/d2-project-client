@@ -46,6 +46,8 @@ export const CourseHeader = ({
 
   return (
     <Box sx={{ mb: 3 }}>
+      {/* [Ticket #95647 - Navigation & Layout]
+          Clear breadcrumb navigation allowing the user to easily return to the main course list */}
       <Breadcrumbs
         separator={<NavigateNextIcon fontSize="small" />}
         aria-label="breadcrumb"
@@ -79,6 +81,8 @@ export const CourseHeader = ({
       >
         Return to List
       </Button>
+      {/* [Ticket #95647 - Data Retrieval & Presentation]
+          Display core course metadata: Course Name, Course ID, Semester, and Study Program */}
       <Typography variant="h3" sx={pageTitle}>
         {course.course_name}
       </Typography>
@@ -96,6 +100,8 @@ export const CourseHeader = ({
           {course.assigned_professor}
         </Typography>
       </Box>
+      {/* [Ticket #95647 - Data Retrieval & Presentation]
+          Summary statistics: Average Grade, Pass Rate, Total Submissions */}
       <Box sx={{ display: 'flex', gap: 3, mt: 1, flexWrap: 'wrap' }}>
         {summary.totalAttempts === 0 ? (
           // Nothing to summarise yet -- a 0% pass rate would read as a real result.
@@ -136,6 +142,8 @@ export const CourseHeader = ({
         >
           Edit Course
         </Button>
+        {/* [Ticket #95647 - Navigation & Layout]
+            Primary action button labelled 'Upload Exam Data' that triggers data ingestion pipeline */}
         <Button
           variant="contained"
           color="success"

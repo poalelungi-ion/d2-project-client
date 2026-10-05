@@ -7,10 +7,19 @@ import { ROUTES } from '../app/navigation';
 import { radii } from '../styles/tokens';
 import { NotFound } from './NotFound';
 
+/**
+ * [Ticket #95647 - View course details Route]
+ * Implementation of acceptance criteria:
+ * 1. Data Retrieval: Queries the backend via useCourseDetails(courseId) for metadata and metrics.
+ * 2. Visual Loading State: Displays Skeleton loader while React components fetch the payload.
+ * 3. 404 Error Handling: Displays "Course Not Found" message with a button to return to the course list.
+ * 4. Presentation: Renders CourseDetailView once data arrives.
+ */
 export const CourseDetail = () => {
   const { courseId } = useParams<'courseId'>();
   const { course, loading, notFound, refetch } = useCourseDetails(courseId ?? null);
 
+  // Loading State: Visual placeholder rendered during API query
   if (loading) {
     return (
       <Box>
@@ -20,6 +29,7 @@ export const CourseDetail = () => {
     );
   }
 
+  // 404 Error State: Displayed when course does not exist in backend
   if (notFound || !course) {
     return (
       <NotFound

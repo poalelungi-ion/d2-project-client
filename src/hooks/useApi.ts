@@ -106,6 +106,13 @@ export function useCourses() {
   return { courses, loading, refetch };
 }
 
+/**
+ * [Ticket #95647 - View course details: State Management & Error Handling]
+ * Fetches course details from backend endpoint GET /api/courses/{id}.
+ * - Manages visual loading state (loading: boolean).
+ * - Identifies non-existent courses on HTTP 404 (notFound: true).
+ * - Triggers toast notification alerting the user to refresh the page on timeout.
+ */
 export function useCourseDetails(courseId: number | string | null) {
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
