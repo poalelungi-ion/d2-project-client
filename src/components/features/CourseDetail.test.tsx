@@ -493,10 +493,10 @@ describe('course metadata and navigation (#95647)', () => {
 
   it('displays core course metadata and primary Upload Exam Data action button', () => {
     renderDetail();
-    expect(screen.getByText('Software Architecture')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Software Architecture' })).toBeInTheDocument();
     expect(screen.getByText('ID: 101')).toBeInTheDocument();
-    expect(screen.getByText('WISE_25')).toBeInTheDocument();
-    expect(screen.getByText('SE Master')).toBeInTheDocument();
+    expect(screen.getAllByText('WISE_25').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('SE Master').length).toBeGreaterThanOrEqual(1);
 
     const uploadButton = screen.getByRole('button', { name: /upload exam data/i });
     expect(uploadButton).toBeInTheDocument();

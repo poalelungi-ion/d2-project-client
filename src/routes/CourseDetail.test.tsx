@@ -40,7 +40,7 @@ describe('CourseDetail route', () => {
     useToastStore.setState({ toast: { open: false, message: '', severity: 'success' } });
   });
 
-  it('displays visual loading state while fetching payload', async () => {
+  it('displays visual loading state while fetching payload', () => {
     // Hangs the promise to verify loading skeleton state
     mockGetCourse.mockReturnValue(new Promise(() => {}));
 

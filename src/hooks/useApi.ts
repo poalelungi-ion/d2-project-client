@@ -65,6 +65,17 @@ const COLUMN_MAPPING: Record<string, string> = {
   // Passed/Failed/Yes/No are stripped before upload; they are never a result.
 };
 
+function isTimeoutError(e: unknown): boolean {
+  const err = e as { name?: string; message?: string };
+  if (err?.name === 'TimeoutError' || err?.name === 'AbortError') return true;
+  const msg = err?.message?.toLowerCase();
+  return msg ? msg.includes('timeout') || msg.includes('timed out') : false;
+}
+
+function notifyTimeout(): void {
+  notify('Request timed out. Please refresh the page.', 'error');
+}
+
 export function useCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,19 +84,13 @@ export function useCourses() {
     try {
       const res = await listCourses();
       if (res.status === 408 || res.status === 504) {
-        notify('Request timed out. Please refresh the page.', 'error');
+        notifyTimeout();
         return;
       }
       setCourses((await res.json()) as Course[]);
     } catch (e: unknown) {
-      const err = e as { name?: string; message?: string };
-      if (
-        err?.name === 'TimeoutError' ||
-        err?.name === 'AbortError' ||
-        err?.message?.toLowerCase().includes('timeout') ||
-        err?.message?.toLowerCase().includes('timed out')
-      ) {
-        notify('Request timed out. Please refresh the page.', 'error');
+      if (isTimeoutError(e)) {
+        notifyTimeout();
       } else {
         console.error('Failed to load courses', e);
       }
@@ -107,7 +112,7 @@ export function useCourseDetails(courseId: number | string | null) {
   const [notFound, setNotFound] = useState(false);
 
   const refetch = useCallback(async () => {
-    if (courseId === null || courseId === undefined || courseId === '') {
+    if (!courseId) {
       setNotFound(true);
       setLoading(false);
       return;
@@ -120,7 +125,7 @@ export function useCourseDetails(courseId: number | string | null) {
         setNotFound(true);
         setCourse(null);
       } else if (res.status === 408 || res.status === 504) {
-        notify('Request timed out. Please refresh the page.', 'error');
+        notifyTimeout();
         setCourse(null);
       } else if (res.ok) {
         setCourse((await res.json()) as Course);
@@ -128,14 +133,8 @@ export function useCourseDetails(courseId: number | string | null) {
         setCourse(null);
       }
     } catch (e: unknown) {
-      const err = e as { name?: string; message?: string };
-      if (
-        err?.name === 'TimeoutError' ||
-        err?.name === 'AbortError' ||
-        err?.message?.toLowerCase().includes('timeout') ||
-        err?.message?.toLowerCase().includes('timed out')
-      ) {
-        notify('Request timed out. Please refresh the page.', 'error');
+      if (isTimeoutError(e)) {
+        notifyTimeout();
       } else {
         console.error('Failed to load course details', e);
       }
