@@ -23,9 +23,11 @@ import { StudyProgramSelect } from './StudyProgramSelect';
 interface StudentFormDialogProps {
   /** The student being edited, or null to create a new one. */
   student: Student | null;
+  /** Existing student IDs to prevent duplicate IDs before submission. */
+  existingStudentIds?: number[];
   onClose: () => void;
-  /** Called after a successful save so the caller can reload its roster. */
-  onSaved: () => void;
+  /** Called after a successful save with the saved student ID. */
+  onSaved: (savedStudentId?: number) => void;
 }
 
 const EMPTY_FORM: StudentFormValues = {
@@ -49,17 +51,39 @@ const toFormValues = (student: Student | null): StudentFormValues => {
   };
 };
 
-const validate = (values: StudentFormValues): StudentFormErrors => {
+const validate = (
+  values: StudentFormValues,
+  existingStudentIds?: number[],
+  currentStudentId?: number,
+): StudentFormErrors => {
   const errors: StudentFormErrors = {};
   if (!values.first_name.trim()) errors.first_name = 'First Name is mandatory';
   if (!values.last_name.trim()) errors.last_name = 'Last Name is mandatory';
-  if (!values.student_id.trim()) errors.student_id = 'Student ID is mandatory';
+  if (!values.student_id.trim()) {
+    errors.student_id = 'Student ID is mandatory';
+  } else {
+    const parsedId = parseInt(values.student_id, 10);
+    if (isNaN(parsedId) || parsedId <= 0) {
+      errors.student_id = 'Student ID must be a positive number';
+    } else if (
+      existingStudentIds &&
+      existingStudentIds.includes(parsedId) &&
+      parsedId !== currentStudentId
+    ) {
+      errors.student_id = 'Student ID already exists';
+    }
+  }
   if (!values.program.trim()) errors.program = 'Study Program is mandatory';
   return errors;
 };
 
 /** Mounted by StudentsAdmin only while open, so the fields start fresh each time. */
-export function StudentFormDialog({ student, onClose, onSaved }: StudentFormDialogProps) {
+export function StudentFormDialog({
+  student,
+  existingStudentIds,
+  onClose,
+  onSaved,
+}: StudentFormDialogProps) {
   const { saveStudent } = useApiMutations();
   const [values, setValues] = useState<StudentFormValues>(() => toFormValues(student));
   const [errors, setErrors] = useState<StudentFormErrors>({});
@@ -68,12 +92,19 @@ export function StudentFormDialog({ student, onClose, onSaved }: StudentFormDial
     setValues((current) => ({ ...current, ...patch }));
 
   const handleSave = async () => {
-    const found = validate(values);
+    const found = validate(values, existingStudentIds, student?.student_id);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
-    if (await saveStudent(values, student?.version)) {
-      onSaved();
+
+    const result = await saveStudent(values, student?.version);
+    if (result.success) {
+      onSaved(parseInt(values.student_id, 10));
       onClose();
+    } else if (result.conflict) {
+      setErrors((prev) => ({
+        ...prev,
+        student_id: 'Student ID already exists',
+      }));
     }
   };
 

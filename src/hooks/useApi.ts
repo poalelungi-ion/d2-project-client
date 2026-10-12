@@ -171,7 +171,16 @@ async function saveCourse(values: CourseFormValues, version?: number): Promise<b
   return false;
 }
 
-async function saveStudent(values: StudentFormValues, version?: number): Promise<boolean> {
+export interface SaveStudentResult {
+  success: boolean;
+  conflict?: boolean;
+  error?: string;
+}
+
+async function saveStudent(
+  values: StudentFormValues,
+  version?: number,
+): Promise<SaveStudentResult> {
   const studentId = parseInt(values.student_id, 10);
   const name = `${values.first_name.trim()} ${values.last_name.trim()}`;
 
@@ -199,13 +208,15 @@ async function saveStudent(values: StudentFormValues, version?: number): Promise
 
     if (res.ok) {
       notify(version === undefined ? 'Student profile created' : 'Student profile updated');
-      return true;
+      return { success: true };
     }
-    notify(`Error: ${await errorDetail(res)}`, 'error');
+    const detail = await errorDetail(res);
+    notify(`Error: ${detail}`, 'error');
+    return { success: false, conflict: res.status === 409, error: detail };
   } catch {
     notify('Network error', 'error');
+    return { success: false, error: 'Network error' };
   }
-  return false;
 }
 
 async function addGrade(studentId: number, grade: AddGradePayload): Promise<boolean> {
