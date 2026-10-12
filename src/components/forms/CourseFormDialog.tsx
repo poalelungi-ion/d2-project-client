@@ -37,7 +37,6 @@ const EMPTY_FORM: CourseFormValues = {
   course_id: '',
   course_name: '',
   semester: '',
-  professor: '',
 };
 
 const toFormValues = (course: Course | null): CourseFormValues =>
@@ -46,7 +45,6 @@ const toFormValues = (course: Course | null): CourseFormValues =>
         course_id: course.course_id?.toString() ?? '',
         course_name: course.course_name || '',
         semester: course.semester || '',
-        professor: course.assigned_professor || '',
       }
     : EMPTY_FORM;
 
@@ -183,16 +181,7 @@ export function CourseFormDialog({
           }}
         />
 
-        <TextField
-          margin="dense"
-          label="Assigned Professor"
-          type="text"
-          fullWidth
-          variant="outlined"
-          value={values.professor}
-          onChange={(e) => update({ professor: e.target.value })}
-          sx={{ mb: 2 }}
-        />
+
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>
