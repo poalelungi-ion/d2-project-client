@@ -5,7 +5,7 @@
  * src/api/client.ts, the only module that talks to the API.
  */
 export const STEPS: readonly string[] = [
-  'Add data',
+  'Course Drive & Documents',
   'Course',
   'Map columns',
   'Review & fix',

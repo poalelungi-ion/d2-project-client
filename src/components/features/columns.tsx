@@ -28,14 +28,6 @@ const editAction = <T,>(onEdit: (row: T) => void): ColDef<T> => ({
 export const courseColumns = (onEdit: (course: Course) => void): ColDef<Course>[] => [
   { field: 'course_id', headerName: 'ID', flex: 0.8 },
   { field: 'course_name', headerName: 'Name', flex: 2 },
-  {
-    field: 'semester',
-    headerName: 'Semester',
-    flex: 1,
-    comparator: (a: string | undefined, b: string | undefined) =>
-      compareSemesters(a ?? '', b ?? ''),
-  },
-  { field: 'assigned_professor', headerName: 'Professor', flex: 1.5 },
   { field: 'total_attempts', headerName: 'Submissions', flex: 1 },
   {
     field: 'pass_rate',

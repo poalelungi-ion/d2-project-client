@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { Box, CssBaseline, Paper, Typography } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 
+import { UniHildesheimLogo } from '../../common/UniHildesheimLogo';
 import { getGlassTheme } from '../../../styles/theme';
 import { gradients, layout, radii } from '../../../styles/tokens';
 import { useThemeStore } from '../../../stores';
@@ -39,20 +40,28 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
         }}
       >
         <Paper sx={{ width: '100%', maxWidth: layout.authCardWidth, p: 4, borderRadius: radii.xl }}>
-          <Typography
-            variant="h5"
-            component="h1"
-            sx={{
-              fontWeight: 800,
-              mb: 0.5,
-              background: gradients.wordmark,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            Study Progress Analysis
-          </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 700, mt: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+            <UniHildesheimLogo size={48} />
+            <Box>
+              <Typography
+                variant="h6"
+                component="h1"
+                sx={{
+                  fontWeight: 800,
+                  lineHeight: 1.2,
+                  background: gradients.wordmark,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                Study Progress Analysis
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                Universität Hildesheim
+              </Typography>
+            </Box>
+          </Box>
+          <Typography variant="h6" sx={{ fontWeight: 700, mt: 1 }}>
             {title}
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>

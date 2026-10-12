@@ -196,9 +196,6 @@ export const CoursesAdmin = () => {
                       <Typography variant="caption" sx={metaChip}>
                         ID: {course.course_id}
                       </Typography>
-                      <Typography variant="caption" sx={metaChip}>
-                        {course.assigned_professor}
-                      </Typography>
                     </Box>
                     <Divider sx={{ mb: 2, opacity: 0.5 }} />
                     <Typography

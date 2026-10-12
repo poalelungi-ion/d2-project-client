@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { parseSemester, compareSemesters, averageGradeBySemester } from './semester';
+import {
+  parseSemester,
+  compareSemesters,
+  averageGradeBySemester,
+  getNextSemester,
+  generateSemesters,
+} from './semester';
 
 describe('semester parsing and chronological sorting (Ticket #99881)', () => {
   it('parses WiSe and SoSe semester variants accurately', () => {
@@ -44,6 +50,27 @@ describe('semester parsing and chronological sorting (Ticket #99881)', () => {
     expect(parseSemester('')).toEqual({ year: 0, term: 0 });
     expect(compareSemesters('', '')).toBe(0);
     expect(compareSemesters('WiSe24', '')).toBeGreaterThan(0);
+  });
+
+  it('calculates the next upcoming semester upfront for Uni Hildesheim', () => {
+    // SoSe24 -> next is WiSe24/25
+    expect(getNextSemester('SoSe24')).toBe('WiSe24/25');
+    // WiSe24/25 -> next is SoSe25
+    expect(getNextSemester('WiSe24/25')).toBe('SoSe25');
+  });
+
+  it('generates dynamic semesters starting from 2016 up to one semester upfront', () => {
+    // Simulated date in June 2026 (Summer Semester 2026)
+    const june2026 = new Date(2026, 5, 15);
+    const list = generateSemesters(june2026, 2024);
+    // Should include up to WiSe26/27 (one semester ahead of SoSe26)
+    expect(list).toContain('SoSe24');
+    expect(list).toContain('WiSe24/25');
+    expect(list).toContain('SoSe25');
+    expect(list).toContain('WiSe25/26');
+    expect(list).toContain('SoSe26');
+    expect(list).toContain('WiSe26/27');
+    expect(list).not.toContain('SoSe27');
   });
 });
 

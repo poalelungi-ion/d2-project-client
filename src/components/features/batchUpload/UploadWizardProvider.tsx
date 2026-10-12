@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useInRouterContext } from 'react-router-dom';
 import type { GridApi } from 'ag-grid-community';
 import type {
   NameSplitRule,
@@ -24,11 +24,18 @@ const UPLOAD_DEFAULTS = {
 interface UploadWizardProviderProps {
   /** The course this upload belongs to, handed over by a Course view's "Upload Exam Data" button. */
   course: UploadCourseHandoff;
+  onImportSuccess?: () => void | Promise<void>;
   children: ReactNode;
 }
 
-export function UploadWizardProvider({ course, children }: UploadWizardProviderProps) {
-  const navigate = useNavigate();
+export function UploadWizardProvider({
+  course,
+  onImportSuccess,
+  children,
+}: UploadWizardProviderProps) {
+  const inRouter = useInRouterContext();
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const navigate = inRouter ? useNavigate() : () => {};
   const { previewImport, confirmImport: sendImport } = useApiMutations();
   const [step, setStep] = useState(0);
   const [file, setFileState] = useState<File | null>(null);
@@ -72,6 +79,13 @@ export function UploadWizardProvider({ course, children }: UploadWizardProviderP
     const trimmedPaste = paste.trim();
     let source: { file: File } | { paste: string };
     if (file) {
+      if (file.size === 0) {
+        notify(
+          'The selected file is empty (0 bytes). Please re-upload or select a valid spreadsheet.',
+          'error',
+        );
+        return;
+      }
       source = { file };
     } else if (trimmedPaste) {
       if (!isTabularPaste(trimmedPaste)) {
@@ -104,8 +118,11 @@ export function UploadWizardProvider({ course, children }: UploadWizardProviderP
     }
     const result = await sendImport(courseInfo, selectedRows);
     if (result.success) {
+      if (onImportSuccess) {
+        await onImportSuccess();
+      }
       const targetCourseId = result.courseId ?? courseInfo.courseId;
-      if (targetCourseId != null) {
+      if (targetCourseId != null && inRouter) {
         void navigate(ROUTES.courseDetail(targetCourseId), {
           state: {
             importSuccess: true,
@@ -116,7 +133,7 @@ export function UploadWizardProvider({ course, children }: UploadWizardProviderP
         setStep(4);
       }
     }
-  }, [courseInfo, sendImport, navigate]);
+  }, [courseInfo, sendImport, navigate, inRouter, onImportSuccess]);
 
   const reset = useCallback(() => {
     setStep(0);

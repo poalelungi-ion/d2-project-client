@@ -16,6 +16,7 @@ import { radii } from '../../../styles/tokens';
 import {
   generateSemesters,
   getCurrentSemester,
+  getNextSemester,
   isValidSemester,
 } from '../../../utils/semester';
 
@@ -25,12 +26,17 @@ const ATTEMPT_TYPES: readonly AttemptType[] = [
   'Other',
 ];
 
-const SEMESTERS = generateSemesters();
 const CURRENT_SEMESTER = getCurrentSemester();
+const NEXT_SEMESTER = getNextSemester(CURRENT_SEMESTER);
+const ALL_SEMESTERS = generateSemesters();
+const otherSemesters = [...ALL_SEMESTERS]
+  .filter((s) => s !== NEXT_SEMESTER && s !== CURRENT_SEMESTER)
+  .reverse();
 
 const SEMESTER_OPTIONS = [
+  NEXT_SEMESTER,
   CURRENT_SEMESTER,
-  ...SEMESTERS.filter((semester) => semester !== CURRENT_SEMESTER),
+  ...otherSemesters,
 ];
 
 export const CourseInfoStep = () => {
@@ -220,10 +226,16 @@ export const CourseInfoStep = () => {
                 }
               />
             )}
+            ListboxProps={{
+              sx: {
+                maxHeight: 320,
+                overflowY: 'auto',
+              },
+            }}
             slotProps={{
               paper: {
                 sx: {
-                  maxHeight: 320,
+                  overflow: 'hidden',
                 },
               },
             }}

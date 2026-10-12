@@ -96,9 +96,6 @@ export const CourseHeader = ({
         <Typography variant="caption" sx={metaChip}>
           {course.study_program}
         </Typography>
-        <Typography variant="caption" sx={metaChip}>
-          {course.assigned_professor}
-        </Typography>
       </Box>
       {/* [Ticket #95647 - Data Retrieval & Presentation]
           Summary statistics: Average Grade, Pass Rate, Total Submissions */}
@@ -148,8 +145,6 @@ export const CourseHeader = ({
           variant="contained"
           color="success"
           startIcon={<CloudUploadIcon />}
-          // The id travels with the handoff, so the wizard never has to ask
-          // which course the file is for -- and never gets told the wrong one.
           onClick={() =>
             void navigate(ROUTES.upload, {
               state: { courseId: course.course_id, courseName: course.course_name },
