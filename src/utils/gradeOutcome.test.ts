@@ -84,7 +84,13 @@ describe('display helpers', () => {
     expect(outcomeLabel('excused', false)).toBe('Excused');
     expect(outcomeLabel(undefined, true)).toBe('Pass');
     expect(formatGrade(null, 'AT')).toBe('AT');
-    expect(formatGrade(5.0, 'NE')).toBe('5');
+    expect(formatGrade(5.0, 'NE')).toBe('5.0');
+  });
+
+  it('formats integral grades with one decimal and preserves existing precision', () => {
+    expect(formatGrade(2)).toBe('2.0');
+    expect(formatGrade(2.7)).toBe('2.7');
+    expect(formatGrade(2.19)).toBe('2.19');
   });
 
   it('recognises official absence cells so the review grid does not rewrite them', () => {
@@ -93,3 +99,5 @@ describe('display helpers', () => {
     expect(isOfficialAbsenceCell('na')).toBe(false);
   });
 });
+
+

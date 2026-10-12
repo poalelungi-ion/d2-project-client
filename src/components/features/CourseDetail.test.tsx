@@ -268,7 +268,7 @@ describe('per-person history columns', () => {
   it('keeps both sittings in their own columns when unfiltered', () => {
     renderDetail(bruno());
 
-    expect(cell('exam1_grade')).toBe('5');
+    expect(cell('exam1_grade')).toBe('5.0');
     expect(cell('exam2_grade')).toBe('1.7');
   });
 
@@ -502,4 +502,3 @@ describe('course metadata and navigation (#95647)', () => {
     expect(uploadButton).toBeInTheDocument();
   });
 });
-

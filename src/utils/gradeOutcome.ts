@@ -62,10 +62,13 @@ export function parseGradeInput(raw: unknown): ParsedGrade {
   if (JUNK_CELLS.has(normalizeCode(text))) {
     return { ok: false };
   }
+
   const code = normalizeCode(text);
+
   if (IGNORED_LABELS.has(code)) {
     return { ok: false };
   }
+
   if (FAIL_ABSENCE.has(code)) {
     return {
       ok: true,
@@ -75,6 +78,7 @@ export function parseGradeInput(raw: unknown): ParsedGrade {
       absenceCode: code,
     };
   }
+
   if (EXCUSED_ABSENCE.has(code)) {
     return {
       ok: true,
@@ -84,11 +88,15 @@ export function parseGradeInput(raw: unknown): ParsedGrade {
       absenceCode: code,
     };
   }
+
   const grade = Number(text.replace(',', '.'));
+
   if (!Number.isFinite(grade) || grade < 1 || grade > 5) {
     return { ok: false };
   }
+
   const passed = grade <= 4;
+
   return {
     ok: true,
     grade,
@@ -103,10 +111,15 @@ export function evaluateGradeCell(raw: unknown): {
   absenceCode: string | null;
 } {
   const parsed = parseGradeInput(raw);
+
   if (!parsed.ok) {
     return { outcome: 'invalid', absenceCode: null };
   }
-  return { outcome: parsed.outcome, absenceCode: parsed.absenceCode };
+
+  return {
+    outcome: parsed.outcome,
+    absenceCode: parsed.absenceCode,
+  };
 }
 
 /** Value POST /grades/ expects: a number, or the NE/EX/AT cell itself. */
@@ -115,12 +128,15 @@ export function gradeSaveValue(mark: {
   absence_code?: string | null;
 }): number | string | null {
   const code = mark.absence_code?.trim();
+
   if (code) return code;
+
   return mark.grade;
 }
 
 export function isOfficialAbsenceCell(raw: unknown): boolean {
   const code = normalizeCode(String(raw ?? ''));
+
   return FAIL_ABSENCE.has(code) || EXCUSED_ABSENCE.has(code);
 }
 
@@ -131,6 +147,7 @@ export function outcomeLabel(
   if (outcome && outcome in OUTCOME_LABEL) {
     return OUTCOME_LABEL[outcome as GradeOutcome];
   }
+
   return passed ? 'Pass' : 'Fail';
 }
 
@@ -139,5 +156,6 @@ export function formatGrade(
   absenceCode?: string | null,
 ): string {
   if (grade == null) return absenceCode || '—';
-  return String(grade);
+
+  return Number.isInteger(grade) ? grade.toFixed(1) : String(grade);
 }
