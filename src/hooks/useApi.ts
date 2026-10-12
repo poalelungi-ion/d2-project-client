@@ -5,6 +5,7 @@ import {
   createCourse,
   createStudent,
   errorDetail,
+  getCourse,
   getStudent,
   listCourses,
   listStudents,
@@ -64,6 +65,17 @@ const COLUMN_MAPPING: Record<string, string> = {
   // Passed/Failed/Yes/No are stripped before upload; they are never a result.
 };
 
+function isTimeoutError(e: unknown): boolean {
+  const err = e as { name?: string; message?: string };
+  if (err?.name === 'TimeoutError' || err?.name === 'AbortError') return true;
+  const msg = err?.message?.toLowerCase();
+  return msg ? msg.includes('timeout') || msg.includes('timed out') : false;
+}
+
+function notifyTimeout(): void {
+  notify('Request timed out. Please refresh the page.', 'error');
+}
+
 export function useCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,9 +83,17 @@ export function useCourses() {
   const refetch = useCallback(async () => {
     try {
       const res = await listCourses();
+      if (res.status === 408 || res.status === 504) {
+        notifyTimeout();
+        return;
+      }
       setCourses((await res.json()) as Course[]);
-    } catch (e) {
-      console.error('Failed to load courses', e);
+    } catch (e: unknown) {
+      if (isTimeoutError(e)) {
+        notifyTimeout();
+      } else {
+        console.error('Failed to load courses', e);
+      }
     } finally {
       setLoading(false);
     }
@@ -84,6 +104,59 @@ export function useCourses() {
   }, [refetch]);
 
   return { courses, loading, refetch };
+}
+
+/**
+ * [Ticket #95647 - View course details: State Management & Error Handling]
+ * Fetches course details from backend endpoint GET /api/courses/{id}.
+ * - Manages visual loading state (loading: boolean).
+ * - Identifies non-existent courses on HTTP 404 (notFound: true).
+ * - Triggers toast notification alerting the user to refresh the page on timeout.
+ */
+export function useCourseDetails(courseId: number | string | null) {
+  const [course, setCourse] = useState<Course | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  const refetch = useCallback(async () => {
+    if (!courseId) {
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setNotFound(false);
+    try {
+      const res = await getCourse(courseId);
+      if (res.status === 404) {
+        setNotFound(true);
+        setCourse(null);
+      } else if (res.status === 408 || res.status === 504) {
+        notifyTimeout();
+        setCourse(null);
+      } else if (res.ok) {
+        setCourse((await res.json()) as Course);
+      } else {
+        setCourse(null);
+      }
+    } catch (e: unknown) {
+      if (isTimeoutError(e)) {
+        notifyTimeout();
+      } else {
+        console.error('Failed to load course details', e);
+      }
+      setCourse(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [courseId]);
+
+  useEffect(() => {
+    setCourse(null);
+    void refetch();
+  }, [refetch]);
+
+  return { course, loading, notFound, refetch };
 }
 
 export function useStudents() {

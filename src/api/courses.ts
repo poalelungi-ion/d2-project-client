@@ -22,6 +22,14 @@ export interface CourseArchivePayload {
 
 export const listCourses = (): Promise<Response> => get('/courses/');
 
+/**
+ * [Ticket #95647 - View course details: Data Retrieval]
+ * Queries the backend for a specific course by ID, returning its metadata,
+ * student roster, and associated exam records (or 404 if not found).
+ */
+export const getCourse = (courseId: number | string): Promise<Response> =>
+  get(`/courses/${courseId}`);
+
 export const createCourse = (course: CourseCreatePayload): Promise<Response> =>
   post('/courses/', course);
 
