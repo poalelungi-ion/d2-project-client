@@ -93,7 +93,7 @@ describe('CourseFormDialog', () => {
     });
   });
 
-  it('validates mandatory fields without requiring study program', async () => {
+  it('validates mandatory fields without requiring study program', () => {
     renderDialog(null);
 
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
