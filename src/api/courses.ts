@@ -6,7 +6,7 @@ export interface CourseCreatePayload {
   course_name: string;
   semester: string;
   study_program?: string | null;
-  professor: string;
+  professor?: string;
 }
 
 /** Payload for PUT /courses/{id} -- CourseCreate plus optimistic-lock fields. */

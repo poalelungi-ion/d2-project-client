@@ -54,21 +54,22 @@ describe('CourseFormDialog', () => {
     expect(screen.getByLabelText(/course number \/ id/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/course name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/semester/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/assigned professor/i)).toBeInTheDocument();
 
-    // Verify Study Program field and label are completely absent
+    // Verify Assigned Professor and Study Program fields and labels are completely absent (#99886)
+    expect(screen.queryByLabelText(/assigned professor/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/study program/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/study program/i)).not.toBeInTheDocument();
   });
 
-  it('renders Create New Course without a Study Program input field', () => {
+  it('renders Create New Course without an Assigned Professor or Study Program input field', () => {
     renderDialog(null);
 
     expect(screen.getByText('Create New Course')).toBeInTheDocument();
+    expect(screen.queryByLabelText(/assigned professor/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/study program/i)).not.toBeInTheDocument();
   });
 
-  it('submits course updates without study_program in the payload', async () => {
+  it('submits course updates without study_program or professor in the payload (#99886)', async () => {
     const { onClose, onSaved } = renderDialog(sampleCourse);
 
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
@@ -76,15 +77,18 @@ describe('CourseFormDialog', () => {
     await waitFor(() => {
       expect(mockSaveCourse).toHaveBeenCalledTimes(1);
     });
-    const [payload, version] = mockSaveCourse.mock.calls[0];
+    const [payload, version] = mockSaveCourse.mock.calls[0] as [
+      Record<string, unknown>,
+      number,
+    ];
 
     expect(payload).toEqual({
       course_id: '101',
       course_name: 'Distributed Systems',
       semester: 'WiSe24/25',
-      professor: 'Prof. Turing',
     });
     expect(payload).not.toHaveProperty('study_program');
+    expect(payload).not.toHaveProperty('professor');
     expect(version).toBe(2);
 
     await waitFor(() => {
