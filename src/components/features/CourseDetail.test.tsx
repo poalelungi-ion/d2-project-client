@@ -482,3 +482,23 @@ describe('lecture-view grade edits', () => {
   });
 });
 
+describe('course metadata and navigation (#95647)', () => {
+  it('renders breadcrumb navigation and allows returning to course list', () => {
+    renderDetail();
+    const breadcrumbs = screen.getByRole('navigation', { name: /breadcrumb/i });
+    expect(breadcrumbs).toBeInTheDocument();
+    expect(within(breadcrumbs).getByRole('button', { name: 'Courses' })).toBeInTheDocument();
+    expect(within(breadcrumbs).getByText('Software Architecture')).toBeInTheDocument();
+  });
+
+  it('displays core course metadata and primary Upload Exam Data action button', () => {
+    renderDetail();
+    expect(screen.getByRole('heading', { name: 'Software Architecture' })).toBeInTheDocument();
+    expect(screen.getByText('ID: 101')).toBeInTheDocument();
+    expect(screen.getAllByText('WISE_25').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('SE Master').length).toBeGreaterThanOrEqual(1);
+
+    const uploadButton = screen.getByRole('button', { name: /upload exam data/i });
+    expect(uploadButton).toBeInTheDocument();
+  });
+});
