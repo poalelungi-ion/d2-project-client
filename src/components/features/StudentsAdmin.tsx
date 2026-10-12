@@ -64,12 +64,18 @@ export const StudentsAdmin = () => {
     );
   }, [students, studentSearchQuery]);
 
+  const existingStudentIds = useMemo(
+    () => students.map((s) => s.student_id),
+    [students],
+  );
+
   return (
     <Fade in={true} timeout={800}>
       <Box sx={{ flexGrow: 1 }}>
         {form && (
           <StudentFormDialog
             student={form.student}
+            existingStudentIds={existingStudentIds}
             onClose={() => setForm(null)}
             onSaved={() => void refetch()}
           />
