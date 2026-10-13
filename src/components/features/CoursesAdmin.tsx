@@ -526,19 +526,31 @@ export const CoursesAdmin = () => {
             ))}
           </Grid>
         ) : (
-          <Box className="ag-theme-alpine" sx={gridContainer}>
-            <AgGridReact<Course>
-              rowData={activeCourses}
-              columnDefs={courseColumnDefs}
-              defaultColDef={{ resizable: true, sortable: true, filter: true }}
-              animateRows={true}
-              pagination={true}
-              paginationPageSize={20}
-              onRowClicked={(e: RowClickedEvent<Course>) => {
-                if (e.data) void navigate(ROUTES.courseDetail(e.data.course_id));
-              }}
-            />
-          </Box>
+          <Paper
+            elevation={0}
+            sx={{
+              ...gridContainer,
+              borderRadius: radii.xl,
+              overflow: 'hidden',
+              border: (theme) => `1px solid ${theme.app.surface.panelBorder}`,
+            }}
+          >
+            <Box className="ag-theme-alpine" sx={{ width: '100%' }}>
+              <AgGridReact<Course>
+                domLayout="autoHeight"
+                rowData={activeCourses}
+                columnDefs={courseColumnDefs}
+                defaultColDef={{ resizable: true, sortable: true, filter: true }}
+                animateRows={true}
+                pagination={true}
+                paginationPageSize={15}
+                paginationPageSizeSelector={[10, 15, 20, 50]}
+                onRowClicked={(e: RowClickedEvent<Course>) => {
+                  if (e.data) void navigate(ROUTES.courseDetail(e.data.course_id));
+                }}
+              />
+            </Box>
+          </Paper>
         )}
       </Box>
     </Fade>

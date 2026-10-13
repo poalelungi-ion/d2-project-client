@@ -26,12 +26,13 @@ const editAction = <T,>(onEdit: (row: T) => void): ColDef<T> => ({
 });
 
 export const courseColumns = (onEdit: (course: Course) => void): ColDef<Course>[] => [
-  { field: 'course_id', headerName: 'ID', flex: 0.8 },
-  { field: 'course_name', headerName: 'Name', flex: 2 },
-  { field: 'total_attempts', headerName: 'Submissions', flex: 1 },
+  { field: 'course_id', headerName: 'ID', minWidth: 90, flex: 0.8 },
+  { field: 'course_name', headerName: 'Name', minWidth: 200, flex: 2 },
+  { field: 'total_attempts', headerName: 'Submissions', minWidth: 130, flex: 1 },
   {
     field: 'pass_rate',
     headerName: 'Pass Rate',
+    minWidth: 110,
     flex: 1,
     cellRenderer: (params: ICellRendererParams<Course, number>) => (
       <span style={{ color: passRateColor(params.value ?? 0), fontWeight: 'bold' }}>
@@ -42,24 +43,26 @@ export const courseColumns = (onEdit: (course: Course) => void): ColDef<Course>[
   {
     field: 'avg_grade',
     headerName: 'Avg Grade',
+    minWidth: 110,
     flex: 1,
     valueFormatter: (params: ValueFormatterParams<Course, number>) => formatGrade(params.value),
   },
-  editAction(onEdit),
+  { ...editAction(onEdit), minWidth: 90, flex: 0.8 },
 ];
 
 export const studentColumns = (onEdit: (student: Student) => void): ColDef<Student>[] => [
-  { field: 'student_id', headerName: 'ID', flex: 1 },
-  { field: 'name', headerName: 'Name', flex: 2 },
-  { field: 'program', headerName: 'Study Program', flex: 2 },
-  { field: 'total_exams', headerName: 'Exams Taken', flex: 1 },
+  { field: 'student_id', headerName: 'ID', minWidth: 100, flex: 0.8 },
+  { field: 'name', headerName: 'Name', minWidth: 160, flex: 1.8 },
+  { field: 'program', headerName: 'Study Program', minWidth: 180, flex: 2 },
+  { field: 'total_exams', headerName: 'Exams Taken', minWidth: 140, flex: 1.2 },
   {
     field: 'avg_grade',
     headerName: 'Avg Grade',
+    minWidth: 120,
     flex: 1,
     valueFormatter: (params: ValueFormatterParams<Student, number>) => formatGrade(params.value),
   },
-  { ...editAction(onEdit), flex: 1 },
+  { ...editAction(onEdit), minWidth: 90, flex: 0.8 },
 ];
 
 export const transcriptColumns = (): ColDef<TranscriptEntry>[] => [
