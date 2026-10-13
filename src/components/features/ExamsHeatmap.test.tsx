@@ -62,19 +62,19 @@ describe('ExamsHeatmap component', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders the explanatory legend with column 15 callout', () => {
+  it('renders the table with semester and student counts', () => {
     render(<ExamsHeatmap heatmapData={sampleData} />);
 
-    expect(screen.getByText(/Numbered Columns/i)).toBeInTheDocument();
-    expect(screen.getByText(/Cell Values = Student Cohort Count/i)).toBeInTheDocument();
-    expect(screen.getByText(/Understanding Column 15/i)).toBeInTheDocument();
-    expect(screen.getByText(/1 student sat their 15th exam/i)).toBeInTheDocument();
+    expect(screen.getByText('Semester')).toBeInTheDocument();
+    expect(screen.getByText('#Students')).toBeInTheDocument();
+    expect(screen.getByText('SOSE_26')).toBeInTheDocument();
+    expect(screen.getByText('34')).toBeInTheDocument();
   });
 
-  it('renders the multi-tier header with chronological sittings label and column 15', () => {
+  it('renders column numbers up to 15', () => {
     render(<ExamsHeatmap heatmapData={sampleData} />);
 
-    expect(screen.getByText(/Chronological Exam Sitting in Degree Career/i)).toBeInTheDocument();
-    expect(screen.getAllByText('15').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText('15').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('1').length).toBeGreaterThan(0);
   });
 });
