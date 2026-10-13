@@ -74,13 +74,17 @@ export const ExamsHeatmap = ({
   };
 
   return (
-    <Box sx={{ mt: 4 }}>
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
-        {title}
-      </Typography>
-      <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
-        {subtitle}
-      </Typography>
+    <Box sx={{ mt: title ? 4 : 0 }}>
+      {title && (
+        <Typography variant="h5" sx={{ fontWeight: 700, mb: subtitle ? 1 : 2 }}>
+          {title}
+        </Typography>
+      )}
+      {subtitle && (
+        <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+          {subtitle}
+        </Typography>
+      )}
       <TableContainer component={Paper} variant="outlined" sx={{ overflowX: 'auto' }}>
         <Table size="small">
           <TableHead>
