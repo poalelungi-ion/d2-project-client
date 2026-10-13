@@ -53,6 +53,10 @@ export const buildComponents = (mode: ThemeMode): Components<Theme> => {
           '--ag-border-color': surfaces.hairline[mode],
           '--ag-row-border-color': surfaces.hairline[mode],
           '--ag-odd-row-background-color': surfaces.tableStripe[mode],
+          '& .ag-cell': {
+            display: 'flex',
+            alignItems: 'center',
+          },
         },
       },
     },

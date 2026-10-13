@@ -84,15 +84,18 @@ export const transcriptColumns = (): ColDef<TranscriptEntry>[] => [
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              padding: '3px 12px',
+              justifyContent: 'center',
+              height: 24,
+              padding: '0 12px',
               borderRadius: '9999px',
-              fontSize: '0.75rem',
+              fontSize: '0.72rem',
               fontWeight: 700,
-              lineHeight: 1.2,
+              lineHeight: 1,
               backgroundColor: isRetake ? 'rgba(237, 108, 2, 0.14)' : 'rgba(25, 118, 210, 0.14)',
               color: isRetake ? '#e65100' : '#1976d2',
               border: isRetake ? '1px solid rgba(237, 108, 2, 0.35)' : '1px solid rgba(25, 118, 210, 0.35)',
               boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+              boxSizing: 'border-box',
             }}
           >
             {type === 'Exam 2' ? 'Exam 2 (Retake)' : type === 'Exam 1' ? 'Exam 1 (First)' : type}
@@ -143,14 +146,17 @@ export const transcriptColumns = (): ColDef<TranscriptEntry>[] => [
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              padding: '3px 10px',
+              justifyContent: 'center',
+              height: 24,
+              padding: '0 10px',
               borderRadius: '9999px',
-              fontSize: '0.75rem',
+              fontSize: '0.72rem',
               fontWeight: 700,
-              lineHeight: 1.2,
+              lineHeight: 1,
               color,
               border: `1px solid ${color}44`,
               backgroundColor: `${color}18`,
+              boxSizing: 'border-box',
             }}
           >
             {params.value}
@@ -180,15 +186,18 @@ export const studentCourseHistoryColumns = (
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              padding: '3px 12px',
+              justifyContent: 'center',
+              height: 24,
+              padding: '0 12px',
               borderRadius: '9999px',
-              fontSize: '0.75rem',
+              fontSize: '0.72rem',
               fontWeight: 700,
-              lineHeight: 1.2,
-              backgroundColor: isRetake ? 'rgba(237, 108, 2, 0.14)' : 'rgba(76, 175, 80, 0.14)',
+              lineHeight: 1,
+              backgroundColor: isRetake ? 'rgba(237, 108, 2, 0.14)' : 'rgba(46, 125, 50, 0.14)',
               color: isRetake ? '#e65100' : '#2e7d32',
-              border: isRetake ? '1px solid rgba(237, 108, 2, 0.35)' : '1px solid rgba(76, 175, 80, 0.35)',
+              border: isRetake ? '1px solid rgba(237, 108, 2, 0.35)' : '1px solid rgba(46, 125, 50, 0.35)',
               boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+              boxSizing: 'border-box',
             }}
           >
             {count} {count === 1 ? 'Attempt' : `Attempts (${count - 1} Retake)`}
@@ -206,9 +215,27 @@ export const studentCourseHistoryColumns = (
       const text = formatGrade(params.value, params.data?.best_absence);
       const isPassed = params.data?.final_status === 'Passed';
       return (
-        <span style={{ fontWeight: 800, color: isPassed ? '#2e7d32' : '#d32f2f' }}>
-          {text} {isPassed ? '✓' : '✗'}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: 24,
+              padding: '0 10px',
+              borderRadius: '9999px',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              lineHeight: 1,
+              color: isPassed ? '#2e7d32' : '#d32f2f',
+              backgroundColor: isPassed ? 'rgba(46, 125, 50, 0.12)' : 'rgba(211, 47, 47, 0.12)',
+              border: isPassed ? '1px solid rgba(46, 125, 50, 0.35)' : '1px solid rgba(211, 47, 47, 0.35)',
+              boxSizing: 'border-box',
+            }}
+          >
+            {text} {isPassed ? '✓' : '✗'}
+          </span>
+        </div>
       );
     },
   },
@@ -241,14 +268,17 @@ export const studentCourseHistoryColumns = (
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              padding: '3px 10px',
+              justifyContent: 'center',
+              height: 24,
+              padding: '0 10px',
               borderRadius: '9999px',
-              fontSize: '0.75rem',
+              fontSize: '0.72rem',
               fontWeight: 700,
-              lineHeight: 1.2,
+              lineHeight: 1,
               color: isPassed ? '#2e7d32' : '#d32f2f',
               backgroundColor: isPassed ? 'rgba(46, 125, 50, 0.12)' : 'rgba(211, 47, 47, 0.12)',
               border: isPassed ? '1px solid rgba(46, 125, 50, 0.35)' : '1px solid rgba(211, 47, 47, 0.35)',
+              boxSizing: 'border-box',
             }}
           >
             {params.value}
@@ -278,16 +308,19 @@ export const studentCourseHistoryColumns = (
             style={{
               display: 'inline-flex',
               alignItems: 'center',
+              justifyContent: 'center',
+              height: 24,
               background: 'none',
               border: '1px solid rgba(25, 118, 210, 0.4)',
               color: '#1976d2',
-              padding: '3px 12px',
+              padding: '0 12px',
               borderRadius: '9999px',
-              fontSize: '0.75rem',
+              fontSize: '0.72rem',
               fontWeight: 700,
-              lineHeight: 1.2,
+              lineHeight: 1,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
+              boxSizing: 'border-box',
             }}
           >
             View ({row.attempt_count})

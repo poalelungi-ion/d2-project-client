@@ -91,15 +91,18 @@ export const individualMarksColumnDefs = (
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              padding: '3px 12px',
+              justifyContent: 'center',
+              height: 24,
+              padding: '0 12px',
               borderRadius: '9999px',
-              fontSize: '0.75rem',
+              fontSize: '0.72rem',
               fontWeight: 700,
-              lineHeight: 1.2,
+              lineHeight: 1,
               backgroundColor: isRetake ? 'rgba(237, 108, 2, 0.14)' : 'rgba(25, 118, 210, 0.14)',
               color: isRetake ? '#e65100' : '#1976d2',
               border: isRetake ? '1px solid rgba(237, 108, 2, 0.35)' : '1px solid rgba(25, 118, 210, 0.35)',
               boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+              boxSizing: 'border-box',
             }}
           >
             {type === 'Exam 2' ? 'Exam 2 (Retake)' : type === 'Exam 1' ? 'Exam 1 (First)' : type}
@@ -225,15 +228,18 @@ export const historyColumnDefs = (
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              padding: '2px 10px',
+              justifyContent: 'center',
+              height: 24,
+              padding: '0 10px',
               borderRadius: '9999px',
               fontWeight: 800,
               fontSize: '0.78rem',
-              lineHeight: 1.2,
+              lineHeight: 1,
               backgroundColor: isPass ? `${chartColors.pass}22` : `${chartColors.fail}22`,
               color: isPass ? chartColors.pass : chartColors.fail,
               border: `1px solid ${isPass ? chartColors.pass : chartColors.fail}`,
               boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+              boxSizing: 'border-box',
             }}
           >
             {text}
@@ -284,13 +290,14 @@ export const historyColumnDefs = (
                 onRevealHistory(row);
               }}
               sx={{
-                py: 0.2,
+                height: 24,
                 px: 1.25,
                 fontSize: '0.72rem',
                 fontWeight: 700,
                 textTransform: 'none',
                 borderRadius: '9999px',
-                lineHeight: 1.2,
+                lineHeight: 1,
+                boxSizing: 'border-box',
               }}
             >
               {count} Attempts ▾
@@ -304,14 +311,17 @@ export const historyColumnDefs = (
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              padding: '2px 10px',
+              justifyContent: 'center',
+              height: 24,
+              padding: '0 10px',
               borderRadius: '9999px',
               fontSize: '0.72rem',
               fontWeight: 700,
-              lineHeight: 1.2,
+              lineHeight: 1,
               backgroundColor: 'rgba(34, 197, 94, 0.12)',
               color: '#2e7d32',
               border: '1px solid rgba(34, 197, 94, 0.35)',
+              boxSizing: 'border-box',
             }}
           >
             1 Attempt
@@ -333,14 +343,17 @@ export const historyColumnDefs = (
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              padding: '2px 10px',
+              justifyContent: 'center',
+              height: 24,
+              padding: '0 10px',
               borderRadius: '9999px',
               fontSize: '0.75rem',
               fontWeight: 700,
-              lineHeight: 1.2,
+              lineHeight: 1,
               color: isPassed ? '#2e7d32' : '#d32f2f',
               backgroundColor: isPassed ? 'rgba(46, 125, 50, 0.12)' : 'rgba(211, 47, 47, 0.12)',
               border: isPassed ? '1px solid rgba(46, 125, 50, 0.35)' : '1px solid rgba(211, 47, 47, 0.35)',
+              boxSizing: 'border-box',
             }}
           >
             {params.value}
