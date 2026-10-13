@@ -140,7 +140,7 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
 
   return (
     <Fade in={true} timeout={800}>
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+      <Box sx={{ flexGrow: 1, width: '100%', pb: 6 }}>
         {/* Header Profile Section */}
         <Box sx={{ mb: 3 }}>
           <Button
@@ -324,12 +324,13 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
 
         {/* Section 2: Personal Transcript (Compact / Per-Course vs All Individual Attempts) */}
         <Paper
+          elevation={0}
           sx={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
             borderRadius: radii.xxl,
+            border: '1px solid',
+            borderColor: 'divider',
             overflow: 'hidden',
+            mb: 4,
           }}
         >
           <Box
@@ -390,7 +391,7 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
             </Box>
           </Box>
 
-          <Box className="ag-theme-alpine" sx={{ flex: 1, width: '100%', p: 2 }}>
+          <Box className="ag-theme-alpine" sx={{ width: '100%', p: 2 }}>
             {transcriptViewMode === 'compact' ? (
               <AgGridReact<StudentCourseHistoryRow>
                 domLayout="autoHeight"
