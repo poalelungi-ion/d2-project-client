@@ -45,6 +45,40 @@ export default function App() {
   const [expanded, setExpanded] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  // Android-style 10-tap Developer Easter Egg on sidebar brand
+  const notify = useToastStore((s) => s.notify);
+  const [logoClicks, setLogoClicks] = useState(0);
+  const [lastLogoClickTime, setLastLogoClickTime] = useState(0);
+
+  const handleSidebarEasterEggClick = () => {
+    const now = Date.now();
+    const isConsecutive = now - lastLogoClickTime < 2500;
+    const nextCount = isConsecutive ? logoClicks + 1 : 1;
+    setLastLogoClickTime(now);
+    setLogoClicks(nextCount);
+
+    const isUnlocked = localStorage.getItem('spa_developer_mode_unlocked') === 'true';
+    if (isUnlocked) {
+      notify('Developer mode already active! Opening Settings...', 'info');
+      setSettingsOpen(true);
+      return;
+    }
+
+    const remaining = 10 - nextCount;
+    if (nextCount >= 5 && remaining > 0) {
+      notify(
+        `You are now ${remaining} ${remaining === 1 ? 'step' : 'steps'} away from being a developer! 🛠️`,
+        'info'
+      );
+    } else if (nextCount >= 10) {
+      try {
+        localStorage.setItem('spa_developer_mode_unlocked', 'true');
+      } catch {}
+      notify('🎉 You are now a developer! Teacher Break (Dino Run) unlocked in Settings!', 'success');
+      setSettingsOpen(true);
+    }
+  };
+
   const drawerWidth = expanded ? 260 : 76;
 
   const handleSignOut = async () => {
@@ -90,7 +124,22 @@ export default function App() {
               }}
             >
               {expanded ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden' }}>
+                <Box
+                  onClick={handleSidebarEasterEggClick}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    borderRadius: radii.md,
+                    p: 0.5,
+                    transition: 'opacity 0.2s ease',
+                    '&:active': { opacity: 0.8 },
+                  }}
+                  title="SPA System (Tap 10x for Developer Options)"
+                >
                   <UniHildesheimLogo size={42} />
                   <Box sx={{ minWidth: 0 }}>
                     <Typography

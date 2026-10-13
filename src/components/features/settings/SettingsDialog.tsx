@@ -53,6 +53,49 @@ export const SettingsDialog = ({ open, onClose }: SettingsDialogProps) => {
   const [gameExpanded, setGameExpanded] = useState(false);
   const [logsExpanded, setLogsExpanded] = useState(false);
 
+  // Android-style 10-click Developer Mode Easter Egg
+  const REQUIRED_DEV_CLICKS = 10;
+  const [devClicks, setDevClicks] = useState(0);
+  const [lastDevClickTime, setLastDevClickTime] = useState(0);
+  const [gameUnlocked, setGameUnlocked] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('spa_developer_mode_unlocked') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleEasterEggClick = () => {
+    const now = Date.now();
+    const isConsecutive = now - lastDevClickTime < 2500;
+    const nextCount = isConsecutive ? devClicks + 1 : 1;
+    setLastDevClickTime(now);
+    setDevClicks(nextCount);
+
+    if (gameUnlocked) {
+      notify('Developer mode is already active! 🦖 Teacher Break Dino Game is ready.', 'info');
+      setGameExpanded(true);
+      return;
+    }
+
+    const remaining = REQUIRED_DEV_CLICKS - nextCount;
+    if (nextCount >= 5 && remaining > 0) {
+      notify(
+        `You are now ${remaining} ${remaining === 1 ? 'step' : 'steps'} away from being a developer! 🛠️`,
+        'info'
+      );
+    } else if (nextCount >= REQUIRED_DEV_CLICKS) {
+      setGameUnlocked(true);
+      setGameExpanded(true);
+      try {
+        localStorage.setItem('spa_developer_mode_unlocked', 'true');
+      } catch {
+        /* ignore storage quota/private mode */
+      }
+      notify('🎉 You are now a developer! Teacher Break (Dino Run) unlocked!', 'success');
+    }
+  };
+
   const [searchQuery, setSearchQuery] = useState('');
   const [newAliasInputs, setNewAliasInputs] = useState<Record<string, string>>({});
 
@@ -111,7 +154,13 @@ export const SettingsDialog = ({ open, onClose }: SettingsDialogProps) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 2, pb: 1.5 }}>
-        <UniHildesheimLogo size={46} />
+        <Box
+          onClick={handleEasterEggClick}
+          sx={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', userSelect: 'none' }}
+          title="Uni Hildesheim Logo (Tap 10x for Easter Egg)"
+        >
+          <UniHildesheimLogo size={46} />
+        </Box>
         <Box>
           <Typography variant="h6" fontWeight="700">
             System Settings &amp; Preferences
@@ -320,41 +369,53 @@ export const SettingsDialog = ({ open, onClose }: SettingsDialogProps) => {
             Staff Tools &amp; Logs
           </Typography>
 
-          {/* Teacher Break Dino Game (Hidden by Default) */}
-          <Accordion
-            expanded={gameExpanded}
-            onChange={(_, exp) => setGameExpanded(exp)}
-            variant="outlined"
-            sx={{
-              borderRadius: `${radii.lg} !important`,
-              overflow: 'hidden',
-              mb: 2,
-              '&:before': { display: 'none' },
-            }}
-          >
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
+          {/* Teacher Break Dino Game (Hidden until unlocked by 10 clicks) */}
+          {gameUnlocked && (
+            <Accordion
+              expanded={gameExpanded}
+              onChange={(_, exp) => setGameExpanded(exp)}
+              variant="outlined"
               sx={{
-                bgcolor: (theme) =>
-                  theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                borderRadius: `${radii.lg} !important`,
+                overflow: 'hidden',
+                mb: 2,
+                '&:before': { display: 'none' },
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <SportsEsportsOutlinedIcon color="primary" />
-                <Box>
-                  <Typography variant="body1" fontWeight="600">
-                    Teacher Break (Dino Run Mini-Game)
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {gameExpanded ? 'Click to hide mini-game' : 'Hidden by default · Click to expand and play'}
-                  </Typography>
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                sx={{
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', pr: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <SportsEsportsOutlinedIcon color="primary" />
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body1" fontWeight="600">
+                          Teacher Break (Dino Run Mini-Game)
+                        </Typography>
+                        <Chip
+                          label="Developer Mode"
+                          size="small"
+                          color="secondary"
+                          sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700 }}
+                        />
+                      </Box>
+                      <Typography variant="caption" color="text.secondary">
+                        {gameExpanded ? 'Click to hide mini-game' : 'Unlocked · Click to expand and play'}
+                      </Typography>
+                    </Box>
+                  </Box>
                 </Box>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails sx={{ p: 2 }}>
-              {gameExpanded && <ProfDinoGame />}
-            </AccordionDetails>
-          </Accordion>
+              </AccordionSummary>
+              <AccordionDetails sx={{ p: 2 }}>
+                {gameExpanded && <ProfDinoGame />}
+              </AccordionDetails>
+            </Accordion>
+          )}
 
           {/* System & Audit Logs Suite (Hidden by Default Under Game) */}
           <Accordion
@@ -433,19 +494,68 @@ export const SettingsDialog = ({ open, onClose }: SettingsDialogProps) => {
           >
             System Information
           </Typography>
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: radii.lg }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-              <SchoolOutlinedIcon color="action" />
-              <Typography variant="body2" fontWeight="700">
-                Stiftung Universität Hildesheim
-              </Typography>
+          <Paper
+            variant="outlined"
+            onClick={handleEasterEggClick}
+            sx={{
+              p: 2,
+              borderRadius: radii.lg,
+              cursor: 'pointer',
+              userSelect: 'none',
+              transition: 'all 0.15s ease',
+              '&:hover': {
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
+              },
+              '&:active': {
+                transform: 'scale(0.99)',
+              },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <SchoolOutlinedIcon color="action" />
+                <Typography variant="body2" fontWeight="700">
+                  Stiftung Universität Hildesheim
+                </Typography>
+              </Box>
+              {gameUnlocked && (
+                <Chip
+                  label="Developer Options Active"
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                  sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700 }}
+                />
+              )}
             </Box>
             <Typography variant="body2" color="text.secondary">
               Faculty IV – Mathematics, Natural Sciences, Economics and Computer Science
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-              Software Systems Engineering (SSE) · SPA System v2.0
+              Software Systems Engineering (SSE) · SPA System v2.0 (Build 2026.10)
             </Typography>
+            {gameUnlocked && (
+              <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  size="small"
+                  variant="text"
+                  color="inherit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setGameUnlocked(false);
+                    setGameExpanded(false);
+                    try {
+                      localStorage.removeItem('spa_developer_mode_unlocked');
+                    } catch {}
+                    notify('Developer options disabled. Teacher Break game hidden.', 'info');
+                  }}
+                  sx={{ fontSize: '0.72rem', textTransform: 'none', py: 0.2 }}
+                >
+                  Hide developer options
+                </Button>
+              </Box>
+            )}
           </Paper>
         </Box>
       </DialogContent>
