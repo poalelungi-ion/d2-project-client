@@ -24,6 +24,7 @@ import type { AttemptType, CourseMark } from '../../../types';
 import { notify, useSystemLogStore } from '../../../stores';
 import { useApiMutations } from '../../../hooks/useApi';
 import { GRADE_CONSTRAINT_MESSAGE, parseGradeInput } from '../../../utils/gradeOutcome';
+import { getStandardSemesterOptions } from '../../../utils/semester';
 
 export interface AddMarkRecordDialogProps {
   courseId: number;
@@ -77,6 +78,12 @@ export function AddMarkRecordDialog({
     courseStudents.length > 0 ? courseStudents[0].studentId : null,
   );
   const [manualStudentId, setManualStudentId] = useState<string>('');
+
+  const allSemestersList = useMemo(() => {
+    const standard = getStandardSemesterOptions();
+    const existing = semesterOptions.filter((s) => s && s !== 'All' && !s.startsWith('__'));
+    return Array.from(new Set([...existing, ...standard]));
+  }, [semesterOptions]);
 
   const [semester, setSemester] = useState<string>(() => {
     if (currentSemester && currentSemester !== 'All') return currentSemester;
@@ -225,23 +232,17 @@ export function AddMarkRecordDialog({
             value={semester}
             label="Semester"
             onChange={(e) => setSemester(e.target.value)}
+            MenuProps={{
+              PaperProps: {
+                sx: { maxHeight: 280 },
+              },
+            }}
           >
-            {semesterOptions
-              .filter((s) => s !== 'All')
-              .map((s) => (
-                <MenuItem key={s} value={s}>
-                  {s}
-                </MenuItem>
-              ))}
-            {!semesterOptions.includes('WiSe 2024/25') && (
-              <MenuItem value="WiSe 2024/25">WiSe 2024/25</MenuItem>
-            )}
-            {!semesterOptions.includes('SoSe 2024') && (
-              <MenuItem value="SoSe 2024">SoSe 2024</MenuItem>
-            )}
-            {!semesterOptions.includes('WiSe 2023/24') && (
-              <MenuItem value="WiSe 2023/24">WiSe 2023/24</MenuItem>
-            )}
+            {allSemestersList.map((s) => (
+              <MenuItem key={s} value={s}>
+                {s}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
 

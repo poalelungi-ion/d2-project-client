@@ -146,6 +146,21 @@ export function generateSemesters(
     .sort(compareSemesters);
 }
 
+/**
+ * Standard list of semesters matching the upload page:
+ * [Next Semester, Current Semester, ...reversed past semesters (most recent first)]
+ */
+export function getStandardSemesterOptions(date: Date = new Date()): string[] {
+  const currentSemester = getCurrentSemester(date);
+  const nextSemester = getNextSemester(currentSemester);
+  const allSemesters = generateSemesters(date);
+  const otherSemesters = [...allSemesters]
+    .filter((s) => s !== nextSemester && s !== currentSemester)
+    .reverse();
+
+  return [nextSemester, currentSemester, ...otherSemesters];
+}
+
 /** Mean numeric grade for one offering of a course. */
 export interface SemesterGradeAverage {
   semester: string;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -19,6 +19,7 @@ import type { AddGradeFormValues, AttemptType, StudentDetails } from '../../type
 import { notify, useSystemLogStore } from '../../stores';
 import { useApiMutations, useCourses } from '../../hooks/useApi';
 import { GRADE_CONSTRAINT_MESSAGE, parseGradeInput } from '../../utils/gradeOutcome';
+import { getStandardSemesterOptions } from '../../utils/semester';
 
 interface AddGradeDialogProps {
   /** Whose transcript the record is appended to. */
@@ -30,7 +31,7 @@ interface AddGradeDialogProps {
 
 const EMPTY_FORM: AddGradeFormValues = {
   course_id: '',
-  semester: 'WiSe23/24',
+  semester: 'WiSe 2024/25',
   grade: '1.0',
   attempt_type: 'Exam 1',
 };
@@ -45,6 +46,8 @@ export function AddGradeDialog({ student, onClose, onSaved }: AddGradeDialogProp
   const { addGrade } = useApiMutations();
   const [values, setValues] = useState<AddGradeFormValues>(EMPTY_FORM);
   const [gradeInput, setGradeInput] = useState<string>('1.0');
+
+  const semesterOptions = useMemo(() => getStandardSemesterOptions(), []);
 
   const update = (patch: Partial<AddGradeFormValues>) =>
     setValues((current) => ({ ...current, ...patch }));
@@ -136,12 +139,17 @@ export function AddGradeDialog({ student, onClose, onSaved }: AddGradeDialogProp
             value={values.semester}
             label="Semester"
             onChange={(e) => update({ semester: e.target.value })}
+            MenuProps={{
+              PaperProps: {
+                sx: { maxHeight: 280 },
+              },
+            }}
           >
-            <MenuItem value="WiSe23/24">Winter Semester 23/24 (WiSe23/24)</MenuItem>
-            <MenuItem value="SoSe24">Summer Semester 24 (SoSe24)</MenuItem>
-            <MenuItem value="WiSe24/25">Winter Semester 24/25 (WiSe24/25)</MenuItem>
-            <MenuItem value="SoSe25">Summer Semester 25 (SoSe25)</MenuItem>
-            <MenuItem value="WiSe25/26">Winter Semester 25/26 (WiSe25/26)</MenuItem>
+            {semesterOptions.map((sem) => (
+              <MenuItem key={sem} value={sem}>
+                {sem}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
 

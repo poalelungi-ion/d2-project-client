@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -21,6 +21,7 @@ import type { CourseMark, AttemptType } from '../../../types';
 import { radii } from '../../../styles/tokens';
 import { gradeOutcomeColor } from '../../../styles/colors';
 import { parseGradeInput, outcomeLabel, GRADE_CONSTRAINT_MESSAGE } from '../../../utils/gradeOutcome';
+import { getStandardSemesterOptions } from '../../../utils/semester';
 
 interface EditMarkDialogProps {
   open: boolean;
@@ -67,6 +68,16 @@ export const EditMarkDialog = ({
       setError(null);
     }
   }, [mark]);
+
+  const semesterOptionsList = useMemo(() => {
+    const standard = getStandardSemesterOptions();
+    const existing = mark
+      ? [mark.semester, ...(availableSemesters || [])].filter(
+          (s) => Boolean(s) && !s.startsWith('__') && s !== 'All',
+        )
+      : [];
+    return Array.from(new Set([...existing, ...standard]));
+  }, [mark, availableSemesters]);
 
   if (!mark) return null;
 
@@ -187,14 +198,13 @@ export const EditMarkDialog = ({
               value={semester}
               label="Semester"
               onChange={(e) => setSemester(e.target.value)}
+              MenuProps={{
+                PaperProps: {
+                  sx: { maxHeight: 280 },
+                },
+              }}
             >
-              {Array.from(
-                new Set(
-                  [mark.semester, ...(availableSemesters || [])].filter(
-                    (s) => Boolean(s) && !s.startsWith('__'),
-                  ),
-                ),
-              ).map((sem) => (
+              {semesterOptionsList.map((sem) => (
                 <MenuItem key={sem} value={sem}>
                   {sem}
                 </MenuItem>
