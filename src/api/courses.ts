@@ -5,8 +5,8 @@ export interface CourseCreatePayload {
   course_id: number | string;
   course_name: string;
   semester: string;
-  study_program: string;
-  professor: string;
+  study_program?: string | null;
+  professor?: string;
 }
 
 /** Payload for PUT /courses/{id} -- CourseCreate plus optimistic-lock fields. */
@@ -21,6 +21,14 @@ export interface CourseArchivePayload {
 }
 
 export const listCourses = (): Promise<Response> => get('/courses/');
+
+/**
+ * [Ticket #95647 - View course details: Data Retrieval]
+ * Queries the backend for a specific course by ID, returning its metadata,
+ * student roster, and associated exam records (or 404 if not found).
+ */
+export const getCourse = (courseId: number | string): Promise<Response> =>
+  get(`/courses/${courseId}`);
 
 export const createCourse = (course: CourseCreatePayload): Promise<Response> =>
   post('/courses/', course);

@@ -5,7 +5,7 @@ import {
   createCourse,
   createStudent,
   errorDetail,
-  getStats,
+  getCourse,
   getStudent,
   listCourses,
   listStudents,
@@ -28,7 +28,6 @@ import type {
   CourseFormValues,
   NameSplitRule,
   PreviewRecord,
-  Stats,
   Student,
   StudentDetails,
   StudentFormValues,
@@ -45,8 +44,6 @@ import {
   parseGradeInput,
   withoutIgnoredColumns,
 } from '../utils/gradeOutcome';
-
-const EMPTY_STATS: Stats = { kpis: {}, toughest_courses: [], atRisk: [] };
 
 const COLUMN_MAPPING: Record<string, string> = {
   Name: 'name',
@@ -68,6 +65,17 @@ const COLUMN_MAPPING: Record<string, string> = {
   // Passed/Failed/Yes/No are stripped before upload; they are never a result.
 };
 
+function isTimeoutError(e: unknown): boolean {
+  const err = e as { name?: string; message?: string };
+  if (err?.name === 'TimeoutError' || err?.name === 'AbortError') return true;
+  const msg = err?.message?.toLowerCase();
+  return msg ? msg.includes('timeout') || msg.includes('timed out') : false;
+}
+
+function notifyTimeout(): void {
+  notify('Request timed out. Please refresh the page.', 'error');
+}
+
 export function useCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,9 +83,17 @@ export function useCourses() {
   const refetch = useCallback(async () => {
     try {
       const res = await listCourses();
+      if (res.status === 408 || res.status === 504) {
+        notifyTimeout();
+        return;
+      }
       setCourses((await res.json()) as Course[]);
-    } catch (e) {
-      console.error('Failed to load courses', e);
+    } catch (e: unknown) {
+      if (isTimeoutError(e)) {
+        notifyTimeout();
+      } else {
+        console.error('Failed to load courses', e);
+      }
     } finally {
       setLoading(false);
     }
@@ -88,6 +104,59 @@ export function useCourses() {
   }, [refetch]);
 
   return { courses, loading, refetch };
+}
+
+/**
+ * [Ticket #95647 - View course details: State Management & Error Handling]
+ * Fetches course details from backend endpoint GET /api/courses/{id}.
+ * - Manages visual loading state (loading: boolean).
+ * - Identifies non-existent courses on HTTP 404 (notFound: true).
+ * - Triggers toast notification alerting the user to refresh the page on timeout.
+ */
+export function useCourseDetails(courseId: number | string | null) {
+  const [course, setCourse] = useState<Course | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  const refetch = useCallback(async () => {
+    if (!courseId) {
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setNotFound(false);
+    try {
+      const res = await getCourse(courseId);
+      if (res.status === 404) {
+        setNotFound(true);
+        setCourse(null);
+      } else if (res.status === 408 || res.status === 504) {
+        notifyTimeout();
+        setCourse(null);
+      } else if (res.ok) {
+        setCourse((await res.json()) as Course);
+      } else {
+        setCourse(null);
+      }
+    } catch (e: unknown) {
+      if (isTimeoutError(e)) {
+        notifyTimeout();
+      } else {
+        console.error('Failed to load course details', e);
+      }
+      setCourse(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [courseId]);
+
+  useEffect(() => {
+    setCourse(null);
+    void refetch();
+  }, [refetch]);
+
+  return { course, loading, notFound, refetch };
 }
 
 export function useStudents() {
@@ -111,29 +180,6 @@ export function useStudents() {
   }, [refetch]);
 
   return { students, loading, refetch };
-}
-
-export function useStats() {
-  const [stats, setStats] = useState<Stats>(EMPTY_STATS);
-  const [loading, setLoading] = useState(true);
-
-  const refetch = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await getStats();
-      setStats((await res.json()) as Stats);
-    } catch (e) {
-      console.error('Failed to load stats', e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refetch();
-  }, [refetch]);
-
-  return { stats, loading, refetch };
 }
 
 export function useStudentDetails(studentId: number | null) {
@@ -171,8 +217,6 @@ async function saveCourse(values: CourseFormValues, version?: number): Promise<b
     course_id: values.course_id,
     course_name: values.course_name,
     semester: values.semester,
-    study_program: values.study_program,
-    professor: values.professor || 'Not Assigned',
   };
 
   try {
@@ -199,7 +243,16 @@ async function saveCourse(values: CourseFormValues, version?: number): Promise<b
   return false;
 }
 
-async function saveStudent(values: StudentFormValues, version?: number): Promise<boolean> {
+export interface SaveStudentResult {
+  success: boolean;
+  conflict?: boolean;
+  error?: string;
+}
+
+async function saveStudent(
+  values: StudentFormValues,
+  version?: number,
+): Promise<SaveStudentResult> {
   const studentId = parseInt(values.student_id, 10);
   const name = `${values.first_name.trim()} ${values.last_name.trim()}`;
 
@@ -227,13 +280,15 @@ async function saveStudent(values: StudentFormValues, version?: number): Promise
 
     if (res.ok) {
       notify(version === undefined ? 'Student profile created' : 'Student profile updated');
-      return true;
+      return { success: true };
     }
-    notify(`Error: ${await errorDetail(res)}`, 'error');
+    const detail = await errorDetail(res);
+    notify(`Error: ${detail}`, 'error');
+    return { success: false, conflict: res.status === 409, error: detail };
   } catch {
     notify('Network error', 'error');
+    return { success: false, error: 'Network error' };
   }
-  return false;
 }
 
 async function addGrade(studentId: number, grade: AddGradePayload): Promise<boolean> {

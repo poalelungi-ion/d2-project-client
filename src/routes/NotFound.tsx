@@ -11,8 +11,8 @@ interface NotFoundProps {
 
 export const NotFound = ({
   title = 'Page not found',
-  backTo = ROUTES.dashboard,
-  backLabel = 'Back to Dashboard',
+  backTo = ROUTES.courses,
+  backLabel = 'Back to Courses',
 }: NotFoundProps) => {
   const navigate = useNavigate();
 

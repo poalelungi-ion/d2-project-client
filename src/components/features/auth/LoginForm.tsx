@@ -39,8 +39,8 @@ export function LoginForm() {
     if (Object.keys(found).length > 0) return;
 
     if (await login({ email: values.email.trim(), password: values.password })) {
-      // Back to whatever was being opened before the redirect, or the dashboard.
-      const target = (location.state as RedirectState | null)?.from ?? ROUTES.dashboard;
+      // Back to whatever was being opened before the redirect, or the courses page.
+      const target = (location.state as RedirectState | null)?.from ?? ROUTES.courses;
       void navigate(target, { replace: true });
     }
   };

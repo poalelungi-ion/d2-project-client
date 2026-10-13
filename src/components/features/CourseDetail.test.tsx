@@ -268,8 +268,13 @@ describe('per-person history columns', () => {
   it('keeps both sittings in their own columns when unfiltered', () => {
     renderDetail(bruno());
 
-    expect(cell('exam1_grade')).toBe('5');
+    expect(cell('exam1_grade')).toBe('5.0');
     expect(cell('exam2_grade')).toBe('1.7');
+  });
+
+  it('shows the semester the sittings took place in', () => {
+    renderDetail(bruno());
+    expect(cell('semester')).toBe('SOSE_25');
   });
 });
 
@@ -474,5 +479,26 @@ describe('lecture-view grade edits', () => {
     expect(screen.getByRole('button', { name: /save marks/i })).toBeInTheDocument();
     expect(within(marksPanel()).getByText('Grade')).toBeInTheDocument();
     expect(screen.getByText(/click a grade to edit/i)).toBeInTheDocument();
+  });
+});
+
+describe('course metadata and navigation (#95647)', () => {
+  it('renders breadcrumb navigation and allows returning to course list', () => {
+    renderDetail();
+    const breadcrumbs = screen.getByRole('navigation', { name: /breadcrumb/i });
+    expect(breadcrumbs).toBeInTheDocument();
+    expect(within(breadcrumbs).getByRole('button', { name: 'Courses' })).toBeInTheDocument();
+    expect(within(breadcrumbs).getByText('Software Architecture')).toBeInTheDocument();
+  });
+
+  it('displays core course metadata and primary Upload Exam Data action button', () => {
+    renderDetail();
+    expect(screen.getByRole('heading', { name: 'Software Architecture' })).toBeInTheDocument();
+    expect(screen.getByText('ID: 101')).toBeInTheDocument();
+    expect(screen.getAllByText('WISE_25').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('SE Master').length).toBeGreaterThanOrEqual(1);
+
+    const uploadButton = screen.getByRole('button', { name: /upload exam data/i });
+    expect(uploadButton).toBeInTheDocument();
   });
 });

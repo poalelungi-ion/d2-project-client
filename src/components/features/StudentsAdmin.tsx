@@ -27,6 +27,7 @@ import { ROUTES } from '../../app/navigation';
 import { useStudents } from '../../hooks/useApi';
 import { useQueryParam } from '../../hooks/useQueryParam';
 import { VIEW_MODES } from '../../utils/constants';
+import { formatGrade } from '../../utils/gradeOutcome';
 import { semantic } from '../../styles/colors';
 import { borders, shadows } from '../../styles/tokens';
 import { gridContainer, pageSubtitle, pageTitle } from '../../styles/mixins';
@@ -63,12 +64,18 @@ export const StudentsAdmin = () => {
     );
   }, [students, studentSearchQuery]);
 
+  const existingStudentIds = useMemo(
+    () => students.map((s) => s.student_id),
+    [students],
+  );
+
   return (
     <Fade in={true} timeout={800}>
       <Box sx={{ flexGrow: 1 }}>
         {form && (
           <StudentFormDialog
             student={form.student}
+            existingStudentIds={existingStudentIds}
             onClose={() => setForm(null)}
             onSaved={() => void refetch()}
           />
@@ -175,7 +182,7 @@ export const StudentsAdmin = () => {
                         Exams: <strong>{student.total_exams}</strong>
                       </Typography>
                       <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                        Avg: <strong>{student.avg_grade}</strong>
+                        Avg: <strong>{formatGrade(student.avg_grade)}</strong>
                       </Typography>
                     </Box>
                   </CardContent>
@@ -202,3 +209,4 @@ export const StudentsAdmin = () => {
     </Fade>
   );
 };
+

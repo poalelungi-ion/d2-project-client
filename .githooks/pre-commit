@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Runs the `quality` stage of .gitlab-ci.yml -- duplication, complexity and unit tests 
+#
+# Enabled by `npm install` (the `prepare` script). Skip once with
+# `git commit --no-verify`.
+set -uo pipefail
+
+root="$(git rev-parse --show-toplevel)"
+
+# Check the staged snapshot rather than the working tree: unstaged edits and
+# files never `git add`ed don't reach CI, so they must not make a gate pass.
+snapshot="$(mktemp -d)"
+trap 'rm -rf "$snapshot"' EXIT
+git checkout-index --all --prefix="$snapshot/"
+ln -s "$root/node_modules" "$snapshot/node_modules"
+cd "$snapshot" || exit 1
+
+# Read the floor from CI so raising it there raises it here too.
+coverage_floor="$(sed -n 's/^ *COVERAGE_FLOOR: *"\([0-9.]*\)".*/\1/p' .gitlab-ci.yml)"
+
+lockfile() {
+  npm ci --dry-run --ignore-scripts
+}
+
+duplication() {
+  npx --yes jscpd@5 . --reporters console,html,codeclimate,json
+}
+
+complexity() {
+  npx eslint --config eslint.config.ci.js src/ --format gitlab || true
+  node scripts/complexity-summary.mjs gl-code-quality-report.json
+}
+
+unit_tests() {
+  npm run test:ci || true
+  COVERAGE_FLOOR="$coverage_floor" npm run test:summary
+}
+
+# The e2e job's build step. Its `tsc -b` covers src/, the e2e specs and the
+# config files, with noUnusedLocals/noUnusedParameters on, so this is what
+# catches unused variables -- the complexity job's ESLint run doesn't gate on them.
+build() {
+  npm run build:e2e
+}
+
+failed=()
+for gate in lockfile duplication complexity unit_tests build; do
+  printf '%-12s ' "$gate"
+  if ESLINT_CODE_QUALITY_REPORT=gl-code-quality-report.json "$gate" > "$gate.log" 2>&1; then
+    echo "passed"
+  else
+    echo "FAILED"
+    failed+=("$gate")
+  fi
+done
+
+if [ ${#failed[@]} -gt 0 ]; then
+  for gate in "${failed[@]}"; do
+    printf '\n===== %s =====\n' "$gate"
+    tail -n 60 "$gate.log"
+  done
+  printf '\npre-commit: %s would fail in the pipeline. Commit aborted.\n' "${failed[*]}"
+  exit 1
+fi

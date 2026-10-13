@@ -27,6 +27,7 @@ import { ROUTES } from '../../app/navigation';
 import { useCourses } from '../../hooks/useApi';
 import { useQueryParam } from '../../hooks/useQueryParam';
 import { COURSE_SORTS, VIEW_MODES } from '../../utils/constants';
+import { formatGrade } from '../../utils/gradeOutcome';
 import { passRateColor } from '../../styles/colors';
 import { gridContainer, metaChip, pageSubtitle, pageTitle } from '../../styles/mixins';
 import { courseColumns } from './columns';
@@ -219,7 +220,7 @@ export const CoursesAdmin = () => {
                       variant="body2"
                       sx={{ display: 'flex', justifyContent: 'space-between' }}
                     >
-                      Avg Grade: <strong>{course.avg_grade}</strong>
+                      Avg Grade: <strong>{formatGrade(course.avg_grade)}</strong>
                     </Typography>
                   </CardContent>
                 </Card>
@@ -245,3 +246,4 @@ export const CoursesAdmin = () => {
     </Fade>
   );
 };
+

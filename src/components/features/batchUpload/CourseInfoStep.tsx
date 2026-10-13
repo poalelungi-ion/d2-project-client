@@ -1,11 +1,37 @@
-import { Box, Typography, Button, TextField, MenuItem, Select } from '@mui/material';
+import {
+  Autocomplete,
+  Box,
+  Typography,
+  Button,
+  TextField,
+  MenuItem,
+  Select,
+} from '@mui/material';
+
 import type { AttemptType } from '../../../types';
 import { useUploadWizard } from './uploadWizardContext';
 import { fieldLabel, monoChip, toneSurface } from '../../../styles/mixins';
 import { semantic } from '../../../styles/colors';
 import { radii } from '../../../styles/tokens';
+import {
+  generateSemesters,
+  getCurrentSemester,
+  isValidSemester,
+} from '../../../utils/semester';
 
-const ATTEMPT_TYPES: readonly AttemptType[] = ['Exam 1', 'Exam 2', 'Other'];
+const ATTEMPT_TYPES: readonly AttemptType[] = [
+  'Exam 1',
+  'Exam 2',
+  'Other',
+];
+
+const SEMESTERS = generateSemesters();
+const CURRENT_SEMESTER = getCurrentSemester();
+
+const SEMESTER_OPTIONS = [
+  CURRENT_SEMESTER,
+  ...SEMESTERS.filter((semester) => semester !== CURRENT_SEMESTER),
+];
 
 export const CourseInfoStep = () => {
   const {
@@ -15,14 +41,23 @@ export const CourseInfoStep = () => {
     setStep: setActiveStep,
   } = useUploadWizard();
 
+  const semesterIsValid =
+    uploadCourseInfo.semester === '' ||
+    isValidSemester(uploadCourseInfo.semester);
+
   return (
     <Box>
       <Typography
         variant="body1"
-        sx={{ mb: 4, color: 'text.secondary', fontSize: '1rem', maxWidth: 800 }}
+        sx={{
+          mb: 4,
+          color: 'text.secondary',
+          fontSize: '1rem',
+          maxWidth: 800,
+        }}
       >
-        A table is always for one course and one semester &mdash; that can&apos;t vary within
-        one import.{' '}
+        A table is always for one course and one semester &mdash; that can&apos;t
+        vary within one import.{' '}
         The course is already settled below; tell us which semester and sitting{' '}
         <Box component="span" sx={{ ...monoChip, px: 1 }}>
           {sourceLabel}
@@ -30,19 +65,39 @@ export const CourseInfoStep = () => {
         covers.
       </Typography>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, maxWidth: 600 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 3,
+          maxWidth: 600,
+        }}
+      >
         <Box>
           <Typography variant="overline" sx={fieldLabel}>
             COURSE
           </Typography>
-          <Box sx={{ ...toneSurface(semantic.success), p: 2, borderRadius: radii.lg }}>
+
+          <Box
+            sx={{
+              ...toneSurface(semantic.success),
+              p: 2,
+              borderRadius: radii.lg,
+            }}
+          >
             <Typography variant="subtitle1" fontWeight={700}>
               {uploadCourseInfo.courseName}
             </Typography>
+
             <Typography
               variant="body2"
               color="text.secondary"
-              sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                mt: 0.5,
+              }}
             >
               Course number
               <Box component="span" sx={{ ...monoChip, px: 1 }}>
@@ -50,48 +105,68 @@ export const CourseInfoStep = () => {
               </Box>
             </Typography>
           </Box>
+
           <Typography
             variant="caption"
             color="text.secondary"
-            sx={{ mt: 0.5, display: 'block' }}
+            sx={{
+              mt: 0.5,
+              display: 'block',
+            }}
           >
-            Taken from the course you started this upload in and attached to every row,
-            so there is nothing to type. A course or course-number column in the file is
-            ignored.
+            Taken from the course you started this upload in and attached to
+            every row, so there is nothing to type. A course or course-number
+            column in the file is ignored.
           </Typography>
         </Box>
+
         <Box>
           <Typography variant="overline" sx={fieldLabel}>
             ECTS (CREDITS FOR THIS COURSE)
           </Typography>
+
           <TextField
             fullWidth
             variant="outlined"
             value={uploadCourseInfo.ects}
             onChange={(e) =>
-              setUploadCourseInfo({ ects: e.target.value })
+              setUploadCourseInfo({
+                ects: e.target.value,
+              })
             }
           />
+
           <Typography
             variant="caption"
             color="text.secondary"
-            sx={{ mt: 0.5, display: 'block' }}
+            sx={{
+              mt: 0.5,
+              display: 'block',
+            }}
           >
-            Recorded with the import. The course itself is fixed by the tab you came from,
-            so the credits here never split it into a second course.
+            Recorded with the import. The course itself is fixed by the tab you
+            came from, so the credits here never split it into a second course.
           </Typography>
         </Box>
+
         <Box>
-          <Typography variant="overline" sx={fieldLabel} id="attempt-type-label">
+          <Typography
+            variant="overline"
+            sx={fieldLabel}
+            id="attempt-type-label"
+          >
             ATTEMPT TYPE
           </Typography>
+
           <Select
             fullWidth
             variant="outlined"
             labelId="attempt-type-label"
             value={uploadCourseInfo.attemptType}
             onChange={(e) =>
-              setUploadCourseInfo({ attemptType: e.target.value as AttemptType })
+              setUploadCourseInfo({
+                attemptType: e.target.value as AttemptType,
+              })
             }
           >
             {ATTEMPT_TYPES.map((attempt) => (
@@ -100,35 +175,99 @@ export const CourseInfoStep = () => {
               </MenuItem>
             ))}
           </Select>
+
           <Typography
             variant="caption"
             color="text.secondary"
-            sx={{ mt: 0.5, display: 'block' }}
+            sx={{
+              mt: 0.5,
+              display: 'block',
+            }}
           >
-            Saved on every record in this import, so you can compare how the first and
-            second sitting of this course went later.
+            Saved on every record in this import, so you can compare how the
+            first and second sitting of this course went later.
           </Typography>
         </Box>
+
         <Box>
           <Typography variant="overline" sx={fieldLabel}>
             SEMESTER
           </Typography>
-          <TextField
+
+          <Autocomplete
             fullWidth
-            variant="outlined"
-            value={uploadCourseInfo.semester}
-            onChange={(e) =>
-              setUploadCourseInfo({ semester: e.target.value })
+            options={SEMESTER_OPTIONS}
+            value={
+              isValidSemester(uploadCourseInfo.semester)
+                ? uploadCourseInfo.semester
+                : null
             }
+            onChange={(_, newValue) => {
+              setUploadCourseInfo({
+                semester: newValue ?? '',
+              });
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="outlined"
+                placeholder="Select or search semester"
+                error={!semesterIsValid}
+                helperText={
+                  !semesterIsValid
+                    ? 'Please select a valid semester.'
+                    : undefined
+                }
+              />
+            )}
+            slotProps={{
+              paper: {
+                sx: {
+                  maxHeight: 320,
+                },
+              },
+            }}
           />
+
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              mt: 0.5,
+              display: 'block',
+            }}
+          >
+            Select or type to search for a semester.
+          </Typography>
         </Box>
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 6 }}>
-        <Button variant="outlined" color="inherit" onClick={() => setActiveStep(0)} sx={{ px: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          mt: 6,
+        }}
+      >
+        <Button
+          variant="outlined"
+          color="inherit"
+          onClick={() => setActiveStep(0)}
+          sx={{ px: 3 }}
+        >
           &larr; Back
         </Button>
-        <Button variant="contained" size="large" onClick={() => setActiveStep(2)} sx={{ px: 4 }}>
+
+        <Button
+          variant="contained"
+          size="large"
+          disabled={
+            !uploadCourseInfo.semester ||
+            !isValidSemester(uploadCourseInfo.semester)
+          }
+          onClick={() => setActiveStep(2)}
+          sx={{ px: 4 }}
+        >
           Continue &rarr;
         </Button>
       </Box>

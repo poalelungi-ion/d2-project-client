@@ -1,10 +1,11 @@
-import { Box, Button, Chip, Typography } from '@mui/material';
+import { Box, Breadcrumbs, Button, Chip, Link as MuiLink, Typography } from '@mui/material';
 import {
   Restore as RestoreIcon,
   ChevronLeft as ChevronLeftIcon,
   CloudUpload as CloudUploadIcon,
   Archive as ArchiveIcon,
   Edit as EditIcon,
+  NavigateNext as NavigateNextIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import type { Course } from '../../../types';
@@ -45,6 +46,34 @@ export const CourseHeader = ({
 
   return (
     <Box sx={{ mb: 3 }}>
+      {/* [Ticket #95647 - Navigation & Layout]
+          Clear breadcrumb navigation allowing the user to easily return to the main course list */}
+      <Breadcrumbs
+        separator={<NavigateNextIcon fontSize="small" />}
+        aria-label="breadcrumb"
+        sx={{ mb: 1.5 }}
+      >
+        <MuiLink
+          component="button"
+          underline="hover"
+          color="inherit"
+          onClick={onBack}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            cursor: 'pointer',
+            fontSize: '0.875rem',
+            background: 'none',
+            border: 'none',
+            p: 0,
+          }}
+        >
+          Courses
+        </MuiLink>
+        <Typography color="text.primary" sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
+          {course.course_name}
+        </Typography>
+      </Breadcrumbs>
       <Button
         startIcon={<ChevronLeftIcon />}
         onClick={onBack}
@@ -52,6 +81,8 @@ export const CourseHeader = ({
       >
         Return to List
       </Button>
+      {/* [Ticket #95647 - Data Retrieval & Presentation]
+          Display core course metadata: Course Name, Course ID, Semester, and Study Program */}
       <Typography variant="h3" sx={pageTitle}>
         {course.course_name}
       </Typography>
@@ -69,6 +100,8 @@ export const CourseHeader = ({
           {course.assigned_professor}
         </Typography>
       </Box>
+      {/* [Ticket #95647 - Data Retrieval & Presentation]
+          Summary statistics: Average Grade, Pass Rate, Total Submissions */}
       <Box sx={{ display: 'flex', gap: 3, mt: 1, flexWrap: 'wrap' }}>
         {summary.totalAttempts === 0 ? (
           // Nothing to summarise yet -- a 0% pass rate would read as a real result.
@@ -109,6 +142,8 @@ export const CourseHeader = ({
         >
           Edit Course
         </Button>
+        {/* [Ticket #95647 - Navigation & Layout]
+            Primary action button labelled 'Upload Exam Data' that triggers data ingestion pipeline */}
         <Button
           variant="contained"
           color="success"

@@ -7,7 +7,7 @@
  * SQLAlchemy models: the API flattens and aggregates on the way out, so a
  * course carries a pass rate and a student carries an exam count that exist
  * nowhere in the database. Keeping them here means a change to a router
- * surfaces as a type error rather than as `undefined` on a dashboard.
+ * surfaces as a type error rather than as `undefined` at runtime.
  */
 
 export type ThemeMode = 'light' | 'dark';
@@ -149,36 +149,6 @@ export interface StudentDetails {
   transcript: TranscriptEntry[];
 }
 
-export interface Kpis {
-  total_active_students: number;
-  total_archived_courses: number;
-  active_pass_rate: number;
-  active_avg_grade: number;
-}
-
-export interface ToughestCourse {
-  course_name: string;
-  pass_rate: number;
-  avg_grade: number;
-}
-
-export interface AtRiskStudent {
-  name: string;
-  fails: number;
-  student_id: number;
-}
-
-/**
- * GET /api/stats/. `kpis` is Partial because the dashboard renders before the
- * first response lands, against an empty object.
- */
-export interface Stats {
-  kpis: Partial<Kpis>;
-  toughest_courses: ToughestCourse[];
-  atRisk: AtRiskStudent[];
-  activity_heatmap?: any[];
-}
-
 /**
  * One parsed row from POST /api/upload/preview/. Every field is a string
  * because the backend stringifies whatever the spreadsheet held -- that is the
@@ -238,8 +208,6 @@ export interface CourseFormValues {
   course_id: string;
   course_name: string;
   semester: string;
-  study_program: string;
-  professor: string;
 }
 
 export type CourseFormErrors = Partial<Record<keyof CourseFormValues, string>>;

@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "prepare": "git config core.hooksPath .githooks || true",
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "lint:complexity": "ESLINT_CODE_QUALITY_REPORT=gl-code-quality-report.json eslint --config eslint.config.ci.js src/ --format gitlab; node scripts/complexity-summary.mjs gl-code-quality-report.json",

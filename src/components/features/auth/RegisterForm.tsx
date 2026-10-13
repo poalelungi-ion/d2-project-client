@@ -43,7 +43,7 @@ export function RegisterForm() {
       password: values.password,
     });
     // register signs in on success, so there is no second password prompt.
-    if (created) void navigate(ROUTES.dashboard, { replace: true });
+    if (created) void navigate(ROUTES.courses, { replace: true });
   };
 
   return (
