@@ -170,19 +170,23 @@ export const ProfDinoGame = () => {
     const el = containerRef.current;
     if (!el) return;
 
-    if (!document.fullscreenElement) {
+    if (!document.fullscreenElement && !isFullscreen) {
       if (el.requestFullscreen) {
-        el.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {
-          setIsFullscreen((prev) => !prev);
-        });
+        el.requestFullscreen()
+          .then(() => setIsFullscreen(true))
+          .catch(() => {
+            setIsFullscreen(true);
+          });
       } else {
-        setIsFullscreen((prev) => !prev);
+        setIsFullscreen(true);
       }
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {
-          setIsFullscreen(false);
-        });
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen()
+          .then(() => setIsFullscreen(false))
+          .catch(() => {
+            setIsFullscreen(false);
+          });
       } else {
         setIsFullscreen(false);
       }
@@ -194,7 +198,11 @@ export const ProfDinoGame = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
   }, []);
 
   const startGame = () => {
@@ -270,24 +278,30 @@ export const ProfDinoGame = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+      if (e.code === 'KeyF') {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleFullscreen();
+      } else if (e.code === 'Escape' && isFullscreen) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        toggleFullscreen();
+      } else if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
         e.preventDefault();
         jump();
       } else if (e.code === 'KeyP') {
         e.preventDefault();
         togglePause();
-      } else if (e.code === 'KeyF') {
-        e.preventDefault();
-        toggleFullscreen();
       } else if (e.code === 'KeyM') {
         e.preventDefault();
         toggleSound();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [soundEnabled, gameState]);
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [soundEnabled, gameState, isFullscreen]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -310,8 +324,8 @@ export const ProfDinoGame = () => {
       // Crisp pixel art rendering
       ctx.imageSmoothingEnabled = false;
 
-      // 1. Draw Zelda Dungeon/Classroom Background
-      ctx.fillStyle = '#0b132b'; // Dark dungeon midnight
+      // 1. Draw Campus Lecture Hall Background
+      ctx.fillStyle = '#0b132b'; // Dark lecture hall midnight
       ctx.fillRect(0, 0, width, height);
 
       // Stone brick background texture with parallax scroll
@@ -352,7 +366,7 @@ export const ProfDinoGame = () => {
         ctx.fillRect(tx + 1, 40, 4, 5);
       }
 
-      // Zelda Cobblestone Checkerboard Floor
+      // Campus Flagstone Checkerboard Floor
       const floorY = g.groundY + 36;
       ctx.fillStyle = '#3a506b';
       ctx.fillRect(0, floorY, width, height - floorY);
@@ -583,7 +597,7 @@ export const ProfDinoGame = () => {
         }
       }
 
-      // 8. Render Collectibles (Zelda Rupees & Coffee)
+      // 8. Render Collectibles (ECTS Crystals & Coffee)
       for (const item of g.collectibles) {
         if (item.type === 'ects_rupee') {
           // Pixel Green Rupee
@@ -704,7 +718,7 @@ export const ProfDinoGame = () => {
         ctx.fillRect(pt.x, pt.y, pt.size, pt.size);
       }
 
-      // 11. Render Player: Zelda-style Scholar Professor
+      // 11. Render Player: Campus Scholar Professor
       const px = g.playerX;
       const py = g.playerY;
 
@@ -712,7 +726,7 @@ export const ProfDinoGame = () => {
       const isFlickering = g.invincibleTimer > 0 && Math.floor(g.invincibleTimer / 4) % 2 === 1;
 
       if (!isFlickering) {
-        // Pointed Academic Wizard / Scholar Cap (Zelda Link Green with Gold Tassel)
+        // Pointed Academic Scholar Cap (Emerald Green with Gold Tassel)
         ctx.fillStyle = '#15803d'; // Cap base
         ctx.fillRect(px + 6, py + 1, 14, 5);
         ctx.fillStyle = '#16a34a';
@@ -780,7 +794,7 @@ export const ProfDinoGame = () => {
         }
       }
 
-      // 12. Retro HUD: 3 Zelda Heart Containers (Top Left)
+      // 12. Retro HUD: 3 Heart Containers (Top Left)
       const heartStartX = 14;
       const heartY = 12;
       for (let h = 0; h < 3; h++) {
@@ -818,7 +832,7 @@ export const ProfDinoGame = () => {
         }
       }
 
-      // ECTS Rupee Counter in HUD
+      // ECTS Crystal Counter in HUD
       ctx.fillStyle = '#22c55e';
       ctx.font = 'bold 12px "Courier New", monospace';
       ctx.fillText(`ECTS: +${g.ects}`, 76, 22);
@@ -841,7 +855,7 @@ export const ProfDinoGame = () => {
         ctx.fillStyle = '#facc15';
         ctx.font = 'bold 16px "Courier New", monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('⚔️ PROF RUN: ZELDA EXAM HALL SPRINT ⚔️', width / 2, 60);
+        ctx.fillText('⚡ PROF RUN: ACADEMIC EXAM SPRINT ⚡', width / 2, 60);
 
         ctx.fillStyle = '#e2e8f0';
         ctx.font = '12px "Courier New", monospace';
@@ -877,19 +891,27 @@ export const ProfDinoGame = () => {
       ref={containerRef}
       variant="outlined"
       sx={{
-        p: isFullscreen ? 3 : 2.5,
+        p: isFullscreen ? { xs: 2, sm: 3 } : 2.5,
         borderRadius: isFullscreen ? 0 : radii.xl,
         bgcolor: '#060a17',
         color: '#f8fafc',
         position: isFullscreen ? 'fixed' : 'relative',
         inset: isFullscreen ? 0 : 'auto',
-        zIndex: isFullscreen ? 9999 : 'auto',
+        zIndex: isFullscreen ? 14000 : 'auto',
+        width: isFullscreen ? '100vw' : '100%',
         height: isFullscreen ? '100vh' : 'auto',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: isFullscreen ? 'center' : 'flex-start',
+        justifyContent: isFullscreen ? 'space-between' : 'flex-start',
         overflow: 'hidden',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
+        '&:fullscreen': {
+          width: '100vw',
+          height: '100vh',
+          p: { xs: 2, sm: 3 },
+          borderRadius: 0,
+          bgcolor: '#060a17',
+        },
       }}
     >
       {/* Game Header Bar */}
@@ -897,7 +919,7 @@ export const ProfDinoGame = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <SportsEsportsIcon sx={{ color: '#22c55e' }} />
           <Typography variant="subtitle1" fontWeight="800" sx={{ letterSpacing: 0.5, fontFamily: 'monospace' }}>
-            Prof Run: Zelda Exam Quest
+            Prof Run: Academic Exam Quest
           </Typography>
           <Chip
             label={semesterTitle}
@@ -1001,6 +1023,7 @@ export const ProfDinoGame = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          my: isFullscreen ? 1.5 : 0,
         }}
         onClick={jump}
       >
@@ -1010,8 +1033,11 @@ export const ProfDinoGame = () => {
           height={200}
           style={{
             width: '100%',
-            height: isFullscreen ? '100%' : 200,
-            maxHeight: isFullscreen ? 'calc(100vh - 120px)' : 200,
+            maxWidth: isFullscreen ? 'min(92vw, 1200px)' : '100%',
+            aspectRatio: '720 / 200',
+            height: 'auto',
+            maxHeight: isFullscreen ? 'calc(100vh - 140px)' : 200,
+            objectFit: 'contain',
             display: 'block',
             imageRendering: 'pixelated',
           }}
