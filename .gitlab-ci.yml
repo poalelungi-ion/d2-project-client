@@ -1,4 +1,4 @@
-stages: [quality, e2e]
+stages: [quality, e2e, publish]
 
 .quality_base: &quality_base
   stage: quality
@@ -115,3 +115,41 @@ e2e:
       - test-results/
     reports:
       junit: e2e-junit.xml
+
+# Publishes the production image (nginx serving the built bundle) 
+# Dockerfile's default target. Publishes the commit tag, which a deployment can
+# pin to, alongside the ref slug (":main" here). 
+publish_image:
+  stage: publish
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.2-debug
+    # The image's own entrypoint is the executor; clear it so GitLab can run
+    # the script below in a shell.
+    entrypoint: [""]
+  # Default branch only: an image per MR would fill the registry.
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  # Skip downloading earlier jobs' artifacts (Playwright traces, reports): they
+  # would only land in the build context.
+  dependencies: []
+  before_script:
+    # Kaniko reads registry credentials from this file rather than `docker
+    # login`. CI_REGISTRY_USER / _PASSWORD are injected by GitLab and scoped to
+    # this project's registry for the length of the job.
+    - mkdir -p /kaniko/.docker
+    - |
+      cat > /kaniko/.docker/config.json <<EOF
+      {"auths":{"$CI_REGISTRY":{"username":"$CI_REGISTRY_USER","password":"$CI_REGISTRY_PASSWORD"}}}
+      EOF
+  script:
+    # --cache pushes intermediate layers to a side repository, so the npm ci
+    # in the Dockerfile is reused until package-lock.json changes.
+    - /kaniko/executor
+        --context "$CI_PROJECT_DIR"
+        --dockerfile "$CI_PROJECT_DIR/Dockerfile"
+        --destination "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+        --destination "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+        --destination "$CI_REGISTRY_IMAGE:latest"
+        --cache=true
+        --cache-repo "$CI_REGISTRY_IMAGE/cache"
+    - echo "Published $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA, :$CI_COMMIT_REF_SLUG and :latest"
