@@ -16,11 +16,11 @@ import {
   Skeleton,
   ToggleButton,
   ToggleButtonGroup,
-  Breadcrumbs,
   Link as MuiLink,
   Paper,
   Chip,
   Collapse,
+  Menu,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -29,6 +29,8 @@ import {
   BarChart as BarChartIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+  School as SchoolIcon,
 } from '@mui/icons-material';
 import { AgGridReact } from 'ag-grid-react';
 import type { RowClickedEvent } from 'ag-grid-community';
@@ -90,6 +92,9 @@ export const CoursesAdmin = () => {
   const [form, setForm] = useState<{ course: Course | null } | null>(null);
   const openCourseForm = useCallback((course: Course | null = null) => setForm({ course }), []);
 
+  const [courseNavAnchor, setCourseNavAnchor] = useState<null | HTMLElement>(null);
+  const isCourseNavOpen = Boolean(courseNavAnchor);
+
   const navigate = useNavigate();
   const courseColumnDefs = useMemo(() => courseColumns(openCourseForm), [openCourseForm]);
 
@@ -147,90 +152,181 @@ export const CoursesAdmin = () => {
             gap: 2,
           }}
         >
-          {/* Address Bar-style Breadcrumbs Navigation (replacing big "Analysis Hub" text) */}
+          {/* Address Bar-style Navigation (replacing big "Analysis Hub" text) */}
           <Box
             sx={{
               display: 'inline-flex',
               alignItems: 'center',
-              py: 0.6,
-              px: 1.5,
+              py: 0.4,
+              px: 1.25,
               borderRadius: radii.md,
               bgcolor: (theme) =>
                 theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
               border: '1px solid',
               borderColor: 'divider',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
             }}
           >
-            <Breadcrumbs
-              separator={<NavigateNextIcon sx={{ fontSize: 16, color: 'text.secondary' }} />}
-              aria-label="breadcrumb"
+            <MuiLink
+              component="button"
+              underline="none"
+              onClick={() => {
+                setSearchQuery('');
+                setCourseNavAnchor(null);
+                void navigate(ROUTES.courses);
+              }}
               sx={{
-                fontSize: '0.875rem',
-                '& .MuiBreadcrumbs-separator': { mx: 0.5 },
+                display: 'inline-flex',
+                alignItems: 'center',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                background: 'none',
+                border: 'none',
+                p: 0,
+                color: 'text.secondary',
+                transition: 'color 0.15s ease',
+                '&:hover': { color: 'primary.main' },
               }}
             >
-              <MuiLink
-                component="button"
-                underline="hover"
-                color="inherit"
+              Courses
+            </MuiLink>
+
+            <NavigateNextIcon sx={{ fontSize: 16, color: 'text.disabled', mx: 0.3 }} />
+
+            {/* Slick Professional Dropdown Button */}
+            <Button
+              size="small"
+              variant="text"
+              onClick={(e) => setCourseNavAnchor(e.currentTarget)}
+              endIcon={
+                <KeyboardArrowDownIcon
+                  sx={{
+                    fontSize: '18px !important',
+                    transition: 'transform 0.2s ease',
+                    transform: isCourseNavOpen ? 'rotate(180deg)' : 'none',
+                    color: 'text.secondary',
+                  }}
+                />
+              }
+              sx={{
+                py: 0.2,
+                px: 0.8,
+                minWidth: 0,
+                textTransform: 'none',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                color: 'text.primary',
+                borderRadius: radii.sm,
+                bgcolor: isCourseNavOpen
+                  ? (theme) => (theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)')
+                  : 'transparent',
+                '&:hover': {
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                },
+              }}
+            >
+              All Courses ({activeCourses.length})
+            </Button>
+
+            <Menu
+              anchorEl={courseNavAnchor}
+              open={isCourseNavOpen}
+              onClose={() => setCourseNavAnchor(null)}
+              PaperProps={{
+                elevation: 4,
+                sx: {
+                  mt: 0.75,
+                  minWidth: 260,
+                  maxWidth: 360,
+                  maxHeight: 380,
+                  borderRadius: radii.md,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  boxShadow: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? '0 12px 32px rgba(0,0,0,0.7)'
+                      : '0 12px 32px rgba(0,0,0,0.12)',
+                },
+              }}
+              transformOrigin={{ horizontal: 'left', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
+            >
+              <Box sx={{ px: 1.5, py: 0.75, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 700,
+                    color: 'text.secondary',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Quick Jump to Course
+                </Typography>
+              </Box>
+
+              <MenuItem
+                selected={true}
                 onClick={() => {
+                  setCourseNavAnchor(null);
                   setSearchQuery('');
                   void navigate(ROUTES.courses);
                 }}
                 sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
+                  py: 1,
+                  px: 1.5,
+                  fontSize: '0.85rem',
                   fontWeight: 600,
-                  background: 'none',
-                  border: 'none',
-                  p: 0,
-                  color: 'text.secondary',
-                  '&:hover': { color: 'primary.main' },
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                 }}
               >
-                Courses
-              </MuiLink>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <SchoolIcon fontSize="small" sx={{ color: 'primary.main', fontSize: 18 }} />
+                  <span>All Courses (Overview)</span>
+                </Box>
+                <Chip
+                  label={activeCourses.length}
+                  size="small"
+                  sx={{ height: 20, fontSize: '0.72rem', fontWeight: 700 }}
+                />
+              </MenuItem>
 
-              <FormControl size="small" variant="standard" sx={{ minWidth: 160 }}>
-                <Select
-                  value=""
-                  displayEmpty
-                  onChange={(e) => {
-                    const targetId = e.target.value;
-                    if (targetId) {
-                      void navigate(ROUTES.courseDetail(targetId));
-                    }
+              <Divider sx={{ my: 0.5 }} />
+
+              {activeCourses.map((c) => (
+                <MenuItem
+                  key={c.course_id}
+                  onClick={() => {
+                    setCourseNavAnchor(null);
+                    void navigate(ROUTES.courseDetail(c.course_id));
                   }}
-                  disableUnderline
                   sx={{
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    color: 'text.primary',
-                    '& .MuiSelect-select': { py: 0, pr: '22px !important' },
-                    '& .MuiSvgIcon-root': { fontSize: 18, right: 0 },
+                    py: 0.85,
+                    px: 1.5,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: 0.25,
                   }}
-                  renderValue={() => (
-                    <Typography
-                      component="span"
-                      sx={{ fontWeight: 600, color: 'text.primary', fontSize: '0.875rem' }}
-                    >
-                      All Courses ({activeCourses.length}) ▾
-                    </Typography>
-                  )}
                 >
-                  <MenuItem disabled value="" sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
-                    <em>Navigate to course:</em>
-                  </MenuItem>
-                  {activeCourses.map((c) => (
-                    <MenuItem key={c.course_id} value={c.course_id} sx={{ fontSize: '0.85rem' }}>
-                      {c.course_name} ({c.semester || 'N/A'})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Breadcrumbs>
+                  <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem', lineHeight: 1.2 }}>
+                    {c.course_name}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
+                      {c.semester || 'No semester'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.72rem' }}>
+                      • ID: {c.course_id}
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              ))}
+            </Menu>
           </Box>
 
           <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
