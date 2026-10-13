@@ -9,19 +9,15 @@ import {
   Typography,
 } from '@mui/material';
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
-import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 
 import { useToastStore, isAcceptedSpreadsheet } from '../../stores';
 import { radii } from '../../styles/tokens';
-import { isTabularPaste } from '../../utils/tabularPaste';
-import { convertPasteToExcel } from '../../api/uploads';
 
 interface CourseDriveDropZoneProps {
   onUpload: (file: File) => Promise<void> | void;
   isUploading?: boolean;
   uploadProgress?: number;
   currentFileName?: string;
-  selectedFileName?: string | null;
   fileInputId?: string;
 }
 
@@ -30,7 +26,6 @@ export const CourseDriveDropZone = ({
   isUploading = false,
   uploadProgress = 0,
   currentFileName,
-  selectedFileName,
   fileInputId = 'excel-upload-file',
 }: CourseDriveDropZoneProps) => {
   const notify = useToastStore((s) => s.notify);
@@ -94,69 +89,11 @@ export const CourseDriveDropZone = ({
     }
   };
 
-  const handlePaste = async (e: React.ClipboardEvent<HTMLDivElement>) => {
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     if (isUploading) return;
-    const clipboardData = e.clipboardData;
-    if (clipboardData.files && clipboardData.files.length > 0) {
-      processFile(clipboardData.files[0]);
-      return;
-    }
-    const text = clipboardData.getData('text/plain');
-    if (text && text.trim() && isTabularPaste(text)) {
-      e.preventDefault();
-      notify('Tabular data detected! Converting to Excel file...', 'info');
-      const timestamp = new Date().toISOString().slice(0, 10);
-      const filename = `pasted_table_${timestamp}.xlsx`;
-      try {
-        const res = await convertPasteToExcel(text, filename);
-        if (res.ok) {
-          const blob = await res.blob();
-          const file = new File([blob], filename, {
-            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          });
-          void onUpload(file);
-          return;
-        }
-      } catch {
-        // fallback
-      }
-      const file = new File([text], `pasted_table_${timestamp}.csv`, { type: 'text/csv' });
-      void onUpload(file);
-    }
-  };
-
-  const handlePasteFromClipboard = async () => {
-    if (isUploading) return;
-    try {
-      const text = await navigator.clipboard.readText();
-      if (!text || !text.trim()) {
-        notify('Clipboard is empty. Copy cells from Excel or a CSV first.', 'info');
-        return;
-      }
-      if (!isTabularPaste(text)) {
-        notify('Clipboard content is not tabular data. Please copy rows from a spreadsheet.', 'error');
-        return;
-      }
-      notify('Converting clipboard table into Excel (.xlsx) file...', 'info');
-      const timestamp = new Date().toISOString().slice(0, 10);
-      const filename = `pasted_table_${timestamp}.xlsx`;
-      try {
-        const res = await convertPasteToExcel(text, filename);
-        if (res.ok) {
-          const blob = await res.blob();
-          const file = new File([blob], filename, {
-            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          });
-          void onUpload(file);
-          return;
-        }
-      } catch {
-        // fallback
-      }
-      const file = new File([text], `pasted_table_${timestamp}.csv`, { type: 'text/csv' });
-      void onUpload(file);
-    } catch {
-      notify('Could not access clipboard automatically. Please click the dropzone and press Ctrl+V, or paste into the box below.', 'info');
+    const files = e.clipboardData.files;
+    if (files && files.length > 0) {
+      processFile(files[0]);
     }
   };
 
@@ -264,52 +201,24 @@ export const CourseDriveDropZone = ({
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Button
-              variant="outlined"
-              size="small"
-              color="primary"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClickBrowse();
-              }}
-              sx={{
-                borderRadius: radii.md,
-                textTransform: 'none',
-                px: 2.5,
-                fontWeight: 600,
-              }}
-            >
-              Browse from computer
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              color="secondary"
-              startIcon={<ContentPasteIcon sx={{ fontSize: 16 }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                void handlePasteFromClipboard();
-              }}
-              sx={{
-                borderRadius: radii.md,
-                textTransform: 'none',
-                px: 2,
-                fontWeight: 600,
-              }}
-            >
-              Paste table as Excel file
-            </Button>
-          </Box>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-            Tip: You can also copy table cells from Excel/web and press <strong>Ctrl+V</strong> directly on this zone.
-          </Typography>
-
-          {selectedFileName && (
-            <Typography variant="body1" color="success.main" fontWeight="600" sx={{ mt: 1.5 }}>
-              Selected: {selectedFileName}
-            </Typography>
-          )}
+          <Button
+            variant="contained"
+            size="medium"
+            color="primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClickBrowse();
+            }}
+            sx={{
+              borderRadius: radii.md,
+              textTransform: 'none',
+              px: 3.5,
+              py: 0.9,
+              fontWeight: 600,
+            }}
+          >
+            Browse from computer
+          </Button>
         </Stack>
       )}
     </Paper>
