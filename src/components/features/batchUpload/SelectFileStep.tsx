@@ -25,7 +25,6 @@ import { CourseDriveTable } from '../../drive/CourseDriveTable';
 import { CourseDriveEmptyState } from '../../drive/CourseDriveEmptyState';
 import { isTabularPaste } from '../../../utils/tabularPaste';
 import { radii } from '../../../styles/tokens';
-import { ExamAttemptSelector } from './ExamAttemptSelector';
 import { PasteTabularPanel } from './PasteTabularPanel';
 
 interface SelectFileStepProps {
@@ -40,7 +39,6 @@ export const SelectFileStep = ({ hideRepository = false }: SelectFileStepProps) 
     setPaste,
     setStep: setActiveStep,
     courseInfo,
-    setCourseInfo,
   } = useUploadWizard();
 
   const {
@@ -252,12 +250,6 @@ export const SelectFileStep = ({ hideRepository = false }: SelectFileStepProps) 
           )}
         </Box>
       )}
-
-      {/* Target Examination Sitting / Attempt Selection */}
-      <ExamAttemptSelector
-        attemptType={courseInfo.attemptType}
-        onChange={(attemptType) => setCourseInfo({ attemptType })}
-      />
 
       {/* Section 2: Ingestion Source (Upload vs Paste Tabbed Card) */}
       <Paper

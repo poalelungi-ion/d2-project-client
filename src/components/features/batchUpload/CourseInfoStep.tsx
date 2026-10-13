@@ -4,13 +4,13 @@ import {
   Typography,
   Button,
   TextField,
-  Chip,
 } from '@mui/material';
 
 import { useUploadWizard } from './uploadWizardContext';
 import { fieldLabel, monoChip, toneSurface } from '../../../styles/mixins';
 import { semantic } from '../../../styles/colors';
 import { radii } from '../../../styles/tokens';
+import { ExamAttemptSelector } from './ExamAttemptSelector';
 import {
   generateSemesters,
   getCurrentSemester,
@@ -68,7 +68,7 @@ export const CourseInfoStep = () => {
           display: 'flex',
           flexDirection: 'column',
           gap: 3,
-          maxWidth: 600,
+          maxWidth: 720,
         }}
       >
         <Box>
@@ -151,28 +151,10 @@ export const CourseInfoStep = () => {
           <Typography variant="overline" sx={fieldLabel}>
             EXAM SITTING / ATTEMPT
           </Typography>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              p: 1.5,
-              borderRadius: radii.md,
-              bgcolor: 'background.paper',
-              border: '1px solid',
-              borderColor: 'divider',
-            }}
-          >
-            <Chip
-              label={uploadCourseInfo.attemptType || 'Exam 1'}
-              color={uploadCourseInfo.attemptType === 'Exam 2' ? 'warning' : 'primary'}
-              sx={{ fontWeight: 700 }}
-              size="small"
-            />
-            <Typography variant="body2" color="text.secondary">
-              Selected in Step 1. Every grade imported from this file will be registered as {uploadCourseInfo.attemptType || 'Exam 1'}.
-            </Typography>
-          </Box>
+          <ExamAttemptSelector
+            attemptType={uploadCourseInfo.attemptType}
+            onChange={(attemptType) => setUploadCourseInfo({ attemptType })}
+          />
         </Box>
 
         <Box>

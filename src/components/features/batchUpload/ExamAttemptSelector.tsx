@@ -16,7 +16,6 @@ export const ExamAttemptSelector = ({
     <Paper
       elevation={0}
       sx={{
-        mb: 3,
         p: 2.5,
         borderRadius: radii.lg,
         border: '1px solid',
