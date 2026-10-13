@@ -369,10 +369,9 @@ export const CoursesAdmin = () => {
               placeholder="Search courses..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{ bgcolor: 'background.paper' }}
             />
             {viewMode === 'grid' && (
-              <FormControl size="small" sx={{ minWidth: 180, bgcolor: 'background.paper' }}>
+              <FormControl size="small" sx={{ minWidth: 180 }}>
                 <InputLabel id="courses-sort-label">Sort By</InputLabel>
                 <Select
                   labelId="courses-sort-label"

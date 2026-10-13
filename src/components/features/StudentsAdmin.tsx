@@ -116,7 +116,6 @@ export const StudentsAdmin = () => {
               placeholder="Search students..."
               value={studentSearchQuery}
               onChange={(e) => setStudentSearchQuery(e.target.value)}
-              sx={{ bgcolor: 'background.paper' }}
             />
 
             <Button variant="cta" startIcon={<AddIcon />} onClick={() => openStudentForm()}>
