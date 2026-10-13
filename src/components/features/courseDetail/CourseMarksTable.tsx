@@ -19,6 +19,7 @@ import {
   MoreVert as MoreVertIcon,
   Person as PersonIcon,
   School as SchoolIcon,
+  AddCircleOutline as AddCircleOutlineIcon,
 } from '@mui/icons-material';
 import { AgGridReact } from 'ag-grid-react';
 import type {
@@ -47,6 +48,7 @@ import { SemesterExamFilter } from './SemesterExamFilter';
 import { EditMarkDialog } from './EditMarkDialog';
 import { StudentAttemptsDialog } from './StudentAttemptsDialog';
 import { StudentFormDialog } from '../../forms/StudentFormDialog';
+import { AddMarkRecordDialog } from './AddMarkRecordDialog';
 
 const DEFAULT_COL_DEF = { resizable: true, sortable: true, filter: true, editable: false };
 
@@ -168,6 +170,7 @@ export const individualMarksColumnDefs = (
 
 interface CourseMarksTableProps {
   marks: CourseMark[];
+  courseId?: number;
   courseName?: string;
   semesterOptions: readonly string[];
   examOptions: readonly string[];
@@ -182,6 +185,7 @@ interface CourseMarksTableProps {
 
 export const CourseMarksTable = ({
   marks,
+  courseId,
   courseName,
   semesterOptions,
   examOptions,
@@ -204,6 +208,7 @@ export const CourseMarksTable = ({
   const [editingMark, setEditingMark] = useState<CourseMark | null>(null);
   const [editingStudentMark, setEditingStudentMark] = useState<CourseMark | null>(null);
   const [revealedStudentHistory, setRevealedStudentHistory] = useState<CourseHistoryRow | null>(null);
+  const [isAddRecordOpen, setIsAddRecordOpen] = useState(false);
 
   // Menu states
   const [actionAnchor, setActionAnchor] = useState<HTMLElement | null>(null);
@@ -318,9 +323,20 @@ export const CourseMarksTable = ({
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-          {viewMode === 'individual' && (
+          {courseId && (
             <Button
               variant="contained"
+              color="primary"
+              startIcon={<AddCircleOutlineIcon />}
+              onClick={() => setIsAddRecordOpen(true)}
+              sx={{ fontWeight: 600, textTransform: 'none' }}
+            >
+              Add Mark Record
+            </Button>
+          )}
+          {viewMode === 'individual' && (
+            <Button
+              variant="outlined"
               startIcon={<SaveIcon />}
               onClick={() => void handleSaveMarks()}
             >
@@ -652,6 +668,20 @@ export const CourseMarksTable = ({
             setEditingStudentMark(null);
             void onRefresh();
           }}
+        />
+      )}
+
+      {/* Centered Modal: Add Manual Mark Record */}
+      {isAddRecordOpen && courseId && (
+        <AddMarkRecordDialog
+          open={isAddRecordOpen}
+          courseId={courseId}
+          courseName={courseName || `Course #${courseId}`}
+          semesterOptions={semesterOptions}
+          currentSemester={semesterFilter}
+          existingMarks={marks}
+          onClose={() => setIsAddRecordOpen(false)}
+          onSaved={onRefresh}
         />
       )}
     </Paper>

@@ -1,6 +1,6 @@
 import { IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import type { ColDef, ICellRendererParams } from 'ag-grid-community';
+import type { ColDef, ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
 import type { Course, Student, TranscriptEntry } from '../../types';
 import { gradeOutcomeColor, passRateColor } from '../../styles/colors';
 import { formatGrade, outcomeLabel } from '../../utils/gradeOutcome';
@@ -43,7 +43,7 @@ export const courseColumns = (onEdit: (course: Course) => void): ColDef<Course>[
     field: 'avg_grade',
     headerName: 'Avg Grade',
     flex: 1,
-    valueFormatter: (params) => formatGrade(params.value),
+    valueFormatter: (params: ValueFormatterParams<Course, number>) => formatGrade(params.value),
   },
   editAction(onEdit),
 ];
@@ -57,7 +57,7 @@ export const studentColumns = (onEdit: (student: Student) => void): ColDef<Stude
     field: 'avg_grade',
     headerName: 'Avg Grade',
     flex: 1,
-    valueFormatter: (params) => formatGrade(params.value),
+    valueFormatter: (params: ValueFormatterParams<Student, number>) => formatGrade(params.value),
   },
   { ...editAction(onEdit), flex: 1 },
 ];
@@ -66,7 +66,33 @@ export const transcriptColumns = (): ColDef<TranscriptEntry>[] => [
   { field: 'result_id', headerName: 'ID', hide: true },
   { field: 'attempt', headerName: 'Attempt #', editable: false, flex: 0.8 },
   // Declared on import, unlike 'Attempt #', which this system derives by counting.
-  { field: 'attempt_type', headerName: 'Exam', editable: false, flex: 1 },
+  {
+    field: 'attempt_type',
+    headerName: 'Sitting / Attempt',
+    editable: false,
+    flex: 1.2,
+    cellRenderer: (params: ICellRendererParams<TranscriptEntry, string>) => {
+      const type = params.value || 'Exam 1';
+      const isRetake = type === 'Exam 2';
+      return (
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            padding: '2px 8px',
+            borderRadius: '12px',
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            backgroundColor: isRetake ? 'rgba(237, 108, 2, 0.12)' : 'rgba(25, 118, 210, 0.12)',
+            color: isRetake ? '#e65100' : '#1565c0',
+            border: isRetake ? '1px solid rgba(237, 108, 2, 0.35)' : '1px solid rgba(25, 118, 210, 0.35)',
+          }}
+        >
+          {type === 'Exam 2' ? 'Exam 2 (Retake)' : type === 'Exam 1' ? 'Exam 1 (First)' : type}
+        </span>
+      );
+    },
+  },
   {
     field: 'semester',
     headerName: 'Semester',
@@ -82,7 +108,7 @@ export const transcriptColumns = (): ColDef<TranscriptEntry>[] => [
     editable: false,
     flex: 1,
     type: 'numericColumn',
-    valueFormatter: (params) =>
+    valueFormatter: (params: ValueFormatterParams<TranscriptEntry, number | null>) =>
       formatGrade(params.value, params.data?.absence_code),
     cellStyle: { fontWeight: 'bold' },
   },

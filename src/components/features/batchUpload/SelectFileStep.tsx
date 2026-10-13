@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Button,
-  TextField,
   Chip,
   Tabs,
   Tab,
@@ -12,12 +11,7 @@ import {
 import {
   ContentPaste as ContentPasteIcon,
   FolderSharedOutlined as FolderSharedOutlinedIcon,
-  TableChartOutlined as TableChartOutlinedIcon,
-  FileDownloadOutlined as FileDownloadOutlinedIcon,
   CloudUploadOutlined as CloudUploadOutlinedIcon,
-  CheckCircleOutline as CheckCircleOutlineIcon,
-  PlaylistAdd as PlaylistAddIcon,
-  Clear as ClearIcon,
 } from '@mui/icons-material';
 import { useUploadWizard } from './uploadWizardContext';
 import {
@@ -30,8 +24,9 @@ import { CourseDriveDropZone } from '../../drive/CourseDriveDropZone';
 import { CourseDriveTable } from '../../drive/CourseDriveTable';
 import { CourseDriveEmptyState } from '../../drive/CourseDriveEmptyState';
 import { isTabularPaste } from '../../../utils/tabularPaste';
-import { convertPasteToExcel } from '../../../api/uploads';
-import { typography, radii } from '../../../styles/tokens';
+import { radii } from '../../../styles/tokens';
+import { ExamAttemptSelector } from './ExamAttemptSelector';
+import { PasteTabularPanel } from './PasteTabularPanel';
 
 export const SelectFileStep = () => {
   const {
@@ -41,6 +36,7 @@ export const SelectFileStep = () => {
     setPaste,
     setStep: setActiveStep,
     courseInfo,
+    setCourseInfo,
   } = useUploadWizard();
 
   const {
@@ -140,109 +136,6 @@ export const SelectFileStep = () => {
       await reparseFile(courseId, fileId);
       notifyToast('File re-parsed successfully!');
     }
-  };
-
-  const sampleData = `Matrikelnr\tName\tStudiengang\tFachsemester\tNote\n1012345\tMustermann, Max\tSoftware Engineering\t3\t1.7\n1012346\tMusterfrau, Anna\tInformatik\t2\t1.3\n1012347\tSchmidt, Lukas\tData Science\t4\t2.0`;
-
-  const handleInsertSampleData = () => {
-    setPaste(sampleData);
-    setPasteError(null);
-    setFile(null);
-    setSelectedDriveFileId(null);
-    notifyToast('Sample grade table inserted!', 'info');
-  };
-
-  const handleClearPaste = () => {
-    setPaste('');
-    setPasteError(null);
-  };
-
-  const handlePasteFromClipboard = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (!text || !text.trim()) {
-        notifyToast('Clipboard is empty. Copy cells from Excel or CSV first.', 'info');
-        return;
-      }
-      setPaste(text);
-      setPasteError(null);
-      setFile(null);
-      setSelectedDriveFileId(null);
-      notifyToast('Pasted content from clipboard!', 'info');
-    } catch {
-      notifyToast('Could not read clipboard directly. Please click inside the box and press Ctrl+V.', 'info');
-    }
-  };
-
-  const handleCreateExcelFromPaste = async () => {
-    if (!paste || !paste.trim()) {
-      notifyToast('Please paste tabular data into the box first.', 'info');
-      return;
-    }
-    if (!isTabularPaste(paste)) {
-      setPasteError('Pasted data is not tabular. Copy cells from a spreadsheet or paste CSV.');
-      notifyToast('Pasted data is not tabular. Copy cells from a spreadsheet or paste CSV.', 'error');
-      return;
-    }
-    setPasteError(null);
-    notifyToast('Converting pasted table into Excel (.xlsx) file...', 'info');
-    const timestamp = new Date().toISOString().slice(0, 10);
-    const filename = `pasted_table_${timestamp}.xlsx`;
-    try {
-      const res = await convertPasteToExcel(paste, filename);
-      if (res.ok) {
-        const blob = await res.blob();
-        const excelFile = new File([blob], filename, {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        });
-        await handleUploadNewFile(excelFile);
-        notifyToast(`Created Excel file "${filename}" and added to Course Drive!`);
-        return;
-      }
-    } catch {
-      // fallback
-    }
-    const csvFile = new File([paste], `pasted_table_${timestamp}.csv`, { type: 'text/csv' });
-    await handleUploadNewFile(csvFile);
-    notifyToast(`Created spreadsheet file "${csvFile.name}" and added to Course Drive!`);
-  };
-
-  const handleDownloadExcelFromPaste = async () => {
-    if (!paste || !paste.trim()) {
-      notifyToast('Please paste tabular data into the box first.', 'info');
-      return;
-    }
-    if (!isTabularPaste(paste)) {
-      setPasteError('Pasted data is not tabular. Copy cells from a spreadsheet or paste CSV.');
-      notifyToast('Pasted data is not tabular. Copy cells from a spreadsheet or paste CSV.', 'error');
-      return;
-    }
-    const timestamp = new Date().toISOString().slice(0, 10);
-    const filename = `pasted_table_${timestamp}.xlsx`;
-    try {
-      const res = await convertPasteToExcel(paste, filename);
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-        notifyToast(`Downloaded "${filename}"!`);
-        return;
-      }
-    } catch {
-      // fallback
-    }
-    const blob = new Blob([paste], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `pasted_table_${timestamp}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    notifyToast(`Downloaded "pasted_table_${timestamp}.csv"!`);
   };
 
   const continueToCourse = () => {
@@ -347,6 +240,12 @@ export const SelectFileStep = () => {
         )}
       </Box>
 
+      {/* Target Examination Sitting / Attempt Selection */}
+      <ExamAttemptSelector
+        attemptType={courseInfo.attemptType}
+        onChange={(attemptType) => setCourseInfo({ attemptType })}
+      />
+
       {/* Section 2: Ingestion Source (Upload vs Paste Tabbed Card) */}
       <Paper
         elevation={0}
@@ -423,120 +322,20 @@ export const SelectFileStep = () => {
         {/* Tab 2: Paste Studio Panel */}
         <Box
           sx={{
-            p: 3,
             display: sourceTab === 'paste' ? 'block' : 'none',
           }}
         >
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 1.5,
-              mb: 2,
-            }}
-          >
-            <Typography variant="body2" color="text.secondary">
-              Copy table cells from Microsoft Excel, Google Sheets, or a CSV file (including the header row) and paste below.
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<ContentPasteIcon />}
-                onClick={() => {
-                  void handlePasteFromClipboard();
-                }}
-                sx={{ textTransform: 'none', fontWeight: 600, borderRadius: radii.md }}
-              >
-                Paste from Clipboard
-              </Button>
-              <Button
-                variant="text"
-                size="small"
-                startIcon={<PlaylistAddIcon />}
-                onClick={handleInsertSampleData}
-                sx={{ textTransform: 'none', fontWeight: 600 }}
-              >
-                Insert Example
-              </Button>
-              {hasPaste && (
-                <Button
-                  variant="text"
-                  size="small"
-                  color="inherit"
-                  startIcon={<ClearIcon />}
-                  onClick={handleClearPaste}
-                  sx={{ textTransform: 'none' }}
-                >
-                  Clear
-                </Button>
-              )}
-            </Box>
-          </Box>
-
-          <TextField
-            multiline
-            minRows={7}
-            maxRows={14}
-            fullWidth
-            placeholder={'Matrikelnr\tName\tStudiengang\tFachsemester\tNote\n1012345\tSchneider, Lena\tSE Master\t3\t1.7\n1012346\tMuster, Max\tCS Bachelor\t1\t2.3'}
-            value={paste}
-            onChange={(e) => {
-              setPasteError(null);
-              setPaste(e.target.value);
-              if (e.target.value) {
-                setFile(null);
-                setSelectedDriveFileId(null);
-              }
-            }}
-            error={Boolean(pasteError)}
-            helperText={pasteError}
-            inputProps={{ 'aria-label': 'Paste tabular grade data' }}
-            sx={{
-              '& .MuiInputBase-input': {
-                fontFamily: typography.mono,
-                fontSize: '0.85rem',
-                whiteSpace: 'pre',
-              },
+          <PasteTabularPanel
+            paste={paste}
+            setPaste={setPaste}
+            pasteError={pasteError}
+            setPasteError={setPasteError}
+            onFileGenerated={handleUploadNewFile}
+            onClearOtherSources={() => {
+              setFile(null);
+              setSelectedDriveFileId(null);
             }}
           />
-
-          {hasPaste && (
-            <Box sx={{ mt: 2.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
-              <Chip
-                icon={<CheckCircleOutlineIcon />}
-                label={`${detectedRowCount} ${detectedRowCount === 1 ? 'row' : 'rows'} detected`}
-                color="primary"
-                variant="outlined"
-                sx={{ fontWeight: 600 }}
-              />
-              <Button
-                variant="contained"
-                color="primary"
-                size="small"
-                startIcon={<TableChartOutlinedIcon />}
-                onClick={() => {
-                  void handleCreateExcelFromPaste();
-                }}
-                sx={{ fontWeight: 600, textTransform: 'none', borderRadius: radii.md }}
-              >
-                Save as Excel (.xlsx) to Course Drive
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<FileDownloadOutlinedIcon />}
-                onClick={() => {
-                  void handleDownloadExcelFromPaste();
-                }}
-                sx={{ fontWeight: 600, textTransform: 'none', borderRadius: radii.md }}
-              >
-                Download as .xlsx
-              </Button>
-            </Box>
-          )}
         </Box>
       </Paper>
 

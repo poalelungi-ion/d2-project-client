@@ -226,7 +226,8 @@ export interface AddGradeFormValues {
   /** Empty string until a course is picked from the dropdown. */
   course_id: number | '';
   semester: string;
-  grade: number;
+  grade: number | string;
+  attempt_type?: AttemptType;
 }
 
 /**

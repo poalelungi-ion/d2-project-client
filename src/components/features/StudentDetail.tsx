@@ -5,6 +5,7 @@ import {
   ChevronLeft as ChevronLeftIcon,
   Cancel as CancelIcon,
   CheckCircle as CheckCircleIcon,
+  AddCircleOutline as AddCircleOutlineIcon,
 } from '@mui/icons-material';
 import { AgGridReact } from 'ag-grid-react';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +17,7 @@ import { pageTitle } from '../../styles/mixins';
 import { transcriptColumns } from './columns';
 import { StudyProgramSelect } from '../forms/StudyProgramSelect';
 import { StudentFormDialog } from '../forms/StudentFormDialog';
+import { AddGradeDialog } from '../forms/AddGradeDialog';
 import { UNASSIGNED_PROGRAM } from '../../utils/studyProgram';
 import EditIcon from '@mui/icons-material/Edit';
 
@@ -32,6 +34,7 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
   // local draft on top of the fetched student.
   const [program, setProgram] = useState(student.program);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [addGradeDialogOpen, setAddGradeDialogOpen] = useState(false);
 
   const navigate = useNavigate();
   const studentColumnDefs = useMemo(() => transcriptColumns(), []);
@@ -147,14 +150,30 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
             sx={{
               p: 3,
               borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 2,
             }}
           >
-            <Typography variant="h5" fontWeight="700">
-              Personal Transcript
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Grades are read-only here. Edit them on the course page.
-            </Typography>
+            <Box>
+              <Typography variant="h5" fontWeight="700">
+                Personal Transcript
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Grades across all course attempts and examination sittings.
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddCircleOutlineIcon />}
+              onClick={() => setAddGradeDialogOpen(true)}
+              sx={{ textTransform: 'none', fontWeight: 600 }}
+            >
+              Add Exam Record
+            </Button>
           </Box>
           <Box className="ag-theme-alpine" sx={{ flex: 1, width: '100%', p: 2 }}>
             <AgGridReact
@@ -174,6 +193,17 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
             onClose={() => setEditDialogOpen(false)}
             onSaved={() => {
               setEditDialogOpen(false);
+              onRefresh();
+            }}
+          />
+        )}
+
+        {addGradeDialogOpen && (
+          <AddGradeDialog
+            student={student}
+            onClose={() => setAddGradeDialogOpen(false)}
+            onSaved={() => {
+              setAddGradeDialogOpen(false);
               onRefresh();
             }}
           />
