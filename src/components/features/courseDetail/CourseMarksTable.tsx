@@ -198,6 +198,209 @@ export const individualMarksColumnDefs = (
     : []),
 ];
 
+export const historyColumnDefs = (
+  chartColors: typeof chart,
+  onQuickEdit: (mark: CourseMark) => void,
+  onOpenRowMenu: (mark: CourseMark, anchor: HTMLElement) => void,
+  onRevealHistory: (row: CourseHistoryRow) => void,
+): ColDef<CourseHistoryRow>[] => [
+  { field: 'student_id', headerName: 'Student ID', flex: 1, editable: false },
+  { field: 'student_name', headerName: 'Student Name', flex: 2, editable: false },
+  { field: 'program', headerName: 'Study Program', flex: 2, editable: false },
+  { field: 'semester', headerName: 'Semester', flex: 1, editable: false, comparator: bySemesterOrder },
+  {
+    colId: 'best_grade',
+    headerName: 'Best Mark',
+    flex: 1.2,
+    editable: false,
+    cellRenderer: (params: ICellRendererParams<CourseHistoryRow>) => {
+      if (!params.data) return null;
+      const { best_grade, best_absence, best_outcome, best_attempt_label } = params.data;
+      const text = formatGrade(best_grade, best_absence);
+      if (!text || text === '—') return <span>—</span>;
+      const isPass = best_outcome === 'passed' || (best_grade != null && best_grade <= 4.0);
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', gap: 1 }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '2px 10px',
+              borderRadius: '9999px',
+              fontWeight: 800,
+              fontSize: '0.78rem',
+              lineHeight: 1.2,
+              backgroundColor: isPass ? `${chartColors.pass}22` : `${chartColors.fail}22`,
+              color: isPass ? chartColors.pass : chartColors.fail,
+              border: `1px solid ${isPass ? chartColors.pass : chartColors.fail}`,
+              boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+            }}
+          >
+            {text}
+          </span>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+            {best_attempt_label}
+          </Typography>
+        </Box>
+      );
+    },
+  },
+  {
+    field: 'exam1_grade',
+    headerName: 'Exam 1 Grade',
+    flex: 1,
+    editable: false,
+    valueFormatter: (params: ValueFormatterParams<CourseHistoryRow, number | null>) =>
+      formatGrade(params.value, params.data?.exam1_absence),
+    cellStyle: { fontWeight: 'bold' },
+  },
+  {
+    field: 'exam2_grade',
+    headerName: 'Exam 2 Grade',
+    flex: 1,
+    editable: false,
+    valueFormatter: (params: ValueFormatterParams<CourseHistoryRow, number | null>) =>
+      formatGrade(params.value, params.data?.exam2_absence),
+    cellStyle: { fontWeight: 'bold' },
+  },
+  {
+    colId: 'attempts',
+    headerName: 'Attempts',
+    width: 140,
+    editable: false,
+    cellRenderer: (params: ICellRendererParams<CourseHistoryRow>) => {
+      if (!params.data) return null;
+      const row = params.data;
+      const count = row.attempt_count || row.marks?.length || 1;
+      if (count > 1) {
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+            <Button
+              size="small"
+              variant="outlined"
+              color="secondary"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRevealHistory(row);
+              }}
+              sx={{
+                py: 0.2,
+                px: 1.25,
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                textTransform: 'none',
+                borderRadius: '9999px',
+                lineHeight: 1.2,
+              }}
+            >
+              {count} Attempts ▾
+            </Button>
+          </Box>
+        );
+      }
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '2px 10px',
+              borderRadius: '9999px',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              lineHeight: 1.2,
+              backgroundColor: 'rgba(34, 197, 94, 0.12)',
+              color: '#2e7d32',
+              border: '1px solid rgba(34, 197, 94, 0.35)',
+            }}
+          >
+            1 Attempt
+          </span>
+        </Box>
+      );
+    },
+  },
+  {
+    field: 'final_status',
+    headerName: 'Final Status',
+    flex: 1,
+    editable: false,
+    cellRenderer: (params: ICellRendererParams<CourseHistoryRow, string>) => {
+      const isPassed = params.value === 'Passed';
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '2px 10px',
+              borderRadius: '9999px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              lineHeight: 1.2,
+              color: isPassed ? '#2e7d32' : '#d32f2f',
+              backgroundColor: isPassed ? 'rgba(46, 125, 50, 0.12)' : 'rgba(211, 47, 47, 0.12)',
+              border: isPassed ? '1px solid rgba(46, 125, 50, 0.35)' : '1px solid rgba(211, 47, 47, 0.35)',
+            }}
+          >
+            {params.value}
+          </span>
+        </Box>
+      );
+    },
+  },
+  {
+    colId: 'actions',
+    headerName: 'Actions',
+    width: 135,
+    editable: false,
+    sortable: false,
+    filter: false,
+    cellRenderer: (params: ICellRendererParams<CourseHistoryRow>) => {
+      if (!params.data) return null;
+      const row = params.data;
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', gap: 0.5 }}>
+          <Button
+            size="small"
+            variant="outlined"
+            color="primary"
+            startIcon={<EditIcon sx={{ fontSize: '0.85rem' }} />}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (row.marks && row.marks.length > 0) {
+                onQuickEdit(row.marks[row.marks.length - 1]);
+              }
+            }}
+            sx={{
+              py: 0.25,
+              px: 1,
+              fontSize: '0.72rem',
+              textTransform: 'none',
+              borderRadius: radii.sm,
+              fontWeight: 700,
+            }}
+          >
+            Edit
+          </Button>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (row.marks && row.marks.length > 0) {
+                onOpenRowMenu(row.marks[row.marks.length - 1], e.currentTarget);
+              }
+            }}
+            sx={{ p: 0.5 }}
+          >
+            <MoreVertIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      );
+    },
+  },
+];
+
 interface CourseMarksTableProps {
   marks: CourseMark[];
   courseId?: number;
@@ -433,172 +636,12 @@ export const CourseMarksTable = ({
             domLayout="autoHeight"
             rowData={historyRows}
             singleClickEdit={true}
-            columnDefs={[
-              { field: 'student_id', headerName: 'Student ID', flex: 1, editable: false },
-              { field: 'student_name', headerName: 'Student Name', flex: 2, editable: false },
-              { field: 'program', headerName: 'Study Program', flex: 2, editable: false },
-              { field: 'semester', headerName: 'Semester', flex: 1, editable: false, comparator: bySemesterOrder },
-              {
-                colId: 'best_grade',
-                headerName: 'Best Mark',
-                flex: 1.2,
-                editable: false,
-                cellRenderer: (params: ICellRendererParams<CourseHistoryRow>) => {
-                  if (!params.data) return null;
-                  const { best_grade, best_absence, best_outcome, best_attempt_label } = params.data;
-                  const text = formatGrade(best_grade, best_absence);
-                  if (!text || text === '—') return <span>—</span>;
-                  const isPass = best_outcome === 'passed' || (best_grade != null && best_grade <= 4.0);
-                  return (
-                    <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', gap: 1 }}>
-                      <span
-                        style={{
-                          padding: '2px 8px',
-                          borderRadius: 12,
-                          fontWeight: 800,
-                          fontSize: '0.78rem',
-                          backgroundColor: isPass ? `${chart.pass}22` : `${chart.fail}22`,
-                          color: isPass ? chart.pass : chart.fail,
-                          border: `1px solid ${isPass ? chart.pass : chart.fail}`,
-                        }}
-                      >
-                        {text}
-                      </span>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                        {best_attempt_label}
-                      </Typography>
-                    </Box>
-                  );
-                },
-              },
-              {
-                field: 'exam1_grade',
-                headerName: 'Exam 1 Grade',
-                flex: 1,
-                editable: false,
-                valueFormatter: (params: ValueFormatterParams<CourseHistoryRow, number | null>) =>
-                  formatGrade(params.value, params.data?.exam1_absence),
-                cellStyle: { fontWeight: 'bold' },
-              },
-              {
-                field: 'exam2_grade',
-                headerName: 'Exam 2 Grade',
-                flex: 1,
-                editable: false,
-                valueFormatter: (params: ValueFormatterParams<CourseHistoryRow, number | null>) =>
-                  formatGrade(params.value, params.data?.exam2_absence),
-                cellStyle: { fontWeight: 'bold' },
-              },
-              {
-                colId: 'attempts',
-                headerName: 'Attempts',
-                width: 140,
-                editable: false,
-                cellRenderer: (params: ICellRendererParams<CourseHistoryRow>) => {
-                  if (!params.data) return null;
-                  const row = params.data;
-                  const count = row.attempt_count || row.marks?.length || 1;
-                  if (count > 1) {
-                    return (
-                      <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="secondary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setRevealedStudentHistory(row);
-                          }}
-                          sx={{
-                            py: 0.25,
-                            px: 1,
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            textTransform: 'none',
-                            borderRadius: radii.sm,
-                          }}
-                        >
-                          {count} Attempts ▾
-                        </Button>
-                      </Box>
-                    );
-                  }
-                  return (
-                    <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                        1 Attempt
-                      </Typography>
-                    </Box>
-                  );
-                },
-              },
-              {
-                field: 'final_status',
-                headerName: 'Final Status',
-                flex: 1,
-                editable: false,
-                cellRenderer: (params: ICellRendererParams<CourseHistoryRow, string>) => (
-                  <span
-                    style={{
-                      color: params.value === 'Passed' ? chart.pass : chart.fail,
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {params.value}
-                  </span>
-                ),
-              },
-              {
-                colId: 'actions',
-                headerName: 'Actions',
-                width: 135,
-                editable: false,
-                sortable: false,
-                filter: false,
-                cellRenderer: (params: ICellRendererParams<CourseHistoryRow>) => {
-                  if (!params.data) return null;
-                  const row = params.data;
-                  return (
-                    <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', gap: 0.5 }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="primary"
-                        startIcon={<EditIcon sx={{ fontSize: '0.85rem' }} />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (row.marks && row.marks.length > 0) {
-                            handleQuickEdit(row.marks[row.marks.length - 1]);
-                          }
-                        }}
-                        sx={{
-                          py: 0.25,
-                          px: 1,
-                          fontSize: '0.72rem',
-                          textTransform: 'none',
-                          borderRadius: radii.sm,
-                          fontWeight: 700,
-                        }}
-                      >
-                        Edit
-                      </Button>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (row.marks && row.marks.length > 0) {
-                            handleOpenRowMenu(row.marks[row.marks.length - 1], e.currentTarget);
-                          }
-                        }}
-                        sx={{ p: 0.5 }}
-                      >
-                        <MoreVertIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  );
-                },
-              },
-            ]}
+            columnDefs={historyColumnDefs(
+              chart,
+              handleQuickEdit,
+              handleOpenRowMenu,
+              setRevealedStudentHistory,
+            )}
             defaultColDef={DEFAULT_COL_DEF}
             animateRows={true}
             pagination={true}

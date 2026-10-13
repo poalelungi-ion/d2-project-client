@@ -377,17 +377,31 @@ export const ExamsHeatmap = ({
                       key={col} 
                       align="center" 
                       sx={{ 
-                        ...getHeatmapCellStyle(val, isDark),
                         border: '1px solid',
                         borderColor: theme.palette.divider,
-                        py: 0.75,
-                        px: 1,
-                        fontSize: '0.85rem',
+                        py: 0.5,
+                        px: 0.5,
+                        verticalAlign: 'middle',
                       }}
                     >
                       {val > 0 ? (
                         <Tooltip title={tooltipText} arrow placement="top" disableInteractive>
-                          <Box component="span" sx={{ display: 'inline-block', width: '100%', height: '100%', cursor: 'default' }}>
+                          <Box
+                            component="span"
+                            sx={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minWidth: 32,
+                              height: 24,
+                              px: 1,
+                              borderRadius: '9999px',
+                              fontSize: '0.78rem',
+                              cursor: 'default',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
+                              ...getHeatmapCellStyle(val, isDark),
+                            }}
+                          >
                             {val}
                           </Box>
                         </Tooltip>
