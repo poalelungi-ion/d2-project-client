@@ -152,13 +152,17 @@ export const CoursesAdmin = () => {
             gap: 2,
           }}
         >
-          {/* Address Bar-style Navigation (replacing big "Analysis Hub" text) */}
-          <Box
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              py: 0.4,
-              px: 1.25,
+          {/* Page Heading & Address Bar-style Navigation */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            <Typography variant="h5" component="h1" fontWeight="800">
+              Courses Analysis Hub
+            </Typography>
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                py: 0.4,
+                px: 1.25,
               borderRadius: radii.md,
               bgcolor: (theme) =>
                 theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
@@ -328,8 +332,9 @@ export const CoursesAdmin = () => {
               ))}
             </Menu>
           </Box>
+        </Box>
 
-          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
             <Button
               variant="outlined"
               size="small"

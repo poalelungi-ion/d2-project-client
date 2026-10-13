@@ -17,6 +17,8 @@ import {
   Divider,
   IconButton,
   Tooltip,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -44,6 +46,7 @@ export default function App() {
 
   const [expanded, setExpanded] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [accountMenuAnchor, setAccountMenuAnchor] = useState<null | HTMLElement>(null);
 
   // Android-style 10-tap Developer Easter Egg on sidebar brand
   const notify = useToastStore((s) => s.notify);
@@ -324,28 +327,36 @@ export default function App() {
                   }}
                 >
                   <Tooltip
-                    title={!expanded ? `${user.name} (${user.email}) - Click to sign out` : ''}
+                    title={!expanded ? `${user.name} (${user.email}) - Account menu` : ''}
                     placement="right"
                   >
-                    <Avatar
-                      sx={{
-                        width: 36,
-                        height: 36,
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        color: 'common.white',
-                        background: gradients.avatar,
-                        boxShadow: shadows.avatar,
-                        cursor: !expanded ? 'pointer' : 'default',
-                      }}
-                      onClick={!expanded ? () => void handleSignOut() : undefined}
+                    <IconButton
+                      aria-label="Account menu"
+                      size="small"
+                      onClick={(e) => setAccountMenuAnchor(e.currentTarget)}
+                      sx={{ p: 0 }}
                     >
-                      {avatarInitials}
-                    </Avatar>
+                      <Avatar
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          color: 'common.white',
+                          background: gradients.avatar,
+                          boxShadow: shadows.avatar,
+                        }}
+                      >
+                        {avatarInitials}
+                      </Avatar>
+                    </IconButton>
                   </Tooltip>
 
                   {expanded && (
-                    <Box sx={{ minWidth: 0 }}>
+                    <Box
+                      sx={{ minWidth: 0, cursor: 'pointer' }}
+                      onClick={(e) => setAccountMenuAnchor(e.currentTarget)}
+                    >
                       <Typography variant="body2" fontWeight="700" noWrap>
                         {user.name}
                       </Typography>
@@ -367,11 +378,34 @@ export default function App() {
                       size="small"
                       onClick={() => void handleSignOut()}
                       sx={{ color: 'text.secondary' }}
+                      aria-label="Sign out"
                     >
                       <LogoutIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                 )}
+
+                <Menu
+                  anchorEl={accountMenuAnchor}
+                  open={Boolean(accountMenuAnchor)}
+                  onClose={() => setAccountMenuAnchor(null)}
+                  PaperProps={{ sx: { minWidth: 200, mt: 1, borderRadius: radii.md } }}
+                >
+                  <MenuItem disabled sx={{ opacity: '1 !important' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {user.email}
+                    </Typography>
+                  </MenuItem>
+                  <Divider />
+                  <MenuItem
+                    onClick={() => {
+                      setAccountMenuAnchor(null);
+                      void handleSignOut();
+                    }}
+                  >
+                    Sign out
+                  </MenuItem>
+                </Menu>
               </Box>
             )}
           </Box>
