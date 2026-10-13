@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import { ThemeProvider } from '@mui/material/styles';
 import { getGlassTheme } from '../../../styles/theme';
 import { SettingsDialog } from './SettingsDialog';
@@ -7,7 +8,11 @@ import { useStudyProgramStore, useToastStore } from '../../../stores';
 import { normalizeStudyProgram } from '../../../utils/studyProgram';
 
 const renderWithTheme = (ui: React.ReactElement) => {
-  return render(<ThemeProvider theme={getGlassTheme('light')}>{ui}</ThemeProvider>);
+  return render(
+    <MemoryRouter>
+      <ThemeProvider theme={getGlassTheme('light')}>{ui}</ThemeProvider>
+    </MemoryRouter>
+  );
 };
 
 describe('SettingsDialog and Study Program Alias Mapping', () => {

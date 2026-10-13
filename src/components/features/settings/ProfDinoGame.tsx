@@ -575,7 +575,9 @@ export const ProfDinoGame = () => {
                 setHighScore(finalMeters);
                 try {
                   localStorage.setItem(HIGHSCORE_KEY, String(finalMeters));
-                } catch {}
+                } catch {
+                  // Ignore localStorage quota errors
+                }
               }
             }
           }

@@ -24,10 +24,13 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import SearchIcon from '@mui/icons-material/Search';
+import TerminalIcon from '@mui/icons-material/Terminal';
+import { useNavigate } from 'react-router-dom';
 
 import { useThemeStore, useToastStore, useStudyProgramStore } from '../../../stores';
 import { radii } from '../../../styles/tokens';
 import { STUDY_PROGRAMS } from '../../../utils/studyProgram';
+import { ROUTES } from '../../../app/navigation';
 import { UniHildesheimLogo } from '../../common/UniHildesheimLogo';
 import { ProfDinoGame } from './ProfDinoGame';
 
@@ -37,6 +40,7 @@ interface SettingsDialogProps {
 }
 
 export const SettingsDialog = ({ open, onClose }: SettingsDialogProps) => {
+  const navigate = useNavigate();
   const mode = useThemeStore((s) => s.mode);
   const toggleTheme = useThemeStore((s) => s.toggle);
   const notify = useToastStore((s) => s.notify);
@@ -334,6 +338,41 @@ export const SettingsDialog = ({ open, onClose }: SettingsDialogProps) => {
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
               Software Systems Engineering (SSE) · SPA System v2.0
             </Typography>
+
+            <Box
+              sx={{
+                mt: 2,
+                pt: 1.5,
+                borderTop: '1px solid',
+                borderColor: 'divider',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 1,
+              }}
+            >
+              <Box>
+                <Typography variant="body2" fontWeight={600}>
+                  System & Audit Logs
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Inspect institutional events, data ingestion runs, and diagnostics.
+                </Typography>
+              </Box>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<TerminalIcon fontSize="small" />}
+                onClick={() => {
+                  onClose();
+                  void navigate(ROUTES.logs);
+                }}
+                sx={{ textTransform: 'none', borderRadius: radii.md, fontWeight: 600 }}
+              >
+                Open System Logs
+              </Button>
+            </Box>
           </Paper>
         </Box>
       </DialogContent>

@@ -10,6 +10,7 @@ import { Login } from '../routes/Login';
 import { Register } from '../routes/Register';
 import { Students } from '../routes/Students';
 import { StudentDetail } from '../routes/StudentDetail';
+import { Logs } from '../routes/Logs';
 import { NotFound } from '../routes/NotFound';
 
 /**
@@ -42,6 +43,7 @@ export const routes = [
               { path: 'courses/:courseId', element: <CourseDetail /> },
               { path: 'students', element: <Students /> },
               { path: 'students/:studentId', element: <StudentDetail /> },
+              { path: 'logs', element: <Logs /> },
               { path: '*', element: <NotFound /> },
             ],
           },

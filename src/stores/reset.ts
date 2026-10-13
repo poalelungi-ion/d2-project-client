@@ -1,6 +1,7 @@
 import { useAuthStore } from './authStore';
 import { useThemeStore } from './themeStore';
 import { useToastStore } from './toastStore';
+import { useSystemLogStore } from './systemLogStore';
 
 interface Resettable<T> {
   getState: () => T;
@@ -20,6 +21,7 @@ const RESETTERS = [
   snapshot(useAuthStore),
   snapshot(useThemeStore),
   snapshot(useToastStore),
+  snapshot(useSystemLogStore),
 ];
 
 /**
