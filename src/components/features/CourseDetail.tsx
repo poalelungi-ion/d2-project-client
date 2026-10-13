@@ -211,6 +211,7 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
                 the roster. */}
             <CourseMarksTable
               marks={marks}
+              courseName={course.course_name}
               semesterOptions={semesterOptions}
               examOptions={examOptions}
               semesterFilter={semesterFilter}

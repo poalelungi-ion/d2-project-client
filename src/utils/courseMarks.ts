@@ -6,7 +6,7 @@
  * lecturer narrows to one semester those aggregates no longer describe what is
  * on screen, so they are recomputed here from the visible rows.
  */
-import type { AttemptType, CourseMark } from '../types';
+import type { AttemptType, CourseMark, GradeOutcome } from '../types';
 import { compareSemesters } from './semester';
 
 /** Sentinel for "no filter", so the Select always has a defined value. */
@@ -171,6 +171,11 @@ export interface CourseHistoryRow {
   program: string;
   /** Every semester the student sat this course in, oldest first, e.g. "SOSE_25, WISE_25". */
   semester: string;
+  best_grade: number | null;
+  best_absence: string | null;
+  best_outcome: GradeOutcome | null;
+  best_attempt_label: string;
+  attempt_count: number;
   exam1_grade: number | null;
   exam1_absence: string | null;
   exam2_grade: number | null;
@@ -178,6 +183,36 @@ export interface CourseHistoryRow {
   final_status: 'Passed' | 'Failed';
   /** Every sitting behind the row, so clicking it can open the student. */
   marks: CourseMark[];
+}
+
+/**
+ * Identifies the best academic mark for a student across all exam sittings
+ * (in German grading, 1.0 is highest pass, 4.0 is lowest pass, 5.0 is fail).
+ */
+export function findBestMark(sittings: readonly CourseMark[]): CourseMark | null {
+  if (!sittings || sittings.length === 0) return null;
+
+  // 1. Prioritize passed attempts first
+  const passed = sittings.filter((m) => m.passed || m.outcome === 'passed');
+  if (passed.length > 0) {
+    const withGrade = passed.filter((m) => m.grade != null);
+    if (withGrade.length > 0) {
+      return [...withGrade].sort((a, b) => (a.grade ?? 5) - (b.grade ?? 5))[0];
+    }
+    return passed[0];
+  }
+
+  // 2. If all failed, select the closest numeric grade to passing (lowest number)
+  const withGrade = sittings.filter((m) => m.grade != null);
+  if (withGrade.length > 0) {
+    return [...withGrade].sort((a, b) => (a.grade ?? 5) - (b.grade ?? 5))[0];
+  }
+
+  // 3. Fallback: excused absence (AT) is preferred over non-attendance (NE/EX)
+  const excused = sittings.find((m) => m.outcome === 'excused' || m.absence_code === 'AT');
+  if (excused) return excused;
+
+  return sittings[0];
 }
 
 /**
@@ -212,11 +247,21 @@ export function perStudentHistory(marks: readonly CourseMark[]): CourseHistoryRo
     // groupByStudent never yields an empty list, so there is always a sitting
     // to read the student's name off -- but it may not be the Exam 1 one.
     const identity = sittings[0];
+    const best = findBestMark(sittings);
+    const bestLabel = best
+      ? `${best.semester} · ${best.attempt_type || 'Other'}`
+      : '';
+
     history.push({
       student_id,
       student_name: identity.student_name,
       program: identity.program,
       semester: semestersOf(sittings).join(SEMESTER_SEPARATOR),
+      best_grade: best ? best.grade : null,
+      best_absence: best ? best.absence_code : null,
+      best_outcome: best ? best.outcome : null,
+      best_attempt_label: bestLabel,
+      attempt_count: sittings.length,
       exam1_grade: first ? first.grade : null,
       exam1_absence: first ? first.absence_code : null,
       exam2_grade: second ? second.grade : null,

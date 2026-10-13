@@ -45,6 +45,7 @@ import { bySemesterOrder, perStudentHistory } from '../../../utils/courseMarks';
 import type { CourseHistoryRow } from '../../../utils/courseMarks';
 import { SemesterExamFilter } from './SemesterExamFilter';
 import { EditMarkDialog } from './EditMarkDialog';
+import { StudentAttemptsDialog } from './StudentAttemptsDialog';
 import { StudentFormDialog } from '../../forms/StudentFormDialog';
 
 const DEFAULT_COL_DEF = { resizable: true, sortable: true, filter: true, editable: false };
@@ -74,6 +75,7 @@ export const individualMarksColumnDefs = (
   { field: 'student_name', headerName: 'Name', flex: 2, editable: false },
   { field: 'program', headerName: 'Study Program', flex: 2, editable: false },
   { field: 'semester', headerName: 'Semester', flex: 1, editable: false, comparator: bySemesterOrder },
+  { field: 'attempt_type', headerName: 'Sitting / Attempt', flex: 1, editable: false },
   {
     field: 'grade',
     headerName: 'Grade',
@@ -166,6 +168,7 @@ export const individualMarksColumnDefs = (
 
 interface CourseMarksTableProps {
   marks: CourseMark[];
+  courseName?: string;
   semesterOptions: readonly string[];
   examOptions: readonly string[];
   semesterFilter: string;
@@ -179,6 +182,7 @@ interface CourseMarksTableProps {
 
 export const CourseMarksTable = ({
   marks,
+  courseName,
   semesterOptions,
   examOptions,
   semesterFilter,
@@ -199,6 +203,7 @@ export const CourseMarksTable = ({
   // Modal dialog states
   const [editingMark, setEditingMark] = useState<CourseMark | null>(null);
   const [editingStudentMark, setEditingStudentMark] = useState<CourseMark | null>(null);
+  const [revealedStudentHistory, setRevealedStudentHistory] = useState<CourseHistoryRow | null>(null);
 
   // Menu states
   const [actionAnchor, setActionAnchor] = useState<HTMLElement | null>(null);
@@ -388,6 +393,39 @@ export const CourseMarksTable = ({
               { field: 'program', headerName: 'Study Program', flex: 2, editable: false },
               { field: 'semester', headerName: 'Semester', flex: 1, editable: false, comparator: bySemesterOrder },
               {
+                colId: 'best_grade',
+                headerName: 'Best Mark',
+                flex: 1.2,
+                editable: false,
+                cellRenderer: (params: ICellRendererParams<CourseHistoryRow>) => {
+                  if (!params.data) return null;
+                  const { best_grade, best_absence, best_outcome, best_attempt_label } = params.data;
+                  const text = formatGrade(best_grade, best_absence);
+                  if (!text || text === '—') return <span>—</span>;
+                  const isPass = best_outcome === 'passed' || (best_grade != null && best_grade <= 4.0);
+                  return (
+                    <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', gap: 1 }}>
+                      <span
+                        style={{
+                          padding: '2px 8px',
+                          borderRadius: 12,
+                          fontWeight: 800,
+                          fontSize: '0.78rem',
+                          backgroundColor: isPass ? `${chart.pass}22` : `${chart.fail}22`,
+                          color: isPass ? chart.pass : chart.fail,
+                          border: `1px solid ${isPass ? chart.pass : chart.fail}`,
+                        }}
+                      >
+                        {text}
+                      </span>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                        {best_attempt_label}
+                      </Typography>
+                    </Box>
+                  );
+                },
+              },
+              {
                 field: 'exam1_grade',
                 headerName: 'Exam 1 Grade',
                 flex: 1,
@@ -404,6 +442,49 @@ export const CourseMarksTable = ({
                 valueFormatter: (params: ValueFormatterParams<CourseHistoryRow, number | null>) =>
                   formatGrade(params.value, params.data?.exam2_absence),
                 cellStyle: { fontWeight: 'bold' },
+              },
+              {
+                colId: 'attempts',
+                headerName: 'Attempts',
+                width: 140,
+                editable: false,
+                cellRenderer: (params: ICellRendererParams<CourseHistoryRow>) => {
+                  if (!params.data) return null;
+                  const row = params.data;
+                  const count = row.attempt_count || row.marks?.length || 1;
+                  if (count > 1) {
+                    return (
+                      <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="secondary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRevealedStudentHistory(row);
+                          }}
+                          sx={{
+                            py: 0.25,
+                            px: 1,
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            borderRadius: radii.sm,
+                          }}
+                        >
+                          {count} Attempts ▾
+                        </Button>
+                      </Box>
+                    );
+                  }
+                  return (
+                    <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                        1 Attempt
+                      </Typography>
+                    </Box>
+                  );
+                },
               },
               {
                 field: 'final_status',
@@ -541,8 +622,24 @@ export const CourseMarksTable = ({
         <EditMarkDialog
           open={Boolean(editingMark)}
           mark={editingMark}
+          courseName={courseName}
+          availableSemesters={semesterOptions}
           onClose={() => setEditingMark(null)}
           onSave={handleSaveSingleMark}
+        />
+      )}
+
+      {/* Centered Modal: Student Attempts Breakdown */}
+      {revealedStudentHistory && (
+        <StudentAttemptsDialog
+          open={Boolean(revealedStudentHistory)}
+          historyRow={revealedStudentHistory}
+          courseName={courseName}
+          onClose={() => setRevealedStudentHistory(null)}
+          onEditAttempt={(markToEdit) => {
+            setRevealedStudentHistory(null);
+            setEditingMark(markToEdit);
+          }}
         />
       )}
 

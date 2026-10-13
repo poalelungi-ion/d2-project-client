@@ -20,10 +20,12 @@ import type {
   AddGradePayload,
   CourseCreatePayload,
   CourseUpdatePayload,
+  GradeSaveRow,
   StudentCreatePayload,
   StudentUpdatePayload,
 } from '../api/index';
 import type {
+  AttemptType,
   Course,
   CourseFormValues,
   NameSplitRule,
@@ -342,9 +344,11 @@ async function saveTranscript(
     version: number;
     grade: number | null;
     absence_code?: string | null;
+    attempt_type?: AttemptType;
+    semester?: string;
   }>,
 ): Promise<TranscriptSaveResult> {
-  const payload: Array<{ result_id: number; version: number; grade: number | string }> = [];
+  const payload: GradeSaveRow[] = [];
   for (const row of rows) {
     const value = gradeSaveValue(row);
     if (value == null || !parseGradeInput(value).ok) {
@@ -355,6 +359,8 @@ async function saveTranscript(
       result_id: row.result_id,
       version: row.version,
       grade: value,
+      attempt_type: row.attempt_type,
+      semester: row.semester,
     });
   }
 

@@ -8,6 +8,7 @@ import {
   examsOf,
   filterLabel,
   filterMarks,
+  findBestMark,
   gradeDistribution,
   isSameSelection,
   marksOfSelection,
@@ -372,5 +373,37 @@ describe('sharedGrades / alignDistribution', () => {
       { grade: '1', count: 0 },
       { grade: '3', count: 1 },
     ]);
+  });
+});
+
+describe('findBestMark and multi-attempt student history', () => {
+  it('selects passed grade over failed grade regardless of chronological order', () => {
+    const attempt1 = { ...mark('SOSE_25', 5.0, 'Exam 1'), student_id: 88, passed: false, outcome: 'failed' as const };
+    const attempt2 = { ...mark('SOSE_25', 1.7, 'Exam 2'), student_id: 88, passed: true, outcome: 'passed' as const };
+
+    const best = findBestMark([attempt1, attempt2]);
+    expect(best?.grade).toBe(1.7);
+    expect(best?.attempt_type).toBe('Exam 2');
+  });
+
+  it('selects lowest numeric grade (best pass) when student has multiple passes', () => {
+    const attempt1 = { ...mark('SOSE_25', 2.3, 'Exam 1'), student_id: 89, passed: true, outcome: 'passed' as const };
+    const attempt2 = { ...mark('WISE_25', 1.3, 'Exam 1'), student_id: 89, passed: true, outcome: 'passed' as const };
+
+    const best = findBestMark([attempt1, attempt2]);
+    expect(best?.grade).toBe(1.3);
+    expect(best?.semester).toBe('WISE_25');
+  });
+
+  it('populates best_grade and attempt_count in perStudentHistory', () => {
+    const rows = perStudentHistory([
+      { ...mark('SOSE_25', 5.0, 'Exam 1'), student_id: 99, student_name: 'Multi Attempt Student', passed: false, outcome: 'failed' },
+      { ...mark('SOSE_25', 2.0, 'Exam 2'), student_id: 99, student_name: 'Multi Attempt Student', passed: true, outcome: 'passed' },
+    ]);
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].attempt_count).toBe(2);
+    expect(rows[0].best_grade).toBe(2.0);
+    expect(rows[0].best_attempt_label).toBe('SOSE_25 · Exam 2');
   });
 });

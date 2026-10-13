@@ -26,23 +26,30 @@ interface EditMarkDialogProps {
   open: boolean;
   mark: CourseMark | null;
   courseName?: string;
+  availableSemesters?: readonly string[];
   onClose: () => void;
   onSave: (updatedMark: CourseMark) => Promise<boolean>;
 }
 
 const COMMON_GRADES = ['1.0', '1.3', '1.7', '2.0', '2.3', '2.7', '3.0', '3.3', '3.7', '4.0', '5.0'];
 const ABSENCE_CODES = ['NE', 'EX', 'AT'];
-const ATTEMPT_TYPES: AttemptType[] = ['Exam 1', 'Exam 2', 'Other'];
+const ATTEMPT_TYPES: { value: AttemptType; label: string }[] = [
+  { value: 'Exam 1', label: 'Exam 1 (1st Attempt / 1. Termin)' },
+  { value: 'Exam 2', label: 'Exam 2 (2nd Attempt / 2. Termin)' },
+  { value: 'Other', label: 'Other Sitting' },
+];
 
 export const EditMarkDialog = ({
   open,
   mark,
   courseName,
+  availableSemesters,
   onClose,
   onSave,
 }: EditMarkDialogProps) => {
   const [gradeInput, setGradeInput] = useState('');
   const [attemptType, setAttemptType] = useState<AttemptType>('Exam 1');
+  const [semester, setSemester] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -56,6 +63,7 @@ export const EditMarkDialog = ({
         setGradeInput('');
       }
       setAttemptType(mark.attempt_type || 'Exam 1');
+      setSemester(mark.semester || '');
       setError(null);
     }
   }, [mark]);
@@ -86,6 +94,7 @@ export const EditMarkDialog = ({
       passed: res.passed,
       outcome: res.outcome,
       attempt_type: attemptType,
+      semester: semester || mark.semester,
     };
 
     const ok = await onSave(updated);
@@ -146,29 +155,53 @@ export const EditMarkDialog = ({
           }}
         >
           <Typography variant="caption" color="text.secondary">
-            Course: <strong>{courseName || 'Current Course'}</strong> · Semester: <strong>{mark.semester}</strong>
+            Course: <strong>{courseName || 'Current Course'}</strong> · Registered: <strong>{mark.semester} ({mark.attempt_type || 'Other'})</strong>
           </Typography>
           <Typography variant="caption" color="text.secondary">
             Study Program: <strong>{mark.program}</strong>
           </Typography>
         </Paper>
 
-        {/* Sitting dropdown */}
-        <FormControl fullWidth size="small">
-          <InputLabel id="sitting-type-label">Sitting / Exam Type</InputLabel>
-          <Select
-            labelId="sitting-type-label"
-            value={attemptType}
-            label="Sitting / Exam Type"
-            onChange={(e) => setAttemptType(e.target.value as AttemptType)}
-          >
-            {ATTEMPT_TYPES.map((type) => (
-              <MenuItem key={type} value={type}>
-                {type}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        {/* Sitting and Semester controls */}
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <FormControl fullWidth size="small">
+            <InputLabel id="sitting-type-label">Exam Attempt</InputLabel>
+            <Select
+              labelId="sitting-type-label"
+              value={attemptType}
+              label="Exam Attempt"
+              onChange={(e) => setAttemptType(e.target.value as AttemptType)}
+            >
+              {ATTEMPT_TYPES.map((type) => (
+                <MenuItem key={type.value} value={type.value}>
+                  {type.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth size="small">
+            <InputLabel id="semester-select-label">Semester</InputLabel>
+            <Select
+              labelId="semester-select-label"
+              value={semester}
+              label="Semester"
+              onChange={(e) => setSemester(e.target.value)}
+            >
+              {Array.from(
+                new Set(
+                  [mark.semester, ...(availableSemesters || [])].filter(
+                    (s) => Boolean(s) && !s.startsWith('__'),
+                  ),
+                ),
+              ).map((sem) => (
+                <MenuItem key={sem} value={sem}>
+                  {sem}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
 
         {/* Grade Input & Real-time Outcome preview */}
         <Box>
