@@ -135,7 +135,6 @@ export const dropZone = (hasFile: boolean): SxProps<Theme> => ({
 export const gridContainer: SxProps<Theme> = {
   flex: 1,
   width: '100%',
-  maxWidth: 1400,
   mt: 2,
 };
 

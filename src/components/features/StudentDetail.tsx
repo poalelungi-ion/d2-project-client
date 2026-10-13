@@ -140,7 +140,7 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
 
   return (
     <Fade in={true} timeout={800}>
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100%', maxWidth: 1400, mx: 'auto', width: '100%' }}>
+      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
         {/* Header Profile Section */}
         <Box sx={{ mb: 3 }}>
           <Button

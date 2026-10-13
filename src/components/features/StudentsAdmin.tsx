@@ -85,9 +85,11 @@ export const StudentsAdmin = () => {
           sx={{
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             mb: 4,
-            maxWidth: 1400,
+            width: '100%',
+            flexWrap: 'wrap',
+            gap: 2,
           }}
         >
           <Box>
@@ -98,7 +100,7 @@ export const StudentsAdmin = () => {
               Manage the student directory and view individual marks.
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
             <ToggleButtonGroup
               value={studentViewMode}
               exclusive
@@ -124,7 +126,7 @@ export const StudentsAdmin = () => {
         </Box>
 
         {studentViewMode === 'grid' ? (
-          <Grid container spacing={3} sx={{ maxWidth: 1400 }}>
+          <Grid container spacing={3} sx={{ width: '100%' }}>
             {activeStudents.map((student) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={student.student_id}>
                 <Card

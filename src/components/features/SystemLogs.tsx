@@ -560,7 +560,7 @@ export const SystemLogs = ({ embedded = false }: { embedded?: boolean }) => {
 
   return (
     <Fade in={true} timeout={400}>
-      <Box sx={{ width: '100%', maxWidth: 1400, mx: 'auto' }}>
+      <Box sx={{ width: '100%' }}>
         {!embedded && (
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, flexWrap: 'wrap', gap: 2 }}>
             <Box>
