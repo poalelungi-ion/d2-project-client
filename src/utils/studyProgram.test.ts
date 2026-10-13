@@ -18,6 +18,7 @@ describe('STUDY_PROGRAMS', () => {
     expect(STUDY_PROGRAMS).toContain('Development Project');
     expect(STUDY_PROGRAMS).toContain('SE Master');
     expect(STUDY_PROGRAMS).toContain('Data Science Master');
+    expect(STUDY_PROGRAMS).toContain('Informatik');
   });
 
   it('keeps the empty-import placeholder off the named list', () => {
@@ -41,6 +42,8 @@ describe('formatValidationIssues', () => {
 
 describe('normalizeStudyProgram and aliases', () => {
   it('correctly maps Uni Hildesheim common abbreviations to canonical names', () => {
+    expect(normalizeStudyProgram('Informatik')).toBe('Informatik');
+    expect(normalizeStudyProgram('informatik')).toBe('Informatik');
     expect(normalizeStudyProgram('M.Sc. SE')).toBe('SE Master');
     expect(normalizeStudyProgram('m.sc. ainf')).toBe('Angewandte Informatik Master');
     expect(normalizeStudyProgram('M.Sc. IMIT')).toBe('IMIT Master');

@@ -14,7 +14,7 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 
 import type { PreviewRecord } from '../../../types';
 import { useUploadWizard } from './uploadWizardContext';
-import { useToastStore } from '../../../stores';
+import { useToastStore, useStudyProgramStore } from '../../../stores';
 import { semantic, tint, gradeOutcomeColor } from '../../../styles/colors';
 import { errorCallout } from '../../../styles/mixins';
 import {
@@ -81,6 +81,12 @@ export const ReviewStep = () => {
   const handleApplyMappings = (mappings: Record<string, string>, newPrograms: string[]) => {
     const updatedDynamics = Array.from(new Set([...dynamicPrograms, ...newPrograms]));
     setDynamicPrograms(updatedDynamics);
+
+    // Persist new mappings to store so SettingsDialog and future imports recognize them
+    const { addAlias } = useStudyProgramStore.getState();
+    for (const [source, target] of Object.entries(mappings)) {
+      addAlias(target, source);
+    }
 
     for (const row of previewData) {
       if (mappings[row.program]) {

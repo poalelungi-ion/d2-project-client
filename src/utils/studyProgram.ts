@@ -12,6 +12,7 @@ export const STUDY_PROGRAMS = [
   'Development Project',
   'IMIT Bachelor',
   'IMIT Master',
+  'Informatik',
   'Research Methods',
   'SE Master',
   'Wirtschaftsinformatik Master',
@@ -38,7 +39,15 @@ export const PROGRAM_ALIASES: Record<string, string> = {
   'software engineering': 'SE Master',
   'software engineering master': 'SE Master',
 
-  // AINF
+  // Informatik & AINF
+  informatik: 'Informatik',
+  inf: 'Informatik',
+  'b.sc. informatik': 'Angewandte Informatik Bachelor',
+  'bsc informatik': 'Angewandte Informatik Bachelor',
+  'informatik bachelor': 'Angewandte Informatik Bachelor',
+  'm.sc. informatik': 'Angewandte Informatik Master',
+  'msc informatik': 'Angewandte Informatik Master',
+  'informatik master': 'Angewandte Informatik Master',
   'm.sc. ainf': 'Angewandte Informatik Master',
   'm.sc. angewandte informatik': 'Angewandte Informatik Master',
   'msc ainf': 'Angewandte Informatik Master',
@@ -82,9 +91,9 @@ export const getEffectiveAliases = (): Record<string, string> => {
     if (typeof window !== 'undefined' && window.localStorage) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw);
+        const parsed = JSON.parse(raw) as unknown;
         if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
-          return parsed;
+          return parsed as Record<string, string>;
         }
       }
     }
@@ -98,7 +107,7 @@ export const normalizeStudyProgram = (value: string): string => {
   if (!value) return UNASSIGNED_PROGRAM;
   const clean = value.trim();
   if (!clean || clean.toLowerCase() === 'nan') return UNASSIGNED_PROGRAM;
-  if ((STUDY_PROGRAM_OPTIONS as readonly string[]).includes(clean)) return clean;
+  if (STUDY_PROGRAM_OPTIONS.includes(clean)) return clean;
   const lower = clean.toLowerCase();
   const aliases = getEffectiveAliases();
   if (aliases[lower]) return aliases[lower];
