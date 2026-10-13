@@ -4,11 +4,9 @@ import {
   Typography,
   Button,
   TextField,
-  MenuItem,
-  Select,
+  Chip,
 } from '@mui/material';
 
-import type { AttemptType } from '../../../types';
 import { useUploadWizard } from './uploadWizardContext';
 import { fieldLabel, monoChip, toneSurface } from '../../../styles/mixins';
 import { semantic } from '../../../styles/colors';
@@ -19,12 +17,6 @@ import {
   getNextSemester,
   isValidSemester,
 } from '../../../utils/semester';
-
-const ATTEMPT_TYPES: readonly AttemptType[] = [
-  'Exam 1',
-  'Exam 2',
-  'Other',
-];
 
 const CURRENT_SEMESTER = getCurrentSemester();
 const NEXT_SEMESTER = getNextSemester(CURRENT_SEMESTER);
@@ -156,43 +148,31 @@ export const CourseInfoStep = () => {
         </Box>
 
         <Box>
-          <Typography
-            variant="overline"
-            sx={fieldLabel}
-            id="attempt-type-label"
-          >
-            ATTEMPT TYPE
+          <Typography variant="overline" sx={fieldLabel}>
+            EXAM SITTING / ATTEMPT
           </Typography>
-
-          <Select
-            fullWidth
-            variant="outlined"
-            labelId="attempt-type-label"
-            value={uploadCourseInfo.attemptType}
-            onChange={(e) =>
-              setUploadCourseInfo({
-                attemptType: e.target.value as AttemptType,
-              })
-            }
-          >
-            {ATTEMPT_TYPES.map((attempt) => (
-              <MenuItem key={attempt} value={attempt}>
-                {attempt}
-              </MenuItem>
-            ))}
-          </Select>
-
-          <Typography
-            variant="caption"
-            color="text.secondary"
+          <Box
             sx={{
-              mt: 0.5,
-              display: 'block',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              p: 1.5,
+              borderRadius: radii.md,
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
             }}
           >
-            Saved on every record in this import, so you can compare how the
-            first and second sitting of this course went later.
-          </Typography>
+            <Chip
+              label={uploadCourseInfo.attemptType || 'Exam 1'}
+              color={uploadCourseInfo.attemptType === 'Exam 2' ? 'warning' : 'primary'}
+              sx={{ fontWeight: 700 }}
+              size="small"
+            />
+            <Typography variant="body2" color="text.secondary">
+              Selected in Step 1. Every grade imported from this file will be registered as {uploadCourseInfo.attemptType || 'Exam 1'}.
+            </Typography>
+          </Box>
         </Box>
 
         <Box>

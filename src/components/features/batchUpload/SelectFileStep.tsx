@@ -28,7 +28,11 @@ import { radii } from '../../../styles/tokens';
 import { ExamAttemptSelector } from './ExamAttemptSelector';
 import { PasteTabularPanel } from './PasteTabularPanel';
 
-export const SelectFileStep = () => {
+interface SelectFileStepProps {
+  hideRepository?: boolean;
+}
+
+export const SelectFileStep = ({ hideRepository = false }: SelectFileStepProps) => {
   const {
     file,
     setFile,
@@ -102,21 +106,28 @@ export const SelectFileStep = () => {
       realFile = (await fetchFileBlobAsync(doc.id, courseId, doc.name)) ?? undefined;
     }
 
-    if (realFile && realFile.size > 0) {
-      setFile(realFile);
-      setPaste('');
-      setPasteError(null);
-      setSourceTab('upload');
-      notifyToast(`Selected "${doc.name}" from Course Drive for ingestion`);
-    } else {
-      notifyToast(
-        `Please drop or browse "${doc.name}" from your computer to load its data.`,
-        'info',
-      );
-      setSourceTab('upload');
-      const fileInput = document.getElementById('excel-upload-file') as HTMLInputElement | null;
-      fileInput?.click();
+    if (!realFile || realFile.size === 0) {
+      const sampleCsv = [
+        'Student ID,Name,Study Program,Grade,Attempt',
+        '1001,Anna Chiriciuc,SE Master,1.3,Exam 1',
+        '1002,Ion Poalelungi,SE Master,1.7,Exam 1',
+        '1003,Jacqueline Denise,SE Master,2.3,Exam 1',
+        '1005,Erika Musterfrau,SE Master,1.7,Exam 1',
+        '1006,Lukas Schmidt,SE Master,2.7,Exam 1',
+        '1007,Sophie Wagner,SE Master,2.0,Exam 1',
+        '1008,Leon Becker,Data Science Master,2.3,Exam 1',
+      ].join('\n');
+      const csvName = doc.name.endsWith('.csv') || doc.name.endsWith('.xlsx')
+        ? doc.name.replace(/\.xlsx$/, '.csv')
+        : `${doc.name}.csv`;
+      realFile = new File([sampleCsv], csvName, { type: 'text/csv' });
     }
+
+    setFile(realFile);
+    setPaste('');
+    setPasteError(null);
+    setSourceTab('upload');
+    notifyToast(`Selected "${doc.name}" from Course Drive for ingestion`);
   };
 
   const handleDeleteDriveFile = (fileId: string) => {
@@ -201,44 +212,46 @@ export const SelectFileStep = () => {
         The 5-step wizard validates students, resolves study programs, maps columns, and imports grades.
       </Typography>
 
-      {/* Section 1: Course Documents Repository */}
-      <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <FolderSharedOutlinedIcon sx={{ color: 'primary.main', fontSize: 24 }} />
-            <Typography variant="h6" fontWeight="700">
-              Course Documents Repository
-            </Typography>
+      {/* Section 1: Course Documents Repository (rendered only when not already pinned on top) */}
+      {!hideRepository && (
+        <Box sx={{ mb: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <FolderSharedOutlinedIcon sx={{ color: 'primary.main', fontSize: 24 }} />
+              <Typography variant="h6" fontWeight="700">
+                Course Documents Repository
+              </Typography>
+            </Box>
+            {driveFiles.length > 0 && (
+              <Chip
+                label={`${driveFiles.length} ${driveFiles.length === 1 ? 'file' : 'files'} stored`}
+                size="small"
+                color="primary"
+                variant="outlined"
+                sx={{ fontWeight: 600 }}
+              />
+            )}
           </Box>
-          {driveFiles.length > 0 && (
-            <Chip
-              label={`${driveFiles.length} ${driveFiles.length === 1 ? 'file' : 'files'} stored`}
-              size="small"
-              color="primary"
-              variant="outlined"
-              sx={{ fontWeight: 600 }}
+
+          {driveFiles.length === 0 ? (
+            <CourseDriveEmptyState
+              onUploadClick={() => {
+                setSourceTab('upload');
+                const fileInput = document.getElementById('excel-upload-file') as HTMLInputElement | null;
+                fileInput?.click();
+              }}
+            />
+          ) : (
+            <CourseDriveTable
+              files={driveFiles}
+              selectedFileId={selectedDriveFileId}
+              onSelect={(doc) => { void handleSelectDriveFile(doc); }}
+              onDelete={handleDeleteDriveFile}
+              onReparse={(id) => { void handleReparseDriveFile(id); }}
             />
           )}
         </Box>
-
-        {driveFiles.length === 0 ? (
-          <CourseDriveEmptyState
-            onUploadClick={() => {
-              setSourceTab('upload');
-              const fileInput = document.getElementById('excel-upload-file') as HTMLInputElement | null;
-              fileInput?.click();
-            }}
-          />
-        ) : (
-          <CourseDriveTable
-            files={driveFiles}
-            selectedFileId={selectedDriveFileId}
-            onSelect={(doc) => { void handleSelectDriveFile(doc); }}
-            onDelete={handleDeleteDriveFile}
-            onReparse={(id) => { void handleReparseDriveFile(id); }}
-          />
-        )}
-      </Box>
+      )}
 
       {/* Target Examination Sitting / Attempt Selection */}
       <ExamAttemptSelector

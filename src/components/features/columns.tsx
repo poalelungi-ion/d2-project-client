@@ -67,12 +67,13 @@ export const studentColumns = (onEdit: (student: Student) => void): ColDef<Stude
 
 export const transcriptColumns = (): ColDef<TranscriptEntry>[] => [
   { field: 'result_id', headerName: 'ID', hide: true },
-  { field: 'attempt', headerName: 'Attempt #', editable: false, flex: 0.8 },
+  { field: 'attempt', headerName: 'Attempt #', minWidth: 90, editable: false, flex: 0.8 },
   // Declared on import, unlike 'Attempt #', which this system derives by counting.
   {
     field: 'attempt_type',
     headerName: 'Sitting / Attempt',
     editable: false,
+    minWidth: 140,
     flex: 1.2,
     cellRenderer: (params: ICellRendererParams<TranscriptEntry, string>) => {
       const type = params.value || 'Exam 1';
@@ -100,15 +101,17 @@ export const transcriptColumns = (): ColDef<TranscriptEntry>[] => [
     field: 'semester',
     headerName: 'Semester',
     editable: false,
+    minWidth: 120,
     flex: 1,
     comparator: (a: string | undefined, b: string | undefined) =>
       compareSemesters(a ?? '', b ?? ''),
   },
-  { field: 'course', headerName: 'Course', editable: false, flex: 2 },
+  { field: 'course', headerName: 'Course', minWidth: 180, editable: false, flex: 2 },
   {
     field: 'grade',
     headerName: 'Grade (1.0-5.0)',
     editable: false,
+    minWidth: 120,
     flex: 1,
     type: 'numericColumn',
     valueFormatter: (params: ValueFormatterParams<TranscriptEntry, number | null>) =>
@@ -119,6 +122,7 @@ export const transcriptColumns = (): ColDef<TranscriptEntry>[] => [
     colId: 'outcome',
     headerName: 'Result',
     editable: false,
+    minWidth: 110,
     flex: 1,
     valueGetter: (params) => {
       const row = params.data;
@@ -137,5 +141,119 @@ export const transcriptColumns = (): ColDef<TranscriptEntry>[] => [
         {params.value}
       </span>
     ),
+  },
+];
+
+export const studentCourseHistoryColumns = (
+  onViewAttempts: (row: import('./StudentCourseAttemptsDialog').StudentCourseHistoryRow) => void,
+): ColDef<import('./StudentCourseAttemptsDialog').StudentCourseHistoryRow>[] => [
+  { field: 'course', headerName: 'Course / Subject', minWidth: 180, flex: 2 },
+  { field: 'semesters', headerName: 'Semesters', minWidth: 140, flex: 1.5 },
+  {
+    field: 'attempt_count',
+    headerName: 'Attempts & Retakes',
+    minWidth: 160,
+    flex: 1.3,
+    cellRenderer: (params: ICellRendererParams<import('./StudentCourseAttemptsDialog').StudentCourseHistoryRow, number>) => {
+      const count = params.value ?? 1;
+      const isRetake = count > 1;
+      return (
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            padding: '2px 8px',
+            borderRadius: '12px',
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            backgroundColor: isRetake ? 'rgba(237, 108, 2, 0.12)' : 'rgba(76, 175, 80, 0.12)',
+            color: isRetake ? '#e65100' : '#2e7d32',
+            border: isRetake ? '1px solid rgba(237, 108, 2, 0.35)' : '1px solid rgba(76, 175, 80, 0.35)',
+          }}
+        >
+          {count} {count === 1 ? 'Attempt' : `Attempts (${count - 1} Retake)`}
+        </span>
+      );
+    },
+  },
+  {
+    field: 'best_grade',
+    headerName: 'Best Grade',
+    minWidth: 120,
+    flex: 1,
+    cellRenderer: (params: ICellRendererParams<import('./StudentCourseAttemptsDialog').StudentCourseHistoryRow, number>) => {
+      const text = formatGrade(params.value, params.data?.best_absence);
+      const isPassed = params.data?.final_status === 'Passed';
+      return (
+        <span style={{ fontWeight: 800, color: isPassed ? '#2e7d32' : '#d32f2f' }}>
+          {text} {isPassed ? '✓' : '✗'}
+        </span>
+      );
+    },
+  },
+  {
+    field: 'exam1_grade',
+    headerName: 'Exam 1',
+    minWidth: 100,
+    flex: 0.9,
+    valueFormatter: (params: ValueFormatterParams<import('./StudentCourseAttemptsDialog').StudentCourseHistoryRow, number | null>) =>
+      params.value != null ? formatGrade(params.value, params.data?.exam1_absence) : '—',
+  },
+  {
+    field: 'exam2_grade',
+    headerName: 'Exam 2 (Retake)',
+    minWidth: 120,
+    flex: 1.1,
+    valueFormatter: (params: ValueFormatterParams<import('./StudentCourseAttemptsDialog').StudentCourseHistoryRow, number | null>) =>
+      params.value != null ? formatGrade(params.value, params.data?.exam2_absence) : '—',
+  },
+  {
+    field: 'final_status',
+    headerName: 'Final Status',
+    minWidth: 110,
+    flex: 1,
+    cellRenderer: (params: ICellRendererParams<import('./StudentCourseAttemptsDialog').StudentCourseHistoryRow, string>) => (
+      <span
+        style={{
+          fontWeight: 700,
+          color: params.value === 'Passed' ? '#2e7d32' : '#d32f2f',
+        }}
+      >
+        {params.value}
+      </span>
+    ),
+  },
+  {
+    colId: 'actions',
+    headerName: 'Attempts',
+    minWidth: 110,
+    flex: 0.9,
+    sortable: false,
+    filter: false,
+    cellRenderer: (params: ICellRendererParams<import('./StudentCourseAttemptsDialog').StudentCourseHistoryRow>) => {
+      if (!params.data) return null;
+      const row = params.data;
+      return (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewAttempts(row);
+          }}
+          style={{
+            background: 'none',
+            border: '1px solid rgba(25, 118, 210, 0.4)',
+            color: '#1976d2',
+            padding: '2px 8px',
+            borderRadius: '4px',
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          View ({row.attempt_count})
+        </button>
+      );
+    },
   },
 ];

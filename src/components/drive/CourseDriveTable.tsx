@@ -24,7 +24,7 @@ import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
 
 import type { CourseDriveFile } from '../../types';
 import { radii } from '../../styles/tokens';
-import { useToastStore } from '../../stores';
+import { useToastStore, useCourseDriveStore } from '../../stores';
 
 interface CourseDriveTableProps {
   files: CourseDriveFile[];
@@ -67,15 +67,28 @@ export const CourseDriveTable = ({
   const notify = useToastStore((s) => s.notify);
 
   const handleDownload = (file: CourseDriveFile) => {
-    // Mock download action
     notify(`Downloading "${file.name}"...`);
-    const blob = new Blob([`Mock exam marks content for ${file.name}`], {
-      type: 'text/plain;charset=utf-8',
-    });
+    const existing = useCourseDriveStore.getState().getFileBlob(file.id, file.course_id, file.name);
+    let blob: Blob;
+    if (existing && existing.size > 0) {
+      blob = existing;
+    } else {
+      const sampleCsv = [
+        'Student ID,Name,Study Program,Grade,Attempt',
+        '1001,Anna Chiriciuc,SE Master,1.3,Exam 1',
+        '1002,Ion Poalelungi,SE Master,1.7,Exam 1',
+        '1003,Jacqueline Denise,SE Master,2.3,Exam 1',
+        '1005,Erika Musterfrau,SE Master,1.7,Exam 1',
+        '1006,Lukas Schmidt,SE Master,2.7,Exam 1',
+        '1007,Sophie Wagner,SE Master,2.0,Exam 1',
+        '1008,Leon Becker,Data Science Master,2.3,Exam 1',
+      ].join('\n');
+      blob = new Blob([sampleCsv], { type: 'text/csv;charset=utf-8' });
+    }
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = file.name;
+    link.download = file.name.endsWith('.csv') || file.name.endsWith('.xlsx') ? file.name : `${file.name}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
