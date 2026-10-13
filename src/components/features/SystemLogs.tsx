@@ -16,6 +16,8 @@ import {
   InputLabel,
   Collapse,
   Grid,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   Terminal as TerminalIcon,
@@ -32,6 +34,12 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   Dns as DnsIcon,
+  VpnKey as VpnKeyIcon,
+  Grade as GradeIcon,
+  Person as PersonIcon,
+  CloudUpload as CloudUploadIcon,
+  Healing as HealingIcon,
+  ReportProblem as ReportProblemIcon,
 } from '@mui/icons-material';
 import { useSystemLogStore, useToastStore, type LogLevel, type LogCategory, type SystemLogItem } from '../../stores';
 import { radii } from '../../styles/tokens';
@@ -71,13 +79,17 @@ const LEVEL_COLORS: Record<LogLevel, { bg: string; text: string; border: string;
 };
 
 const CATEGORY_LABELS: Record<LogCategory, string> = {
-  auth: 'Authentication',
+  auth: 'Authentication & Logins',
+  marks: 'Grade & Marks Editions',
+  student: 'Student Registry',
+  incident: 'System Incidents',
   ingestion: 'Data Ingestion',
   drive: 'Course Drive',
-  student: 'Student Registry',
   system: 'System Core',
   network: 'Network & API',
 };
+
+export type LogPageTab = 'all' | 'incidents' | 'logins' | 'marks' | 'updates' | 'ingestion' | 'diagnostics';
 
 interface LogStats {
   total: number;
@@ -241,7 +253,6 @@ const SystemLogRowItem = ({ log, isExpanded, onToggleExpand, onCopy }: SystemLog
           }
         }}
       >
-        {/* Left details: Level, Category, Time, Message */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 300 }}>
           <Box
             sx={{
@@ -318,7 +329,6 @@ const SystemLogRowItem = ({ log, isExpanded, onToggleExpand, onCopy }: SystemLog
           </Box>
         </Box>
 
-        {/* Right details: Actor & Controls */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }} onClick={(e) => e.stopPropagation()}>
           <Typography
             variant="caption"
@@ -352,7 +362,6 @@ const SystemLogRowItem = ({ log, isExpanded, onToggleExpand, onCopy }: SystemLog
         </Box>
       </Box>
 
-      {/* Expandable JSON / Diagnostic Payload */}
       {log.details && (
         <Collapse in={isExpanded} timeout={200}>
           <Box
@@ -365,7 +374,7 @@ const SystemLogRowItem = ({ log, isExpanded, onToggleExpand, onCopy }: SystemLog
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
               <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Diagnostic Payload & Metadata
+                Diagnostic Payload &amp; Metadata
               </Typography>
               <Button
                 size="small"
@@ -401,18 +410,80 @@ const SystemLogRowItem = ({ log, isExpanded, onToggleExpand, onCopy }: SystemLog
   );
 };
 
-export const SystemLogs = () => {
+const TAB_DESCRIPTIONS: Record<LogPageTab, { title: string; desc: string; icon: typeof TerminalIcon }> = {
+  all: {
+    title: 'Full Institutional Audit Trail',
+    desc: 'Real-time chronologic stream of all actions across the entire platform.',
+    icon: TerminalIcon,
+  },
+  incidents: {
+    title: 'Incidents & System Warnings',
+    desc: 'Audit page for detected anomalies, runtime exceptions, grade rejections, and security warnings.',
+    icon: ReportProblemIcon,
+  },
+  logins: {
+    title: 'Staff Logins & Authentication',
+    desc: 'Audit page tracking staff sign-ins, session exchanges, Bearer tokens, and auth security claims.',
+    icon: VpnKeyIcon,
+  },
+  marks: {
+    title: 'Grade & Marks Editions',
+    desc: 'Audit page documenting lecturer grade modifications, sitting changes, and transcript saves.',
+    icon: GradeIcon,
+  },
+  updates: {
+    title: 'Student & Course Registry Updates',
+    desc: 'Audit page tracking student profile edits, alias normalizations, and course metadata changes.',
+    icon: PersonIcon,
+  },
+  ingestion: {
+    title: 'Data Ingestion & Course Storage',
+    desc: 'Audit page for batch exam spreadsheet parsing, course drive uploads, and schema mapping.',
+    icon: CloudUploadIcon,
+  },
+  diagnostics: {
+    title: 'System Diagnostics & Health',
+    desc: 'System monitoring page for database connection pools, gateway delays, and live diagnostics.',
+    icon: HealingIcon,
+  },
+};
+
+export const SystemLogs = ({ embedded = false }: { embedded?: boolean }) => {
   const { logs, clearLogs, resetToDefaults, triggerDiagnostics } = useSystemLogStore();
   const notify = useToastStore((s) => s.notify);
 
+  const [activeTab, setActiveTab] = useState<LogPageTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState<'all' | LogLevel>('all');
   const [categoryFilter, setCategoryFilter] = useState<'all' | LogCategory>('all');
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 
-  // Filtered log results
-  const filteredLogs = useMemo(() => {
+  const tabFilteredLogs = useMemo(() => {
     return logs.filter((log) => {
+      if (activeTab === 'incidents') {
+        return log.level === 'error' || log.level === 'critical' || log.level === 'warn' || log.category === 'incident';
+      }
+      if (activeTab === 'logins') {
+        return log.category === 'auth';
+      }
+      if (activeTab === 'marks') {
+        return log.category === 'marks' || log.code.includes('MARK') || log.code.includes('GRADE');
+      }
+      if (activeTab === 'updates') {
+        return log.category === 'student' || log.code.includes('STUDENT') || log.code.includes('COURSE');
+      }
+      if (activeTab === 'ingestion') {
+        return log.category === 'ingestion' || log.category === 'drive';
+      }
+      if (activeTab === 'diagnostics') {
+        return log.category === 'system' || log.category === 'network';
+      }
+      return true;
+    });
+  }, [logs, activeTab]);
+
+  const filteredLogs = useMemo(() => {
+    return tabFilteredLogs.filter((log) => {
       if (levelFilter !== 'all' && log.level !== levelFilter) return false;
       if (categoryFilter !== 'all' && log.category !== categoryFilter) return false;
       if (searchQuery.trim()) {
@@ -425,9 +496,8 @@ export const SystemLogs = () => {
       }
       return true;
     });
-  }, [logs, levelFilter, categoryFilter, searchQuery]);
+  }, [tabFilteredLogs, levelFilter, categoryFilter, searchQuery]);
 
-  // KPI Metrics
   const stats = useMemo(() => {
     const errorCount = logs.filter((l) => l.level === 'error' || l.level === 'critical').length;
     const warnCount = logs.filter((l) => l.level === 'warn').length;
@@ -440,27 +510,24 @@ export const SystemLogs = () => {
     };
   }, [logs]);
 
-  // Copy details helper
   const handleCopy = (log: SystemLogItem) => {
     const content = JSON.stringify(log, null, 2);
     void navigator.clipboard.writeText(content);
     notify(`Copied log entry [${log.code}] to clipboard`, 'success');
   };
 
-  // Export logs to JSON
   const handleExportJson = () => {
     const jsonStr = JSON.stringify(filteredLogs, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `system-logs-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `system-logs-${activeTab}-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
     notify(`Exported ${filteredLogs.length} logs to JSON`, 'info');
   };
 
-  // Export logs to CSV
   const handleExportCsv = () => {
     const headers = ['ID', 'Timestamp', 'Level', 'Category', 'Code', 'Actor', 'Message'];
     const rows = filteredLogs.map((l) => [
@@ -477,7 +544,7 @@ export const SystemLogs = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `system-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `system-logs-${activeTab}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     notify(`Exported ${filteredLogs.length} logs to CSV`, 'info');
@@ -488,86 +555,126 @@ export const SystemLogs = () => {
     notify('Diagnostic completed: System check passed and logged.', 'success');
   };
 
+  const currentTabInfo = TAB_DESCRIPTIONS[activeTab];
+  const CurrentIcon = currentTabInfo.icon;
+
   return (
     <Fade in={true} timeout={400}>
       <Box sx={{ width: '100%', maxWidth: 1400, mx: 'auto' }}>
-        {/* Top Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-          <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
-              <TerminalIcon color="primary" sx={{ fontSize: 32 }} />
-              <Typography variant="h4" sx={{ ...pageTitle, m: 0 }}>
-                Full System & Audit Logs
+        {!embedded && (
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+                <TerminalIcon color="primary" sx={{ fontSize: 32 }} />
+                <Typography variant="h4" sx={{ ...pageTitle, m: 0 }}>
+                  Full System &amp; Audit Logs
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Real-time audit trail of institutional data ingestion, course storage, authentication, and core system diagnostics.
               </Typography>
             </Box>
-            <Typography variant="body2" color="text.secondary">
-              Real-time audit trail of institutional data ingestion, course storage, authentication, and core system diagnostics.
-            </Typography>
+
+            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<PlayArrowIcon />}
+                onClick={handleRunDiagnostics}
+                sx={{ textTransform: 'none', fontWeight: 600, borderRadius: radii.md }}
+              >
+                Run Diagnostic Check
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<DownloadIcon />}
+                onClick={handleExportJson}
+                sx={{ textTransform: 'none', fontWeight: 600, borderRadius: radii.md }}
+              >
+                Export JSON
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<DownloadIcon />}
+                onClick={handleExportCsv}
+                sx={{ textTransform: 'none', fontWeight: 600, borderRadius: radii.md }}
+              >
+                Export CSV
+              </Button>
+              <Button
+                variant="text"
+                size="small"
+                color="error"
+                startIcon={<DeleteSweepIcon />}
+                onClick={() => {
+                  clearLogs();
+                  notify('Cleared active system log entries.', 'info');
+                }}
+                sx={{ textTransform: 'none', fontWeight: 600 }}
+              >
+                Clear Logs
+              </Button>
+              <Button
+                variant="text"
+                size="small"
+                color="inherit"
+                startIcon={<RestartAltIcon />}
+                onClick={() => {
+                  resetToDefaults();
+                  notify('Restored standard system log events.', 'info');
+                }}
+                sx={{ textTransform: 'none', fontWeight: 600, color: 'text.secondary' }}
+              >
+                Reset Seed
+              </Button>
+            </Box>
           </Box>
+        )}
 
-          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<PlayArrowIcon />}
-              onClick={handleRunDiagnostics}
-              sx={{ textTransform: 'none', fontWeight: 600, borderRadius: radii.md }}
-            >
-              Run Diagnostic Check
-            </Button>
-
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<DownloadIcon />}
-              onClick={handleExportJson}
-              sx={{ textTransform: 'none', fontWeight: 600, borderRadius: radii.md }}
-            >
-              Export JSON
-            </Button>
-
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<DownloadIcon />}
-              onClick={handleExportCsv}
-              sx={{ textTransform: 'none', fontWeight: 600, borderRadius: radii.md }}
-            >
-              Export CSV
-            </Button>
-
-            <Button
-              variant="text"
-              size="small"
-              color="error"
-              startIcon={<DeleteSweepIcon />}
-              onClick={() => {
-                clearLogs();
-                notify('Cleared active system log entries.', 'info');
-              }}
-              sx={{ textTransform: 'none', fontWeight: 600 }}
-            >
-              Clear Logs
-            </Button>
-
-            <Button
-              variant="text"
-              size="small"
-              color="inherit"
-              startIcon={<RestartAltIcon />}
-              onClick={() => {
-                resetToDefaults();
-                notify('Restored standard system log events.', 'info');
-              }}
-              sx={{ textTransform: 'none', fontWeight: 600, color: 'text.secondary' }}
-            >
-              Reset Seed
-            </Button>
-          </Box>
-        </Box>
-
-        {/* System Health & KPI Metric Badges */}
         <SystemLogMetricsCards stats={stats} />
+
+        {/* Dedicated Log Pages Navigation Tabs */}
+        <Paper variant="outlined" sx={{ mb: 2.5, borderRadius: radii.lg, overflow: 'hidden' }}>
+          <Tabs
+            value={activeTab}
+            onChange={(_, val: LogPageTab) => setActiveTab(val)}
+            variant="scrollable"
+            scrollButtons="auto"
+            indicatorColor="primary"
+            textColor="primary"
+          >
+            <Tab value="all" icon={<TerminalIcon fontSize="small" />} iconPosition="start" label="All Audit Trail" />
+            <Tab value="incidents" icon={<ReportProblemIcon fontSize="small" />} iconPosition="start" label="Incidents &amp; Issues" />
+            <Tab value="logins" icon={<VpnKeyIcon fontSize="small" />} iconPosition="start" label="Logins &amp; Auth" />
+            <Tab value="marks" icon={<GradeIcon fontSize="small" />} iconPosition="start" label="Marks &amp; Grades" />
+            <Tab value="updates" icon={<PersonIcon fontSize="small" />} iconPosition="start" label="Registry Updates" />
+            <Tab value="ingestion" icon={<CloudUploadIcon fontSize="small" />} iconPosition="start" label="Ingestion &amp; Drive" />
+            <Tab value="diagnostics" icon={<HealingIcon fontSize="small" />} iconPosition="start" label="System Health" />
+          </Tabs>
+
+          <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)', borderTop: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <CurrentIcon color="primary" />
+              <Box>
+                <Typography variant="subtitle2" fontWeight={700}>
+                  {currentTabInfo.title}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {currentTabInfo.desc}
+                </Typography>
+              </Box>
+            </Box>
+            <Chip
+              label={`${tabFilteredLogs.length} records`}
+              size="small"
+              color={activeTab === 'incidents' ? 'error' : 'default'}
+              variant="outlined"
+              sx={{ fontWeight: 700 }}
+            />
+          </Box>
+        </Paper>
 
         {/* Filter and Search Bar */}
         <Paper
@@ -607,30 +714,34 @@ export const SystemLogs = () => {
               onChange={(e) => setLevelFilter(e.target.value as 'all' | LogLevel)}
             >
               <MenuItem value="all">All Severities</MenuItem>
-              <MenuItem value="error">Error & Critical</MenuItem>
+              <MenuItem value="error">Error &amp; Critical</MenuItem>
               <MenuItem value="warn">Warnings</MenuItem>
               <MenuItem value="info">Information</MenuItem>
               <MenuItem value="success">Success</MenuItem>
             </Select>
           </FormControl>
 
-          <FormControl size="small" sx={{ minWidth: 170 }}>
-            <InputLabel id="log-category-label">Module Category</InputLabel>
-            <Select
-              labelId="log-category-label"
-              value={categoryFilter}
-              label="Module Category"
-              onChange={(e) => setCategoryFilter(e.target.value as 'all' | LogCategory)}
-            >
-              <MenuItem value="all">All Categories</MenuItem>
-              <MenuItem value="ingestion">Data Ingestion</MenuItem>
-              <MenuItem value="drive">Course Drive</MenuItem>
-              <MenuItem value="auth">Authentication</MenuItem>
-              <MenuItem value="student">Student Registry</MenuItem>
-              <MenuItem value="system">System Core</MenuItem>
-              <MenuItem value="network">Network & API</MenuItem>
-            </Select>
-          </FormControl>
+          {activeTab === 'all' && (
+            <FormControl size="small" sx={{ minWidth: 170 }}>
+              <InputLabel id="log-category-label">Module Category</InputLabel>
+              <Select
+                labelId="log-category-label"
+                value={categoryFilter}
+                label="Module Category"
+                onChange={(e) => setCategoryFilter(e.target.value as 'all' | LogCategory)}
+              >
+                <MenuItem value="all">All Categories</MenuItem>
+                <MenuItem value="incident">Incidents &amp; Issues</MenuItem>
+                <MenuItem value="auth">Authentication &amp; Logins</MenuItem>
+                <MenuItem value="marks">Grade &amp; Marks Editions</MenuItem>
+                <MenuItem value="student">Student Registry</MenuItem>
+                <MenuItem value="ingestion">Data Ingestion</MenuItem>
+                <MenuItem value="drive">Course Drive</MenuItem>
+                <MenuItem value="system">System Core</MenuItem>
+                <MenuItem value="network">Network &amp; API</MenuItem>
+              </Select>
+            </FormControl>
+          )}
 
           <Chip
             label={`${filteredLogs.length} matching event${filteredLogs.length === 1 ? '' : 's'}`}

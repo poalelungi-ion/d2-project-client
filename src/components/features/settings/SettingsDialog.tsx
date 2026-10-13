@@ -25,14 +25,17 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import SearchIcon from '@mui/icons-material/Search';
 import TerminalIcon from '@mui/icons-material/Terminal';
+import SportsEsportsOutlinedIcon from '@mui/icons-material/SportsEsportsOutlined';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { useNavigate } from 'react-router-dom';
 
-import { useThemeStore, useToastStore, useStudyProgramStore } from '../../../stores';
+import { useThemeStore, useToastStore, useStudyProgramStore, useSystemLogStore } from '../../../stores';
 import { radii } from '../../../styles/tokens';
 import { STUDY_PROGRAMS } from '../../../utils/studyProgram';
 import { ROUTES } from '../../../app/navigation';
 import { UniHildesheimLogo } from '../../common/UniHildesheimLogo';
 import { ProfDinoGame } from './ProfDinoGame';
+import { SystemLogs } from '../SystemLogs';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -46,6 +49,9 @@ export const SettingsDialog = ({ open, onClose }: SettingsDialogProps) => {
   const notify = useToastStore((s) => s.notify);
 
   const { aliases, addAlias, removeAlias, resetDefaults } = useStudyProgramStore();
+  const systemLogs = useSystemLogStore((s) => s.logs);
+  const [gameExpanded, setGameExpanded] = useState(false);
+  const [logsExpanded, setLogsExpanded] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [newAliasInputs, setNewAliasInputs] = useState<Record<string, string>>({});
@@ -304,16 +310,118 @@ export const SettingsDialog = ({ open, onClose }: SettingsDialogProps) => {
           </Box>
         </Box>
 
-        {/* Dino-Run Easter Egg Mini Game: Prof Run */}
+        {/* Staff Break Mini Game & System Logs (Hidden by default) */}
         <Box sx={{ mb: 3 }}>
           <Typography
             variant="subtitle2"
             color="text.secondary"
             sx={{ mb: 1.5, textTransform: 'uppercase', letterSpacing: 0.5 }}
           >
-            Teacher Break (Dino Run Mini-Game)
+            Staff Tools &amp; Logs
           </Typography>
-          <ProfDinoGame />
+
+          {/* Teacher Break Dino Game (Hidden by Default) */}
+          <Accordion
+            expanded={gameExpanded}
+            onChange={(_, exp) => setGameExpanded(exp)}
+            variant="outlined"
+            sx={{
+              borderRadius: `${radii.lg} !important`,
+              overflow: 'hidden',
+              mb: 2,
+              '&:before': { display: 'none' },
+            }}
+          >
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              sx={{
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <SportsEsportsOutlinedIcon color="primary" />
+                <Box>
+                  <Typography variant="body1" fontWeight="600">
+                    Teacher Break (Dino Run Mini-Game)
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {gameExpanded ? 'Click to hide mini-game' : 'Hidden by default · Click to expand and play'}
+                  </Typography>
+                </Box>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 2 }}>
+              {gameExpanded && <ProfDinoGame />}
+            </AccordionDetails>
+          </Accordion>
+
+          {/* System & Audit Logs Suite (Hidden by Default Under Game) */}
+          <Accordion
+            expanded={logsExpanded}
+            onChange={(_, exp) => setLogsExpanded(exp)}
+            variant="outlined"
+            sx={{
+              borderRadius: `${radii.lg} !important`,
+              overflow: 'hidden',
+              '&:before': { display: 'none' },
+            }}
+          >
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              sx={{
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', pr: 1, flexWrap: 'wrap', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <TerminalIcon color="primary" />
+                  <Box>
+                    <Typography variant="body1" fontWeight="600">
+                      System &amp; Audit Logs
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {logsExpanded ? 'Click to hide logs' : 'Hidden under mini-game · Audits, logins, grade editions, and incidents'}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <Chip
+                    label={`${systemLogs.length} Events`}
+                    size="small"
+                    variant="outlined"
+                    sx={{ height: 22, fontSize: '0.7rem', fontWeight: 700 }}
+                  />
+                  {systemLogs.filter((l) => l.level === 'error' || l.level === 'critical').length > 0 && (
+                    <Chip
+                      label={`${systemLogs.filter((l) => l.level === 'error' || l.level === 'critical').length} Incidents`}
+                      size="small"
+                      color="error"
+                      sx={{ height: 22, fontSize: '0.7rem', fontWeight: 700 }}
+                    />
+                  )}
+                </Box>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<OpenInNewIcon fontSize="small" />}
+                  onClick={() => {
+                    onClose();
+                    void navigate(ROUTES.logs);
+                  }}
+                  sx={{ textTransform: 'none', borderRadius: radii.md, fontWeight: 600 }}
+                >
+                  Open Full-Page Inspector
+                </Button>
+              </Box>
+              {logsExpanded && <SystemLogs embedded={true} />}
+            </AccordionDetails>
+          </Accordion>
         </Box>
 
         {/* System & Institution Info */}
@@ -338,41 +446,6 @@ export const SettingsDialog = ({ open, onClose }: SettingsDialogProps) => {
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
               Software Systems Engineering (SSE) · SPA System v2.0
             </Typography>
-
-            <Box
-              sx={{
-                mt: 2,
-                pt: 1.5,
-                borderTop: '1px solid',
-                borderColor: 'divider',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: 1,
-              }}
-            >
-              <Box>
-                <Typography variant="body2" fontWeight={600}>
-                  System & Audit Logs
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Inspect institutional events, data ingestion runs, and diagnostics.
-                </Typography>
-              </Box>
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<TerminalIcon fontSize="small" />}
-                onClick={() => {
-                  onClose();
-                  void navigate(ROUTES.logs);
-                }}
-                sx={{ textTransform: 'none', borderRadius: radii.md, fontWeight: 600 }}
-              >
-                Open System Logs
-              </Button>
-            </Box>
           </Paper>
         </Box>
       </DialogContent>

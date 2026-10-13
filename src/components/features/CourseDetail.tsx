@@ -139,7 +139,7 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
           <Tabs
             value={activeTab}
-            onChange={(_, val) => setActiveTab(val)}
+            onChange={(_, val: 'drive' | 'overview') => setActiveTab(val)}
             textColor="primary"
             indicatorColor="primary"
             aria-label="Course Detail views"

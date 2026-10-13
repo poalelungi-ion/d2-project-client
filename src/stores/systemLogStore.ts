@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 export type LogLevel = 'info' | 'success' | 'warn' | 'error' | 'critical';
-export type LogCategory = 'auth' | 'ingestion' | 'drive' | 'student' | 'system' | 'network';
+export type LogCategory = 'auth' | 'ingestion' | 'drive' | 'student' | 'marks' | 'system' | 'network' | 'incident';
 
 export interface SystemLogItem {
   id: string;
@@ -31,29 +31,51 @@ const INITIAL_LOGS: SystemLogItem[] = [
   },
   {
     id: 'log-102',
-    timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString(), // 12 mins ago
+    timestamp: new Date(Date.now() - 1000 * 60 * 8).toISOString(), // 8 mins ago
     level: 'info',
-    category: 'drive',
-    code: 'DRV_UPLOAD',
-    message: 'Course drive document Syllabus_2026_Advanced_SE.pdf (2.4 MB) stored in course storage.',
-    actor: 'Ion Poalelungi <poalelungi@uni-hildesheim.de>',
-    details: JSON.stringify({ courseId: 1, fileName: 'Syllabus_2026_Advanced_SE.pdf', size: 2516582, mime: 'application/pdf' }, null, 2),
-    actionLabel: 'View in Drive',
+    category: 'marks',
+    code: 'MARK_SAVED',
+    message: 'Grade modified for Clara Later in Software Architecture (WiSe_25, Exam 1): Updated from 3.3 to 3.0 (Passed).',
+    actor: 'Lecturer · Prof. Dr. Schmidt',
+    details: JSON.stringify({ student: 'Clara Later', studentId: 1003, course: 'Software Architecture', oldGrade: 3.3, newGrade: 3.0, outcome: 'passed' }, null, 2),
+    actionLabel: 'Inspect Mark',
   },
   {
     id: 'log-103',
-    timestamp: new Date(Date.now() - 1000 * 60 * 25).toISOString(), // 25 mins ago
+    timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 mins ago
     level: 'info',
     category: 'auth',
-    code: 'AUTH_LOGIN',
-    message: 'User session authenticated via Bearer token with institutional SSE claims.',
+    code: 'AUTH_LOGIN_SUCCESS',
+    message: 'Staff member authenticated successfully via credentials (JWT issued).',
     actor: 'poalelungi@uni-hildesheim.de',
-    details: JSON.stringify({ ip: '134.106.18.42', role: 'professor', institution: 'Stiftung Universität Hildesheim', method: 'JWT' }, null, 2),
+    details: JSON.stringify({ ip: '134.106.18.42', role: 'Staff/Lecturer', institution: 'Stiftung Universität Hildesheim', method: 'Bearer' }, null, 2),
     actionLabel: 'Review Session',
   },
   {
     id: 'log-104',
-    timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(), // 45 mins ago
+    timestamp: new Date(Date.now() - 1000 * 60 * 22).toISOString(), // 22 mins ago
+    level: 'error',
+    category: 'incident',
+    code: 'INCIDENT_GRADE_REJECTED',
+    message: 'Grade value 6.5 rejected by validation: Must be between 1.0 and 5.0 or NE/EX/AT.',
+    actor: 'Grade Validator',
+    details: JSON.stringify({ input: '6.5', allowedGrades: ['1.0', '1.3', '1.7', '2.0', '2.3', '2.7', '3.0', '3.3', '3.7', '4.0', '5.0'], absenceCodes: ['NE', 'EX', 'AT'] }, null, 2),
+    actionLabel: 'Incident Report',
+  },
+  {
+    id: 'log-105',
+    timestamp: new Date(Date.now() - 1000 * 60 * 35).toISOString(), // 35 mins ago
+    level: 'info',
+    category: 'student',
+    code: 'STUDENT_UPDATED',
+    message: 'Updated student profile: Bruno Retake (ID: 1002, Program: SE Master, Status: Active).',
+    actor: 'Administrator',
+    details: JSON.stringify({ studentId: 1002, name: 'Bruno Retake', program: 'SE Master', status: 'active', version: 2 }, null, 2),
+    actionLabel: 'View Student',
+  },
+  {
+    id: 'log-106',
+    timestamp: new Date(Date.now() - 1000 * 60 * 48).toISOString(), // 48 mins ago
     level: 'warn',
     category: 'student',
     code: 'STU_ALIAS',
@@ -63,8 +85,19 @@ const INITIAL_LOGS: SystemLogItem[] = [
     actionLabel: 'Verify Mapping',
   },
   {
-    id: 'log-105',
+    id: 'log-107',
     timestamp: new Date(Date.now() - 1000 * 60 * 65).toISOString(),
+    level: 'info',
+    category: 'drive',
+    code: 'DRV_UPLOAD',
+    message: 'Course drive document Syllabus_2026_Advanced_SE.pdf (2.4 MB) stored in course storage.',
+    actor: 'Ion Poalelungi <poalelungi@uni-hildesheim.de>',
+    details: JSON.stringify({ courseId: 1, fileName: 'Syllabus_2026_Advanced_SE.pdf', size: 2516582, mime: 'application/pdf' }, null, 2),
+    actionLabel: 'View in Drive',
+  },
+  {
+    id: 'log-108',
+    timestamp: new Date(Date.now() - 1000 * 60 * 85).toISOString(),
     level: 'info',
     category: 'system',
     code: 'SYS_BOOT',
@@ -73,19 +106,19 @@ const INITIAL_LOGS: SystemLogItem[] = [
     details: JSON.stringify({ engine: 'PostgreSQL 15-alpine', maxConnections: 20, active: 1, idle: 4, ssl: false }, null, 2),
   },
   {
-    id: 'log-106',
-    timestamp: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
+    id: 'log-109',
+    timestamp: new Date(Date.now() - 1000 * 60 * 110).toISOString(),
     level: 'error',
-    category: 'ingestion',
-    code: 'ING_MISMATCH',
-    message: 'Data format mismatch during import of Klausur_DBS_WS2425: Header "Matrikelnr" mapped to Student-ID.',
+    category: 'incident',
+    code: 'INCIDENT_INGEST_MISMATCH',
+    message: 'Data format mismatch during import of Klausur_DBS_WS2425: Header "Matrikelnr" mapped via heuristic.',
     actor: 'Ingestion Parser',
     details: JSON.stringify({ error: 'Unrecognized column header: Matrikelnr', fallbackRuleApplied: 'Alias match matrikel -> student_id' }, null, 2),
     actionLabel: 'Review',
   },
   {
-    id: 'log-107',
-    timestamp: new Date(Date.now() - 1000 * 60 * 130).toISOString(),
+    id: 'log-110',
+    timestamp: new Date(Date.now() - 1000 * 60 * 140).toISOString(),
     level: 'success',
     category: 'system',
     code: 'SYS_HEALTH',
@@ -94,7 +127,7 @@ const INITIAL_LOGS: SystemLogItem[] = [
     details: JSON.stringify({ dbLatencyMs: 1.2, apiLatencyMs: 18.4, memRssMb: 142.1, status: 'HEALTHY' }, null, 2),
   },
   {
-    id: 'log-108',
+    id: 'log-111',
     timestamp: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
     level: 'warn',
     category: 'network',

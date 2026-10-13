@@ -1,6 +1,5 @@
 import SchoolIcon from '@mui/icons-material/School';
 import PersonIcon from '@mui/icons-material/Person';
-import TerminalIcon from '@mui/icons-material/Terminal';
 import type { SvgIconComponent } from '@mui/icons-material';
 
 export const ROUTES = {
@@ -24,7 +23,6 @@ export interface NavItem {
 export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Courses', path: ROUTES.courses, icon: SchoolIcon },
   { label: 'Students', path: ROUTES.students, icon: PersonIcon },
-  { label: 'System Logs', path: ROUTES.logs, icon: TerminalIcon },
 ];
 
 export const isNavItemActive = (item: NavItem, pathname: string): boolean =>

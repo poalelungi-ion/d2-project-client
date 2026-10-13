@@ -15,7 +15,9 @@ import { radii } from '../../styles/tokens';
 import { pageTitle } from '../../styles/mixins';
 import { transcriptColumns } from './columns';
 import { StudyProgramSelect } from '../forms/StudyProgramSelect';
+import { StudentFormDialog } from '../forms/StudentFormDialog';
 import { UNASSIGNED_PROGRAM } from '../../utils/studyProgram';
+import EditIcon from '@mui/icons-material/Edit';
 
 interface StudentDetailProps {
   /** Fetched by the route from :studentId, transcript included. */
@@ -29,6 +31,7 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
   // The program field is edited in place before being saved, so it needs a
   // local draft on top of the fetched student.
   const [program, setProgram] = useState(student.program);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const navigate = useNavigate();
   const studentColumnDefs = useMemo(() => transcriptColumns(), []);
@@ -79,6 +82,15 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
               onClick={() => void updateStudentProgram()}
             >
               Save Profile
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<EditIcon />}
+              onClick={() => setEditDialogOpen(true)}
+              sx={{ textTransform: 'none', fontWeight: 600 }}
+            >
+              Edit Full Record
             </Button>
             {student.status === 'active' && (
               <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
@@ -155,6 +167,17 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
             />
           </Box>
         </Paper>
+
+        {editDialogOpen && (
+          <StudentFormDialog
+            student={student}
+            onClose={() => setEditDialogOpen(false)}
+            onSaved={() => {
+              setEditDialogOpen(false);
+              onRefresh();
+            }}
+          />
+        )}
       </Box>
     </Fade>
   );
