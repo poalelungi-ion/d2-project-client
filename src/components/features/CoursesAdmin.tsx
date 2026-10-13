@@ -57,22 +57,22 @@ const PLACEHOLDER_SEMESTER_DISTRIBUTION: HeatmapRow[] = [
   {
     semester: 'WiSe 2023/24',
     total_students: 48,
-    distribution: { 0: 2, 1: 18, 2: 16, 3: 8, 4: 3, 5: 1 },
+    distribution: { 1: 20, 2: 16, 3: 8, 4: 3, 5: 1 },
   },
   {
     semester: 'SoSe 2024',
     total_students: 52,
-    distribution: { 0: 1, 1: 14, 2: 20, 3: 11, 4: 4, 5: 2 },
+    distribution: { 1: 15, 2: 20, 3: 11, 4: 4, 5: 2 },
   },
   {
     semester: 'WiSe 2024/25',
     total_students: 65,
-    distribution: { 0: 3, 1: 22, 2: 24, 3: 12, 4: 3, 5: 1 },
+    distribution: { 1: 25, 2: 24, 3: 12, 4: 3, 5: 1 },
   },
   {
     semester: 'SoSe 2025',
     total_students: 58,
-    distribution: { 0: 1, 1: 17, 2: 22, 3: 13, 4: 4, 5: 1 },
+    distribution: { 1: 18, 2: 22, 3: 13, 4: 4, 5: 1 },
   },
 ];
 
@@ -420,7 +420,7 @@ export const CoursesAdmin = () => {
                   Semester Exams Distribution (All Subjects)
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Track student exam completions and cohort distribution per semester across all subjects.
+                  Track student cohort progression and how many students sat their 1st, 2nd, ... or 15th exam in each semester across all subjects.
                 </Typography>
               </Box>
               {isUsingPlaceholder && (

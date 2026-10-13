@@ -246,6 +246,7 @@ export const CourseAnalytics = ({
           heatmapData={heatmapData}
           title="Course Attempts Activity"
           subtitle="Distribution of how many times students took this specific course's exams per semester."
+          isCourseSpecific={true}
         />
       </Box>
     </>
