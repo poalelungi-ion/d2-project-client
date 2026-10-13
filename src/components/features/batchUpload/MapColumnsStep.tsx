@@ -95,15 +95,15 @@ export const MapColumnsStep = () => {
                 borderBottom: borders.hairline(theme.app.surface.hairline),
               }}
             >
-              <Typography variant="overline" sx={{ width: '40%', fontWeight: 700, color: 'grey.600' }}>
+              <Typography variant="overline" sx={{ width: '40%', fontWeight: 700, color: 'text.secondary' }}>
                 COLUMN IN FILE
               </Typography>
-              <Typography variant="overline" sx={{ width: '40%', fontWeight: 700, color: 'grey.600' }}>
+              <Typography variant="overline" sx={{ width: '40%', fontWeight: 700, color: 'text.secondary' }}>
                 MAPS TO
               </Typography>
               <Typography
                 variant="overline"
-                sx={{ width: '20%', fontWeight: 700, color: 'grey.600', textAlign: 'right' }}
+                sx={{ width: '20%', fontWeight: 700, color: 'text.secondary', textAlign: 'right' }}
               >
                 STATUS
               </Typography>
@@ -186,17 +186,31 @@ export const MapColumnsStep = () => {
                 </Button>
               ))}
             </Box>
-            <Typography variant="caption" sx={{ color: 'grey.600' }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               &mdash; Schneider, Lena
             </Typography>
           </Box>
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Card variant="outlined" sx={{ borderRadius: radii.lg, p: 3, bgcolor: 'grey.50' }}>
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: radii.lg,
+              p: 3,
+              bgcolor: (t) => (t.palette.mode === 'dark' ? t.app.surface.solid : 'grey.50'),
+              borderColor: (t) => (t.palette.mode === 'dark' ? t.app.surface.hairline : t.palette.divider),
+            }}
+          >
             <Typography
               variant="overline"
-              sx={{ fontWeight: 800, color: 'grey.800', mb: 2, display: 'block' }}
+              sx={{
+                fontWeight: 800,
+                color: 'text.secondary',
+                letterSpacing: '0.08em',
+                mb: 2,
+                display: 'block',
+              }}
             >
               TARGET SCHEMA
             </Typography>
@@ -212,11 +226,20 @@ export const MapColumnsStep = () => {
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main', mr: 1 }} />
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
                       {f.name}
                     </Typography>
                   </Box>
-                  <Typography variant="caption" sx={{ color: 'grey.500' }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'text.secondary',
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      fontSize: '0.7rem',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
                     {f.req}
                   </Typography>
                 </Box>
@@ -224,7 +247,7 @@ export const MapColumnsStep = () => {
             </Box>
             <Typography
               variant="caption"
-              sx={{ color: 'grey.600', display: 'block', lineHeight: 1.4 }}
+              sx={{ color: 'text.secondary', display: 'block', lineHeight: 1.5 }}
             >
               Grades are validated as German marks (1.0 &ndash; 5.0) or official
               absence codes: NE (no show) and EX (disqualified) fail, AT (medical
