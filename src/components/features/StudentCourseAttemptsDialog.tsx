@@ -198,7 +198,7 @@ export const StudentCourseAttemptsDialog = ({
                         label={m.attempt_type || (idx === 0 ? 'Exam 1' : 'Exam 2')}
                         color={m.attempt_type === 'Exam 2' ? 'warning' : 'primary'}
                         variant={m.attempt_type === 'Exam 2' ? 'filled' : 'outlined'}
-                        sx={{ fontSize: '0.72rem', height: 22, fontWeight: 700 }}
+                        sx={{ fontSize: '0.72rem', height: 22, fontWeight: 700, borderRadius: '9999px' }}
                       />
                     </TableCell>
                     <TableCell>

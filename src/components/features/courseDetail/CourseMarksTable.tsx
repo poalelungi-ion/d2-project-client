@@ -77,7 +77,37 @@ export const individualMarksColumnDefs = (
   { field: 'student_name', headerName: 'Name', flex: 2, editable: false },
   { field: 'program', headerName: 'Study Program', flex: 2, editable: false },
   { field: 'semester', headerName: 'Semester', flex: 1, editable: false, comparator: bySemesterOrder },
-  { field: 'attempt_type', headerName: 'Sitting / Attempt', flex: 1, editable: false },
+  {
+    field: 'attempt_type',
+    headerName: 'Sitting / Attempt',
+    flex: 1,
+    editable: false,
+    cellRenderer: (params: ICellRendererParams<CourseMark, string>) => {
+      const type = params.value || 'Exam 1';
+      const isRetake = type === 'Exam 2';
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '3px 12px',
+              borderRadius: '9999px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              lineHeight: 1.2,
+              backgroundColor: isRetake ? 'rgba(237, 108, 2, 0.14)' : 'rgba(25, 118, 210, 0.14)',
+              color: isRetake ? '#e65100' : '#1976d2',
+              border: isRetake ? '1px solid rgba(237, 108, 2, 0.35)' : '1px solid rgba(25, 118, 210, 0.35)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+            }}
+          >
+            {type === 'Exam 2' ? 'Exam 2 (Retake)' : type === 'Exam 1' ? 'Exam 1 (First)' : type}
+          </span>
+        </div>
+      );
+    },
+  },
   {
     field: 'grade',
     headerName: 'Grade',

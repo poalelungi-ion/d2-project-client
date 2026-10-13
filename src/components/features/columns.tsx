@@ -79,21 +79,25 @@ export const transcriptColumns = (): ColDef<TranscriptEntry>[] => [
       const type = params.value || 'Exam 1';
       const isRetake = type === 'Exam 2';
       return (
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            padding: '2px 8px',
-            borderRadius: '12px',
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            backgroundColor: isRetake ? 'rgba(237, 108, 2, 0.12)' : 'rgba(25, 118, 210, 0.12)',
-            color: isRetake ? '#e65100' : '#1565c0',
-            border: isRetake ? '1px solid rgba(237, 108, 2, 0.35)' : '1px solid rgba(25, 118, 210, 0.35)',
-          }}
-        >
-          {type === 'Exam 2' ? 'Exam 2 (Retake)' : type === 'Exam 1' ? 'Exam 1 (First)' : type}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '3px 12px',
+              borderRadius: '9999px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              lineHeight: 1.2,
+              backgroundColor: isRetake ? 'rgba(237, 108, 2, 0.14)' : 'rgba(25, 118, 210, 0.14)',
+              color: isRetake ? '#e65100' : '#1976d2',
+              border: isRetake ? '1px solid rgba(237, 108, 2, 0.35)' : '1px solid rgba(25, 118, 210, 0.35)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+            }}
+          >
+            {type === 'Exam 2' ? 'Exam 2 (Retake)' : type === 'Exam 1' ? 'Exam 1 (First)' : type}
+          </span>
+        </div>
       );
     },
   },
@@ -131,16 +135,29 @@ export const transcriptColumns = (): ColDef<TranscriptEntry>[] => [
     },
     cellRenderer: (
       params: ICellRendererParams<TranscriptEntry, string>,
-    ) => (
-      <span
-        style={{
-          color: gradeOutcomeColor(params.data?.outcome ?? ''),
-          fontWeight: 'bold',
-        }}
-      >
-        {params.value}
-      </span>
-    ),
+    ) => {
+      const color = gradeOutcomeColor(params.data?.outcome ?? '');
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '3px 10px',
+              borderRadius: '9999px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              lineHeight: 1.2,
+              color,
+              border: `1px solid ${color}44`,
+              backgroundColor: `${color}18`,
+            }}
+          >
+            {params.value}
+          </span>
+        </div>
+      );
+    },
   },
 ];
 
@@ -158,21 +175,25 @@ export const studentCourseHistoryColumns = (
       const count = params.value ?? 1;
       const isRetake = count > 1;
       return (
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            padding: '2px 8px',
-            borderRadius: '12px',
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            backgroundColor: isRetake ? 'rgba(237, 108, 2, 0.12)' : 'rgba(76, 175, 80, 0.12)',
-            color: isRetake ? '#e65100' : '#2e7d32',
-            border: isRetake ? '1px solid rgba(237, 108, 2, 0.35)' : '1px solid rgba(76, 175, 80, 0.35)',
-          }}
-        >
-          {count} {count === 1 ? 'Attempt' : `Attempts (${count - 1} Retake)`}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '3px 12px',
+              borderRadius: '9999px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              lineHeight: 1.2,
+              backgroundColor: isRetake ? 'rgba(237, 108, 2, 0.14)' : 'rgba(76, 175, 80, 0.14)',
+              color: isRetake ? '#e65100' : '#2e7d32',
+              border: isRetake ? '1px solid rgba(237, 108, 2, 0.35)' : '1px solid rgba(76, 175, 80, 0.35)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+            }}
+          >
+            {count} {count === 1 ? 'Attempt' : `Attempts (${count - 1} Retake)`}
+          </span>
+        </div>
       );
     },
   },
@@ -212,16 +233,29 @@ export const studentCourseHistoryColumns = (
     headerName: 'Final Status',
     minWidth: 110,
     flex: 1,
-    cellRenderer: (params: ICellRendererParams<import('./StudentCourseAttemptsDialog').StudentCourseHistoryRow, string>) => (
-      <span
-        style={{
-          fontWeight: 700,
-          color: params.value === 'Passed' ? '#2e7d32' : '#d32f2f',
-        }}
-      >
-        {params.value}
-      </span>
-    ),
+    cellRenderer: (params: ICellRendererParams<import('./StudentCourseAttemptsDialog').StudentCourseHistoryRow, string>) => {
+      const isPassed = params.value === 'Passed';
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '3px 10px',
+              borderRadius: '9999px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              lineHeight: 1.2,
+              color: isPassed ? '#2e7d32' : '#d32f2f',
+              backgroundColor: isPassed ? 'rgba(46, 125, 50, 0.12)' : 'rgba(211, 47, 47, 0.12)',
+              border: isPassed ? '1px solid rgba(46, 125, 50, 0.35)' : '1px solid rgba(211, 47, 47, 0.35)',
+            }}
+          >
+            {params.value}
+          </span>
+        </div>
+      );
+    },
   },
   {
     colId: 'actions',
@@ -234,25 +268,31 @@ export const studentCourseHistoryColumns = (
       if (!params.data) return null;
       const row = params.data;
       return (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewAttempts(row);
-          }}
-          style={{
-            background: 'none',
-            border: '1px solid rgba(25, 118, 210, 0.4)',
-            color: '#1976d2',
-            padding: '2px 8px',
-            borderRadius: '4px',
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-          }}
-        >
-          View ({row.attempt_count})
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewAttempts(row);
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              background: 'none',
+              border: '1px solid rgba(25, 118, 210, 0.4)',
+              color: '#1976d2',
+              padding: '3px 12px',
+              borderRadius: '9999px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              lineHeight: 1.2,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            View ({row.attempt_count})
+          </button>
+        </div>
       );
     },
   },
