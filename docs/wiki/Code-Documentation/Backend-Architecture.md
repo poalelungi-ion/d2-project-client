@@ -1,5 +1,9 @@
 # Backend Service Architecture
 
+> 📌 **Backend Service Repository:**
+> The backend implementation, database models, and migrations are maintained in:
+> 🔗 **[`d2-project-backend`](https://gitlab.gwdg.de/sudarshan.bashyal/d2-project-backend)**
+
 The backend is built with **FastAPI**, **SQLAlchemy**, and **PostgreSQL 15**, providing a high-throughput, ACID-compliant API service for academic ingestion and analytics.
 
 ---
