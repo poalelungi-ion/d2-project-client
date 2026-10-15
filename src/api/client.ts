@@ -6,6 +6,31 @@ export const DEFAULT_API_BASE_URL: string = (
 
 export const API_BASE_URL_STORAGE_KEY = 'spa_api_base_url';
 
+/**
+ * Returns any runtime API Base URL injected into window.__APP_CONFIG__
+ * by the Docker container entrypoint script from the container's environment (.env).
+ */
+export const getRuntimeApiBaseUrl = (): string | null => {
+  try {
+    if (typeof window !== 'undefined') {
+      const runtime = (window as unknown as { __APP_CONFIG__?: { API_BASE_URL?: string } }).__APP_CONFIG__;
+      if (runtime?.API_BASE_URL && runtime.API_BASE_URL.trim() && !runtime.API_BASE_URL.startsWith('__')) {
+        return runtime.API_BASE_URL.trim().replace(/\/+$/, '');
+      }
+    }
+  } catch {
+    // Ignore runtime lookup errors
+  }
+  return null;
+};
+
+/**
+ * The effective default URL (either dynamically injected by container environment or build-time default).
+ */
+export const getEffectiveDefaultApiBaseUrl = (): string => {
+  return getRuntimeApiBaseUrl() ?? DEFAULT_API_BASE_URL;
+};
+
 export const getApiBaseUrl = (): string => {
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
@@ -17,7 +42,7 @@ export const getApiBaseUrl = (): string => {
   } catch {
     // Ignore storage errors (e.g. private browsing sandbox)
   }
-  return DEFAULT_API_BASE_URL;
+  return getEffectiveDefaultApiBaseUrl();
 };
 
 export const setApiBaseUrl = (newUrl: string): void => {

@@ -5,6 +5,8 @@ import {
   authHeader,
   get,
   getApiBaseUrl,
+  getEffectiveDefaultApiBaseUrl,
+  getRuntimeApiBaseUrl,
   refreshSession,
   resetApiBaseUrl,
   setAccessToken,
@@ -199,4 +201,18 @@ describe('dynamic base URL resolution', () => {
     expect(result.ok).toBe(false);
     expect(result.error).toMatch(/Failed to fetch|Unable to connect/);
   });
+
+  it('reads runtime API Base URL from window.__APP_CONFIG__ when present', () => {
+    (window as unknown as { __APP_CONFIG__: { API_BASE_URL: string } }).__APP_CONFIG__ = {
+      API_BASE_URL: 'http://runtime-server:8000/api',
+    };
+    expect(getRuntimeApiBaseUrl()).toBe('http://runtime-server:8000/api');
+    expect(getEffectiveDefaultApiBaseUrl()).toBe('http://runtime-server:8000/api');
+    expect(getApiBaseUrl()).toBe('http://runtime-server:8000/api');
+
+    delete (window as unknown as { __APP_CONFIG__?: unknown }).__APP_CONFIG__;
+    expect(getRuntimeApiBaseUrl()).toBeNull();
+    expect(getApiBaseUrl()).toBe(DEFAULT_API_BASE_URL);
+  });
 });
+

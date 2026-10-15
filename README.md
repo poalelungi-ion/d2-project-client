@@ -124,22 +124,28 @@ backend.
 2. **Local Development (`.env` file)**:
    Set `VITE_API_BASE_URL=http://localhost:8000/api` in `.env` before running `npm run dev`.
 
-3. **Runtime In-Browser Configuration (No Container Rebuild Required)**:
+3. **Runtime Container Environment (`/config.js` via `.env`)**:
+   When running the production Nginx container via Docker Compose, `/docker-entrypoint.d/40-generate-config.sh` automatically reads `VITE_API_BASE_URL` from the container's environment (`.env`) and injects it into `/usr/share/nginx/html/config.js` at boot. This means you can change `VITE_API_BASE_URL` in `.env` and restart containers (`docker compose up -d`) without needing to rebuild the image!
+
+4. **Runtime In-Browser Configuration (No Container Rebuild Required)**:
    In case of connection issues or when targeting different backend instances:
    - On the **Sign In / Registration** screen, click the **Settings** icon button in the header.
    - Or when authenticated, open **Settings** from the user account menu or click the University logo.
-   - Under **Backend API Connection**, you can view the build default, input a custom target URL, click **Test Connection** to verify network reachability, and **Save & Apply**.
-   - The custom URL is stored in the browser's `localStorage` (`spa_api_base_url`) and takes precedence over the build-time default. Click **Reset Default** anytime to revert to the container's built-in address.
+   - Under **Backend API Connection**, you can view the active URL, input a custom target URL, click **Test Connection** to verify network reachability, and **Save & Apply**.
+   - The custom URL is stored in the browser's `localStorage` (`spa_api_base_url`) and takes precedence over container and build defaults. Click **Reset Default** anytime to revert to the container's built-in address.
 
 > **Developer Mode Easter Egg**: Tapping the University logo or System Information card **10 times in a row** (Android developer options mechanic) activates Developer Mode and unlocks the **Teacher Break (Dino Run)** mini-game directly in the settings dialog!
 
 There is no API token here any more. Access is per-account: the user signs in,
 and nothing secret is compiled into the bundle. See **Authentication** below.
 
-The backend must be configured to match: its `CORS_ORIGINS` has to name the
-origin this app is served from (a wildcard does not work for the credentialed
-refresh request), and its `COOKIE_SECURE` has to be `true` once that origin is
-HTTPS.
+### Backend CORS Configuration
+
+The backend's `CORS_ORIGINS` in `.env` must list the exact origin(s) the client is accessed from in the browser:
+- Localhost default: `CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173`
+- Server deployment: `CORS_ORIGINS=http://<server-ip-or-domain>:5173` (or `https://<server-domain>`)
+
+> **Note**: A wildcard (`*`) cannot be used because authentication uses credentialed requests with `httpOnly` refresh cookies (`credentials: 'include'`), which browsers strictly refuse on wildcard origins. Trailing slashes are automatically stripped by the backend. Set `COOKIE_SECURE=true` once running over HTTPS.
 
 ## Authentication
 

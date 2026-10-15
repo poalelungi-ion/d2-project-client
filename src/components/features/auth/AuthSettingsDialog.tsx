@@ -33,8 +33,8 @@ import { useThemeStore, useToastStore } from '../../../stores';
 import { radii } from '../../../styles/tokens';
 import { UniHildesheimLogo } from '../../common/UniHildesheimLogo';
 import {
-  DEFAULT_API_BASE_URL,
   getApiBaseUrl,
+  getEffectiveDefaultApiBaseUrl,
   resetApiBaseUrl,
   setApiBaseUrl,
   testApiConnection,
@@ -151,9 +151,10 @@ export const AuthSettingsDialog = ({ open, onClose }: AuthSettingsDialogProps) =
 
   const handleResetApiUrl = () => {
     resetApiBaseUrl();
-    setApiUrl(DEFAULT_API_BASE_URL);
+    const defaultUrl = getEffectiveDefaultApiBaseUrl();
+    setApiUrl(defaultUrl);
     setTestResult(null);
-    notify(`Reset Backend API Base URL to default: ${DEFAULT_API_BASE_URL}`, 'info');
+    notify(`Reset Backend API Base URL to default: ${defaultUrl}`, 'info');
   };
 
   return (
@@ -261,7 +262,7 @@ export const AuthSettingsDialog = ({ open, onClose }: AuthSettingsDialogProps) =
                   API Base Endpoint
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Build Default: <code>{DEFAULT_API_BASE_URL}</code>
+                  Default: <code>{getEffectiveDefaultApiBaseUrl()}</code>
                 </Typography>
               </Box>
             </Box>
