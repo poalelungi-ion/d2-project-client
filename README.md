@@ -102,13 +102,36 @@ backend.
 | :--- | :--- | :--- |
 | `VITE_API_BASE_URL` | `http://localhost:8000/api` | Root of the backend API |
 
-Two things to know about this value:
+### Three Ways to Configure the Backend API
 
-* Vite inlines `VITE_`-prefixed variables **at build time**. A production image
-  must be built with the value it will run against; setting it on an existing
-  build has no effect. The Dockerfile takes it as a build arg.
-* It is resolved by the **browser**, not from inside the container, so it must
-  be an address the user's browser can reach.
+1. **Docker Compose & Build Arguments (Build-time)**:
+   In `docker-compose.yml`, `VITE_API_BASE_URL` is passed as a build argument to the Dockerfile:
+   ```yaml
+   client:
+     build:
+       context: ./d2-project-client
+       dockerfile: Dockerfile
+       args:
+         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api}
+     environment:
+       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api}
+   ```
+   You can override this by providing `VITE_API_BASE_URL` in a `.env` file or building directly:
+   ```bash
+   docker compose build --build-arg VITE_API_BASE_URL=https://api.example.org/api client
+   ```
+
+2. **Local Development (`.env` file)**:
+   Set `VITE_API_BASE_URL=http://localhost:8000/api` in `.env` before running `npm run dev`.
+
+3. **Runtime In-Browser Configuration (No Container Rebuild Required)**:
+   In case of connection issues or when targeting different backend instances:
+   - On the **Sign In / Registration** screen, click the **Settings** icon button in the header.
+   - Or when authenticated, open **Settings** from the user account menu or click the University logo.
+   - Under **Backend API Connection**, you can view the build default, input a custom target URL, click **Test Connection** to verify network reachability, and **Save & Apply**.
+   - The custom URL is stored in the browser's `localStorage` (`spa_api_base_url`) and takes precedence over the build-time default. Click **Reset Default** anytime to revert to the container's built-in address.
+
+> **Developer Mode Easter Egg**: Tapping the University logo or System Information card **10 times in a row** (Android developer options mechanic) activates Developer Mode and unlocks the **Teacher Break (Dino Run)** mini-game directly in the settings dialog!
 
 There is no API token here any more. Access is per-account: the user signs in,
 and nothing secret is compiled into the bundle. See **Authentication** below.

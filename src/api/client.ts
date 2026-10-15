@@ -1,7 +1,90 @@
 import type { SessionResponse } from '../types';
 
-export const API_BASE_URL: string =
-  import.meta.env?.VITE_API_BASE_URL ?? 'http://localhost:8000/api';
+export const DEFAULT_API_BASE_URL: string = (
+  import.meta.env?.VITE_API_BASE_URL ?? 'http://localhost:8000/api'
+).replace(/\/+$/, '');
+
+export const API_BASE_URL_STORAGE_KEY = 'spa_api_base_url';
+
+export const getApiBaseUrl = (): string => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const stored = window.localStorage.getItem(API_BASE_URL_STORAGE_KEY);
+      if (stored && stored.trim()) {
+        return stored.trim().replace(/\/+$/, '');
+      }
+    }
+  } catch {
+    // Ignore storage errors (e.g. private browsing sandbox)
+  }
+  return DEFAULT_API_BASE_URL;
+};
+
+export const setApiBaseUrl = (newUrl: string): void => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const clean = newUrl.trim().replace(/\/+$/, '');
+      if (clean) {
+        window.localStorage.setItem(API_BASE_URL_STORAGE_KEY, clean);
+      } else {
+        window.localStorage.removeItem(API_BASE_URL_STORAGE_KEY);
+      }
+    }
+  } catch {
+    // Ignore storage errors
+  }
+};
+
+export const resetApiBaseUrl = (): void => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.removeItem(API_BASE_URL_STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage errors
+  }
+};
+
+/** Backwards-compatible export of the default API base URL. */
+export const API_BASE_URL: string = DEFAULT_API_BASE_URL;
+
+/**
+ * Pings the backend to verify network connectivity and CORS readiness.
+ */
+export const testApiConnection = async (
+  targetUrl: string,
+): Promise<{ ok: boolean; status?: number; error?: string }> => {
+  const cleanUrl = targetUrl.trim().replace(/\/+$/, '');
+  if (!cleanUrl) {
+    return { ok: false, error: 'URL cannot be empty' };
+  }
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`${cleanUrl}/courses/`, {
+      method: 'GET',
+      credentials: 'include',
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return { ok: true, status: res.status };
+  } catch (err: unknown) {
+    try {
+      const rootUrl = cleanUrl.replace(/\/api\/?$/, '');
+      const controller2 = new AbortController();
+      const timeoutId2 = setTimeout(() => controller2.abort(), 3000);
+      const res2 = await fetch(`${rootUrl}/`, {
+        method: 'GET',
+        signal: controller2.signal,
+      });
+      clearTimeout(timeoutId2);
+      return { ok: true, status: res2.status };
+    } catch {
+      const message = err instanceof Error ? err.message : 'Unable to connect';
+      return { ok: false, error: message };
+    }
+  }
+};
 
 /**
  * The access token is held here, in a module variable, and nowhere else.
@@ -30,7 +113,11 @@ export const setSessionExpiredHandler = (handler: () => void): void => {
 export const authHeader = (): Record<string, string> =>
   accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
 
-const url = (path: string): string => `${API_BASE_URL}${path}`;
+const url = (path: string): string => {
+  const base = getApiBaseUrl();
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${base}${normalizedPath}`;
+};
 
 /** Path of the endpoint that exchanges the refresh cookie, relative to the API root. */
 const REFRESH_PATH = '/auth/refresh';
