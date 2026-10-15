@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -11,43 +11,27 @@ import {
   FormControlLabel,
   Chip,
   Paper,
-  TextField,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Tooltip,
-  Alert,
-  CircularProgress,
 } from '@mui/material';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import SearchIcon from '@mui/icons-material/Search';
 import TerminalIcon from '@mui/icons-material/Terminal';
 import SportsEsportsOutlinedIcon from '@mui/icons-material/SportsEsportsOutlined';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import DnsOutlinedIcon from '@mui/icons-material/DnsOutlined';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useNavigate } from 'react-router-dom';
 
-import { useThemeStore, useToastStore, useStudyProgramStore, useSystemLogStore } from '../../../stores';
+import { useThemeStore, useToastStore, useSystemLogStore } from '../../../stores';
 import { radii } from '../../../styles/tokens';
-import { STUDY_PROGRAMS } from '../../../utils/studyProgram';
 import { ROUTES } from '../../../app/navigation';
 import { UniHildesheimLogo } from '../../common/UniHildesheimLogo';
-import {
-  getApiBaseUrl,
-  getEffectiveDefaultApiBaseUrl,
-  resetApiBaseUrl,
-  setApiBaseUrl,
-  testApiConnection,
-} from '../../../api/client';
 import { ProfDinoGame } from './ProfDinoGame';
 import { SystemLogs } from '../SystemLogs';
+import { BackendApiConnectionSection } from './BackendApiConnectionSection';
+import { StudyProgramAliasesSection } from './StudyProgramAliasesSection';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -60,72 +44,9 @@ export const SettingsDialog = ({ open, onClose }: SettingsDialogProps) => {
   const toggleTheme = useThemeStore((s) => s.toggle);
   const notify = useToastStore((s) => s.notify);
 
-  const { aliases, addAlias, removeAlias, resetDefaults } = useStudyProgramStore();
   const systemLogs = useSystemLogStore((s) => s.logs);
   const [gameExpanded, setGameExpanded] = useState(false);
   const [logsExpanded, setLogsExpanded] = useState(false);
-
-  // Backend API Base URL state
-  const [apiUrl, setApiUrl] = useState<string>(() => getApiBaseUrl());
-  const [testingApi, setTestingApi] = useState(false);
-  const [testResult, setTestResult] = useState<{
-    tested: boolean;
-    ok: boolean;
-    message: string;
-  } | null>(null);
-
-  const handleTestConnection = async () => {
-    setTestingApi(true);
-    setTestResult(null);
-    const target = apiUrl.trim();
-    if (!target) {
-      setTestResult({
-        tested: true,
-        ok: false,
-        message: 'API Base URL cannot be empty.',
-      });
-      setTestingApi(false);
-      return;
-    }
-
-    const res = await testApiConnection(target);
-    if (res.ok) {
-      setTestResult({
-        tested: true,
-        ok: true,
-        message: `Successfully reached backend at ${target}${res.status ? ` (HTTP ${res.status})` : ''}`,
-      });
-      notify('Backend connection verified successfully!', 'success');
-    } else {
-      setTestResult({
-        tested: true,
-        ok: false,
-        message: `Unable to connect: ${res.error || 'Server unreachable or CORS blocked'}. Please check if backend is running.`,
-      });
-      notify('Connection test failed. Check backend status.', 'error');
-    }
-    setTestingApi(false);
-  };
-
-  const handleSaveApiUrl = () => {
-    const target = apiUrl.trim();
-    if (!target) {
-      notify('API Base URL cannot be empty.', 'error');
-      return;
-    }
-    setApiBaseUrl(target);
-    const saved = getApiBaseUrl();
-    setApiUrl(saved);
-    notify(`Backend API Base URL set to: ${saved}`, 'success');
-  };
-
-  const handleResetApiUrl = () => {
-    resetApiBaseUrl();
-    const defaultUrl = getEffectiveDefaultApiBaseUrl();
-    setApiUrl(defaultUrl);
-    setTestResult(null);
-    notify(`Reset Backend API Base URL to default: ${defaultUrl}`, 'info');
-  };
 
   // Android-style 10-click Developer Mode Easter Egg
   const REQUIRED_DEV_CLICKS = 10;
@@ -168,61 +89,6 @@ export const SettingsDialog = ({ open, onClose }: SettingsDialogProps) => {
       }
       notify('🎉 You are now a developer! Teacher Break (Dino Run) unlocked!', 'success');
     }
-  };
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [newAliasInputs, setNewAliasInputs] = useState<Record<string, string>>({});
-
-  // Group aliases by canonical study program
-  const programAliasMap = useMemo(() => {
-    const map: Record<string, string[]> = {};
-    for (const prog of STUDY_PROGRAMS) {
-      map[prog] = [];
-    }
-    for (const [alias, target] of Object.entries(aliases)) {
-      if (!map[target]) {
-        map[target] = [];
-      }
-      map[target].push(alias);
-    }
-    // Sort aliases alphabetically
-    for (const prog of Object.keys(map)) {
-      map[prog].sort();
-    }
-    return map;
-  }, [aliases]);
-
-  const filteredPrograms = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return STUDY_PROGRAMS;
-    return STUDY_PROGRAMS.filter((prog) => {
-      const matchProgramName = prog.toLowerCase().includes(q);
-      const matchAlias = (programAliasMap[prog] ?? []).some((a) => a.includes(q));
-      return matchProgramName || matchAlias;
-    });
-  }, [searchQuery, programAliasMap]);
-
-  const handleAddAlias = (program: string) => {
-    const val = (newAliasInputs[program] || '').trim();
-    if (!val) return;
-
-    const success = addAlias(program, val);
-    if (success) {
-      notify(`Added alias "${val}" for ${program}`);
-      setNewAliasInputs((prev) => ({ ...prev, [program]: '' }));
-    } else {
-      notify('Could not add alias', 'error');
-    }
-  };
-
-  const handleRemoveAlias = (alias: string, program: string) => {
-    removeAlias(alias);
-    notify(`Removed alias "${alias}" from ${program}`);
-  };
-
-  const handleReset = () => {
-    resetDefaults();
-    notify('Reset study program aliases to defaults');
   };
 
   return (
@@ -294,233 +160,10 @@ export const SettingsDialog = ({ open, onClose }: SettingsDialogProps) => {
         </Box>
 
         {/* Backend API Connection Section */}
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-            <Box>
-              <Typography
-                variant="subtitle2"
-                color="text.secondary"
-                sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}
-              >
-                Backend API Connection
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Configure backend target URL. Stored in your browser's local storage and overrides the build default.
-              </Typography>
-            </Box>
-            <Tooltip title="Reset to container default URL">
-              <Button
-                size="small"
-                variant="outlined"
-                color="inherit"
-                startIcon={<RestartAltIcon />}
-                onClick={handleResetApiUrl}
-                sx={{ textTransform: 'none', borderRadius: radii.md }}
-              >
-                Reset Default
-              </Button>
-            </Tooltip>
-          </Box>
-
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: radii.lg }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-              <DnsOutlinedIcon color="primary" />
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="body2" fontWeight="600">
-                  API Base Endpoint
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Default: <code>{getEffectiveDefaultApiBaseUrl()}</code>
-                </Typography>
-              </Box>
-            </Box>
-
-            <TextField
-              size="small"
-              fullWidth
-              label="Backend API Base URL"
-              placeholder="http://localhost:8000/api"
-              value={apiUrl}
-              onChange={(e) => {
-                setApiUrl(e.target.value);
-                setTestResult(null);
-              }}
-              sx={{ mb: 2 }}
-            />
-
-            {testResult && (
-              <Alert
-                severity={testResult.ok ? 'success' : 'error'}
-                icon={testResult.ok ? <CheckCircleOutlineIcon /> : <ErrorOutlineIcon />}
-                sx={{ mb: 2, py: 0.5 }}
-              >
-                {testResult.message}
-              </Alert>
-            )}
-
-            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => void handleTestConnection()}
-                disabled={testingApi}
-                startIcon={testingApi ? <CircularProgress size={16} /> : undefined}
-                sx={{ textTransform: 'none', borderRadius: radii.md }}
-              >
-                {testingApi ? 'Testing...' : 'Test Connection'}
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                onClick={handleSaveApiUrl}
-                disabled={testingApi || !apiUrl.trim()}
-                sx={{ textTransform: 'none', borderRadius: radii.md }}
-              >
-                Save &amp; Apply
-              </Button>
-            </Box>
-          </Paper>
-        </Box>
+        <BackendApiConnectionSection />
 
         {/* Study Program Name Mappings & Aliases */}
-        <Box sx={{ mb: 3 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: 1.5,
-            }}
-          >
-            <Box>
-              <Typography
-                variant="subtitle2"
-                color="text.secondary"
-                sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}
-              >
-                Study Program Name Mappings &amp; Aliases
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Associate spreadsheet naming variations and abbreviations with official programs
-              </Typography>
-            </Box>
-            <Tooltip title="Reset all aliases to university defaults">
-              <Button
-                size="small"
-                variant="outlined"
-                color="inherit"
-                startIcon={<RestartAltIcon />}
-                onClick={handleReset}
-                sx={{ textTransform: 'none', borderRadius: radii.md }}
-              >
-                Reset Defaults
-              </Button>
-            </Tooltip>
-          </Box>
-
-          <TextField
-            size="small"
-            fullWidth
-            placeholder="Search programs or aliases (e.g. SE, AINF, Informatik)..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />,
-            }}
-            sx={{ mb: 2 }}
-          />
-
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {filteredPrograms.map((prog) => {
-              const progAliases = programAliasMap[prog] ?? [];
-              const inputValue = newAliasInputs[prog] || '';
-
-              return (
-                <Accordion
-                  key={prog}
-                  variant="outlined"
-                  disableGutters
-                  sx={{
-                    borderRadius: radii.md,
-                    '&:before': { display: 'none' },
-                    overflow: 'hidden',
-                  }}
-                >
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
-                      <SchoolOutlinedIcon fontSize="small" color="primary" />
-                      <Typography variant="body2" fontWeight="600">
-                        {prog}
-                      </Typography>
-                      <Chip
-                        label={`${progAliases.length} alias${progAliases.length === 1 ? '' : 'es'}`}
-                        size="small"
-                        sx={{ ml: 'auto', mr: 2, height: 22, fontSize: '0.75rem' }}
-                      />
-                    </Box>
-                  </AccordionSummary>
-                  <AccordionDetails sx={{ pt: 0, pb: 2, px: 2 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-                      Any of these abbreviations or spreadsheet column entries will automatically resolve to <strong>{prog}</strong> on upload:
-                    </Typography>
-
-                    {/* Active Aliases */}
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 2 }}>
-                      {progAliases.length === 0 ? (
-                        <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
-                          No aliases registered yet.
-                        </Typography>
-                      ) : (
-                        progAliases.map((alias) => (
-                          <Chip
-                            key={alias}
-                            label={alias}
-                            size="small"
-                            onDelete={() => handleRemoveAlias(alias, prog)}
-                            color="default"
-                            sx={{
-                              borderRadius: radii.sm,
-                              bgcolor: (theme) => theme.palette.action.hover,
-                            }}
-                          />
-                        ))
-                      )}
-                    </Box>
-
-                    {/* Add Alias Input */}
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <TextField
-                        size="small"
-                        fullWidth
-                        placeholder={`Add new alias for ${prog} (e.g. M.Sc. ${prog.slice(0, 4)})...`}
-                        value={inputValue}
-                        onChange={(e) =>
-                          setNewAliasInputs((prev) => ({ ...prev, [prog]: e.target.value }))
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleAddAlias(prog);
-                          }
-                        }}
-                      />
-                      <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<AddCircleOutlineIcon />}
-                        onClick={() => handleAddAlias(prog)}
-                        disabled={!inputValue.trim()}
-                        sx={{ textTransform: 'none', whiteSpace: 'nowrap' }}
-                      >
-                        Add Alias
-                      </Button>
-                    </Box>
-                  </AccordionDetails>
-                </Accordion>
-              );
-            })}
-          </Box>
-        </Box>
+        <StudyProgramAliasesSection />
 
         {/* Staff Break Mini Game & System Logs (Hidden by default) */}
         <Box sx={{ mb: 3 }}>

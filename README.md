@@ -102,37 +102,31 @@ backend.
 | :--- | :--- | :--- |
 | `VITE_API_BASE_URL` | `http://localhost:8000/api` | Root of the backend API |
 
-### Three Ways to Configure the Backend API
+### Configuring the Backend API (Global vs. Local)
 
-1. **Docker Compose & Build Arguments (Build-time)**:
-   In `docker-compose.yml`, `VITE_API_BASE_URL` is passed as a build argument to the Dockerfile:
-   ```yaml
-   client:
-     build:
-       context: ./d2-project-client
-       dockerfile: Dockerfile
-       args:
-         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api}
-     environment:
-       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api}
-   ```
-   You can override this by providing `VITE_API_BASE_URL` in a `.env` file or building directly:
+#### A. Global Configuration (Affects ALL users across all devices)
+To configure the base API endpoint for all users globally, set `VITE_API_BASE_URL` in `.env` or in your container deployment:
+
+1. **Runtime Container Environment (`/config.js` via `.env`)**:
+   When running the production Nginx container via Docker Compose, `/docker-entrypoint.d/40-generate-config.sh` automatically reads `VITE_API_BASE_URL` from the container's environment (`.env`) and injects it into `/usr/share/nginx/html/config.js` at container boot.
+   - **Advantage**: You can change `VITE_API_BASE_URL` in `.env` on your server and restart containers (`docker compose up -d`) **without needing to rebuild the image**.
+   - Every visitor who opens the web app loads this global default automatically.
+
+2. **Docker Compose & Build Arguments (Build-time)**:
+   In `docker-compose.yml`, `VITE_API_BASE_URL` is also passed as a build argument:
    ```bash
    docker compose build --build-arg VITE_API_BASE_URL=https://api.example.org/api client
    ```
 
-2. **Local Development (`.env` file)**:
+3. **Local Development Server (`.env` file)**:
    Set `VITE_API_BASE_URL=http://localhost:8000/api` in `.env` before running `npm run dev`.
 
-3. **Runtime Container Environment (`/config.js` via `.env`)**:
-   When running the production Nginx container via Docker Compose, `/docker-entrypoint.d/40-generate-config.sh` automatically reads `VITE_API_BASE_URL` from the container's environment (`.env`) and injects it into `/usr/share/nginx/html/config.js` at boot. This means you can change `VITE_API_BASE_URL` in `.env` and restart containers (`docker compose up -d`) without needing to rebuild the image!
-
-4. **Runtime In-Browser Configuration (No Container Rebuild Required)**:
-   In case of connection issues or when targeting different backend instances:
-   - On the **Sign In / Registration** screen, click the **Settings** icon button in the header.
-   - Or when authenticated, open **Settings** from the user account menu or click the University logo.
-   - Under **Backend API Connection**, you can view the active URL, input a custom target URL, click **Test Connection** to verify network reachability, and **Save & Apply**.
-   - The custom URL is stored in the browser's `localStorage` (`spa_api_base_url`) and takes precedence over container and build defaults. Click **Reset Default** anytime to revert to the container's built-in address.
+#### B. Local In-Browser Setting (Rescue & Debugging Tool)
+In case of connection issues or when testing against a different backend without reconfiguring the server:
+- On the **Sign In / Registration** screen, click the **Settings (gear ⚙️)** icon button in the top-right header.
+- Or when authenticated, open **Settings** from the user account menu or click the University logo.
+- Under **Backend API Connection**, you can view the active URL, enter a custom target URL, click **Test Connection** to verify network reachability and CORS, and **Save & Apply**.
+- **Scope**: The custom URL is stored in that specific browser's `localStorage` (`spa_api_base_url`) as a client-side override. Click **Reset Default** anytime to revert back to the global container default.
 
 > **Developer Mode Easter Egg**: Tapping the University logo or System Information card **10 times in a row** (Android developer options mechanic) activates Developer Mode and unlocks the **Teacher Break (Dino Run)** mini-game directly in the settings dialog!
 
