@@ -3,7 +3,7 @@ import { Alert, Box, Button, Link as MuiLink, TextField, Typography } from '@mui
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { ROUTES } from '../../../app/navigation';
-import { useAuthStore } from '../../../stores';
+import { useAuthStore, useSystemLogStore } from '../../../stores';
 import { UNIVERSITY_EMAIL_SUFFIX } from '../../../utils/constants';
 import type { LoginFormErrors, LoginFormValues } from '../../../types';
 import { AuthLayout } from './AuthLayout';
@@ -39,6 +39,14 @@ export function LoginForm() {
     if (Object.keys(found).length > 0) return;
 
     if (await login({ email: values.email.trim(), password: values.password })) {
+      useSystemLogStore.getState().addLog({
+        level: 'info',
+        category: 'auth',
+        code: 'AUTH_LOGIN_SUCCESS',
+        message: `Staff member signed in successfully: ${values.email.trim()}`,
+        actor: values.email.trim(),
+        details: JSON.stringify({ email: values.email.trim(), method: 'JWT Credentials' }, null, 2),
+      });
       // Back to whatever was being opened before the redirect, or the courses page.
       const target = (location.state as RedirectState | null)?.from ?? ROUTES.courses;
       void navigate(target, { replace: true });

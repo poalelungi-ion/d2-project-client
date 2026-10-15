@@ -53,6 +53,10 @@ export const buildComponents = (mode: ThemeMode): Components<Theme> => {
           '--ag-border-color': surfaces.hairline[mode],
           '--ag-row-border-color': surfaces.hairline[mode],
           '--ag-odd-row-background-color': surfaces.tableStripe[mode],
+          '& .ag-cell': {
+            display: 'flex',
+            alignItems: 'center',
+          },
         },
       },
     },
@@ -129,7 +133,22 @@ export const buildComponents = (mode: ThemeMode): Components<Theme> => {
     // Every search box, form field and readonly mapping input in the app.
     MuiOutlinedInput: {
       styleOverrides: {
-        root: { borderRadius: radii.lg },
+        root: {
+          borderRadius: radii.lg,
+          backgroundColor: mode === 'light' ? common.white : surfaces.panel[mode],
+          '& fieldset': {
+            borderRadius: radii.lg,
+          },
+        },
+      },
+    },
+
+    MuiFormControl: {
+      styleOverrides: {
+        root: {
+          borderRadius: radii.lg,
+          backgroundColor: 'transparent',
+        },
       },
     },
 
@@ -138,6 +157,7 @@ export const buildComponents = (mode: ThemeMode): Components<Theme> => {
         root: {
           backgroundColor: surfaces.panel[mode],
           borderRadius: radii.lg,
+          overflow: 'hidden',
         },
       },
     },

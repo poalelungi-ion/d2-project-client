@@ -94,7 +94,7 @@ export interface CourseMark {
 export interface Course {
   course_id: number;
   course_name: string;
-  assigned_professor: string;
+  assigned_professor?: string;
   semester: string;
   study_program: string;
   total_attempts: number;
@@ -207,7 +207,7 @@ export interface ApiError {
 export interface CourseFormValues {
   course_id: string;
   course_name: string;
-  semester: string;
+  semester?: string;
 }
 
 export type CourseFormErrors = Partial<Record<keyof CourseFormValues, string>>;
@@ -226,7 +226,8 @@ export interface AddGradeFormValues {
   /** Empty string until a course is picked from the dropdown. */
   course_id: number | '';
   semester: string;
-  grade: number;
+  grade: number | string;
+  attempt_type?: AttemptType;
 }
 
 /**
@@ -271,3 +272,20 @@ export interface Toast {
   message: string;
   severity: ToastSeverity;
 }
+
+// === Course Drive ===
+export type DriveFileStatus = 'uploading' | 'parsing' | 'parsed' | 'error';
+
+export interface CourseDriveFile {
+  id: string;
+  course_id: string | number;
+  name: string;
+  size_bytes: number;
+  uploaded_at: string;
+  uploaded_by: string;
+  status: DriveFileStatus;
+  status_message?: string;
+  record_count?: number;
+  semester?: string;
+}
+

@@ -110,22 +110,30 @@ export function getCurrentSemester(date: Date = new Date()): string {
   return `WiSe${shortYear(year - 1)}/${shortYear(year)}`;
 }
 
+export function getNextSemester(semester: string): string {
+  const parsed = parseSemester(semester);
+  if (parsed.term === 1) {
+    return `WiSe${shortYear(parsed.year)}/${shortYear(parsed.year + 1)}`;
+  }
+  if (parsed.term === 2) {
+    return `SoSe${shortYear(parsed.year + 1)}`;
+  }
+  return semester;
+}
+
 export function generateSemesters(
   date: Date = new Date(),
-  yearsBefore = 10,
+  startYear = 2016,
 ): string[] {
-  const currentYear = date.getFullYear();
   const currentSemester = getCurrentSemester(date);
+  const nextSemester = getNextSemester(currentSemester);
+  const nextParsed = parseSemester(nextSemester);
+  const endYear = nextParsed.year + 1;
   const semesters: string[] = [];
 
-  for (
-    let year = currentYear - yearsBefore;
-    year <= currentYear;
-    year += 1
-  ) {
+  for (let year = startYear; year <= endYear; year += 1) {
     const summerSemester = `SoSe${shortYear(year)}`;
-    const winterSemester =
-      `WiSe${shortYear(year)}/${shortYear(year + 1)}`;
+    const winterSemester = `WiSe${shortYear(year)}/${shortYear(year + 1)}`;
 
     semesters.push(summerSemester);
     semesters.push(winterSemester);
@@ -133,10 +141,24 @@ export function generateSemesters(
 
   return semesters
     .filter(
-      (semester) =>
-        compareSemesters(semester, currentSemester) <= 0,
+      (semester) => compareSemesters(semester, nextSemester) <= 0,
     )
     .sort(compareSemesters);
+}
+
+/**
+ * Standard list of semesters matching the upload page:
+ * [Next Semester, Current Semester, ...reversed past semesters (most recent first)]
+ */
+export function getStandardSemesterOptions(date: Date = new Date()): string[] {
+  const currentSemester = getCurrentSemester(date);
+  const nextSemester = getNextSemester(currentSemester);
+  const allSemesters = generateSemesters(date);
+  const otherSemesters = [...allSemesters]
+    .filter((s) => s !== nextSemester && s !== currentSemester)
+    .reverse();
+
+  return [nextSemester, currentSemester, ...otherSemesters];
 }
 
 /** Mean numeric grade for one offering of a course. */

@@ -13,16 +13,18 @@ import {
 } from '@mui/material';
 import type {
   Student,
+  StudentDetails,
   StudentFormErrors,
   StudentFormValues,
   StudentStatus,
 } from '../../types';
 import { useApiMutations } from '../../hooks/useApi';
+import { useSystemLogStore } from '../../stores';
 import { StudyProgramSelect } from './StudyProgramSelect';
 
 interface StudentFormDialogProps {
   /** The student being edited, or null to create a new one. */
-  student: Student | null;
+  student: Student | StudentDetails | null;
   /** Existing student IDs to prevent duplicate IDs before submission. */
   existingStudentIds?: number[];
   onClose: () => void;
@@ -39,7 +41,7 @@ const EMPTY_FORM: StudentFormValues = {
 };
 
 /** Editing splits the stored full name back into the two fields the UI asks for. */
-const toFormValues = (student: Student | null): StudentFormValues => {
+const toFormValues = (student: Student | StudentDetails | null): StudentFormValues => {
   if (!student) return EMPTY_FORM;
   const nameParts = (student.name || '').split(' ');
   return {
@@ -98,9 +100,25 @@ export function StudentFormDialog({
 
     const result = await saveStudent(values, student?.version);
     if (result.success) {
+      useSystemLogStore.getState().addLog({
+        level: 'info',
+        category: 'student',
+        code: student ? 'STUDENT_UPDATED' : 'STUDENT_CREATED',
+        message: `${student ? 'Updated' : 'Created'} student profile: ${values.first_name} ${values.last_name} (ID: ${values.student_id}, Program: ${values.program}, Status: ${values.status})`,
+        actor: 'Staff Administrator',
+        details: JSON.stringify({ ...values, studentId: values.student_id }, null, 2),
+      });
       onSaved(parseInt(values.student_id, 10));
       onClose();
     } else if (result.conflict) {
+      useSystemLogStore.getState().addLog({
+        level: 'warn',
+        category: 'incident',
+        code: 'STUDENT_DUPLICATE_ID',
+        message: `Conflict: Student ID ${values.student_id} already exists in registry.`,
+        actor: 'Student Registry Validator',
+        details: JSON.stringify({ attemptedId: values.student_id, name: `${values.first_name} ${values.last_name}` }, null, 2),
+      });
       setErrors((prev) => ({
         ...prev,
         student_id: 'Student ID already exists',

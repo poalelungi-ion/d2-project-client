@@ -23,3 +23,15 @@ export const previewUpload = (formData: FormData): Promise<Response> =>
 /** Commits the reviewed rows in a single transaction. */
 export const confirmUpload = (payload: UploadConfirmPayload): Promise<Response> =>
   post('/upload/confirm/', payload);
+
+/** Converts pasted tabular string into an openpyxl .xlsx Excel spreadsheet blob. */
+export const convertPasteToExcel = (
+  paste: string,
+  filename = 'pasted_table.xlsx',
+): Promise<Response> => {
+  const formData = new FormData();
+  formData.append('paste', paste);
+  formData.append('filename', filename);
+  return postForm('/upload/paste-to-excel/', formData);
+};
+

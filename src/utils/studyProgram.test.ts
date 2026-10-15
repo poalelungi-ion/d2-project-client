@@ -4,6 +4,8 @@ import {
   STUDY_PROGRAM_OPTIONS,
   UNASSIGNED_PROGRAM,
   formatValidationIssues,
+  normalizeStudyProgram,
+  isAllowedStudyProgram,
 } from './studyProgram';
 
 describe('STUDY_PROGRAMS', () => {
@@ -16,6 +18,7 @@ describe('STUDY_PROGRAMS', () => {
     expect(STUDY_PROGRAMS).toContain('Development Project');
     expect(STUDY_PROGRAMS).toContain('SE Master');
     expect(STUDY_PROGRAMS).toContain('Data Science Master');
+    expect(STUDY_PROGRAMS).toContain('Informatik');
   });
 
   it('keeps the empty-import placeholder off the named list', () => {
@@ -34,5 +37,23 @@ describe('formatValidationIssues', () => {
     expect(formatValidationIssues(['Grade'], ['Study Program'])).toBe(
       'Missing: Grade. Invalid: Study Program',
     );
+  });
+});
+
+describe('normalizeStudyProgram and aliases', () => {
+  it('correctly maps Uni Hildesheim common abbreviations to canonical names', () => {
+    expect(normalizeStudyProgram('Informatik')).toBe('Informatik');
+    expect(normalizeStudyProgram('informatik')).toBe('Informatik');
+    expect(normalizeStudyProgram('M.Sc. SE')).toBe('SE Master');
+    expect(normalizeStudyProgram('m.sc. ainf')).toBe('Angewandte Informatik Master');
+    expect(normalizeStudyProgram('M.Sc. IMIT')).toBe('IMIT Master');
+    expect(normalizeStudyProgram('B.Sc. IMIT')).toBe('IMIT Bachelor');
+    expect(normalizeStudyProgram('M.Sc. WiInf')).toBe('Wirtschaftsinformatik Master');
+    expect(normalizeStudyProgram('Data Science')).toBe('Data Science Master');
+  });
+
+  it('recognizes dynamic study programs', () => {
+    expect(isAllowedStudyProgram('M.Sc. Robotics', ['M.Sc. Robotics'])).toBe(true);
+    expect(isAllowedStudyProgram('M.Sc. AI', [])).toBe(false);
   });
 });

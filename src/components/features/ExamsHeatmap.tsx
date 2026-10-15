@@ -24,12 +24,14 @@ export const ExamsHeatmap = ({
   heatmapData, 
   title = "Exams Completed", 
   subtitle = "Total number of exams taken by each student per semester.",
-  minColumns = 0
+  minColumns = 0,
+  isCourseSpecific: _isCourseSpecific,
 }: { 
   heatmapData: HeatmapRow[], 
   title?: string, 
   subtitle?: string,
-  minColumns?: number
+  minColumns?: number,
+  isCourseSpecific?: boolean,
 }) => {
   const theme = useTheme();
 
@@ -62,25 +64,94 @@ export const ExamsHeatmap = ({
 
   // Ensure we show at least up to maxExams, but don't force a huge number if not needed
   const cols = Math.max(minColumns, maxExams);
-  const examColumns = Array.from({ length: cols + 1 }, (_, i) => i);
+  const hasZero = heatmapData.some(row => Boolean(row.distribution[0] || row.distribution['0']));
+  const startCol = hasZero ? 0 : 1;
+  const examColumns = Array.from({ length: cols - startCol + 1 }, (_, i) => i + startCol);
 
-  // Helper to get color scale (light green to dark green based on value)
-  const getCellColor = (value: number) => {
-    if (!value || value === 0) return 'transparent';
-    if (value <= 2) return '#c8e6c9'; // light green
-    if (value <= 5) return '#81c784'; // medium green
-    if (value <= 10) return '#4caf50';
-    return '#388e3c'; // dark green
+  const isDark = theme.palette.mode === 'dark';
+
+  // Theme-adaptive, high-contrast heat map styling
+  const getCellStyle = (value: number) => {
+    if (!value || value === 0) {
+      return {
+        bgcolor: 'transparent',
+        color: 'text.secondary',
+        fontWeight: 400,
+      };
+    }
+
+    if (isDark) {
+      // Dark mode: Avoid jarring whitish pastels; use saturated emerald / forest tints
+      // with high-contrast text (> 7:1) for optimal readability on dark backgrounds
+      if (value <= 2) {
+        return {
+          bgcolor: 'rgba(34, 197, 94, 0.22)', // Rich translucent emerald tint, NOT whitish
+          color: '#86efac',                    // Crisp luminous mint text
+          fontWeight: 700,
+        };
+      }
+      if (value <= 5) {
+        return {
+          bgcolor: 'rgba(34, 197, 94, 0.40)', // Medium emerald
+          color: '#bbf7d0',                    // Light mint text
+          fontWeight: 700,
+        };
+      }
+      if (value <= 10) {
+        return {
+          bgcolor: '#15803d',                  // Solid forest green
+          color: '#ffffff',                    // Crisp white text
+          fontWeight: 700,
+        };
+      }
+      return {
+        bgcolor: '#16a34a',                    // Vibrant solid green
+        color: '#ffffff',                      // Crisp white text
+        fontWeight: 800,
+      };
+    } else {
+      // Light mode: Fresh green hues with dark green text on lighter cells for high contrast
+      if (value <= 2) {
+        return {
+          bgcolor: '#dcfce7',                  // Soft light green
+          color: '#14532d',                    // Deep dark green text (contrast > 10:1)
+          fontWeight: 700,
+        };
+      }
+      if (value <= 5) {
+        return {
+          bgcolor: '#86efac',                  // Medium light green
+          color: '#14532d',                    // Deep dark green text
+          fontWeight: 700,
+        };
+      }
+      if (value <= 10) {
+        return {
+          bgcolor: '#22c55e',                  // Solid green
+          color: '#ffffff',                    // Crisp white text
+          fontWeight: 700,
+        };
+      }
+      return {
+        bgcolor: '#15803d',                  // Dark forest green
+        color: '#ffffff',                    // Crisp white text
+        fontWeight: 800,
+      };
+    }
   };
 
   return (
-    <Box sx={{ mt: 4 }}>
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
-        {title}
-      </Typography>
-      <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
-        {subtitle}
-      </Typography>
+    <Box sx={{ mt: title ? 4 : 0 }}>
+      {title && (
+        <Typography variant="h5" sx={{ fontWeight: 700, mb: subtitle ? 1 : 2 }}>
+          {title}
+        </Typography>
+      )}
+      {subtitle && (
+        <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+          {subtitle}
+        </Typography>
+      )}
       <TableContainer component={Paper} variant="outlined" sx={{ overflowX: 'auto' }}>
         <Table size="small">
           <TableHead>
@@ -114,10 +185,12 @@ export const ExamsHeatmap = ({
                       key={col} 
                       align="center" 
                       sx={{ 
-                        bgcolor: getCellColor(val),
-                        color: val > 5 ? 'white' : 'inherit',
+                        ...getCellStyle(val),
                         border: '1px solid',
                         borderColor: theme.palette.divider,
+                        py: 0.75,
+                        px: 1,
+                        fontSize: '0.85rem',
                       }}
                     >
                       {val > 0 ? val : ''}

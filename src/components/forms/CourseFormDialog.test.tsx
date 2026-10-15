@@ -47,29 +47,29 @@ describe('CourseFormDialog', () => {
     mockSaveCourse.mockResolvedValue(true);
   });
 
-  it('renders Edit Course without a Study Program input field or container', () => {
+  it('renders Edit Course without Semester, Study Program, or Professor fields', () => {
     renderDialog(sampleCourse);
 
     expect(screen.getByText('Edit Course')).toBeInTheDocument();
     expect(screen.getByLabelText(/course number \/ id/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/course name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/semester/i)).toBeInTheDocument();
 
-    // Verify Assigned Professor and Study Program fields and labels are completely absent (#99886)
+    // Verify Semester, Assigned Professor, and Study Program fields and labels are completely absent
+    expect(screen.queryByLabelText(/semester/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/assigned professor/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/study program/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/study program/i)).not.toBeInTheDocument();
   });
 
-  it('renders Create New Course without an Assigned Professor or Study Program input field', () => {
+  it('renders Create New Course without an Assigned Professor, Study Program, or Semester input field', () => {
     renderDialog(null);
 
     expect(screen.getByText('Create New Course')).toBeInTheDocument();
+    expect(screen.queryByLabelText(/semester/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/assigned professor/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/study program/i)).not.toBeInTheDocument();
   });
 
-  it('submits course updates without study_program or professor in the payload (#99886)', async () => {
+  it('submits course updates without study_program, professor, or semester in the payload (#99886)', async () => {
     const { onClose, onSaved } = renderDialog(sampleCourse);
 
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
@@ -85,7 +85,6 @@ describe('CourseFormDialog', () => {
     expect(payload).toEqual({
       course_id: '101',
       course_name: 'Distributed Systems',
-      semester: 'WiSe24/25',
     });
     expect(payload).not.toHaveProperty('study_program');
     expect(payload).not.toHaveProperty('professor');
@@ -97,14 +96,14 @@ describe('CourseFormDialog', () => {
     });
   });
 
-  it('validates mandatory fields without requiring study program', () => {
+  it('validates mandatory fields (Course Name and Course ID)', () => {
     renderDialog(null);
 
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     expect(screen.getByText('Course Name is mandatory')).toBeInTheDocument();
     expect(screen.getByText('Course ID is mandatory')).toBeInTheDocument();
-    expect(screen.getByText('Semester is mandatory')).toBeInTheDocument();
+    expect(screen.queryByText('Semester is mandatory')).not.toBeInTheDocument();
     expect(screen.queryByText('Study Program is mandatory')).not.toBeInTheDocument();
     expect(mockSaveCourse).not.toHaveBeenCalled();
   });

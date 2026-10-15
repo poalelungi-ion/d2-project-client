@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Autocomplete,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -11,11 +10,6 @@ import {
 
 import type { Course, CourseFormErrors, CourseFormValues } from '../../types';
 import { useApiMutations } from '../../hooks/useApi';
-import {
-  generateSemesters,
-  getCurrentSemester,
-  isValidSemester,
-} from '../../utils/semester';
 
 interface CourseFormDialogProps {
   /** The course being edited, or null to create a new one. */
@@ -25,18 +19,9 @@ interface CourseFormDialogProps {
   onSaved: (savedCourseId: string) => void;
 }
 
-const SEMESTERS = generateSemesters();
-const CURRENT_SEMESTER = getCurrentSemester();
-
-const SEMESTER_OPTIONS = [
-  CURRENT_SEMESTER,
-  ...SEMESTERS.filter((semester) => semester !== CURRENT_SEMESTER),
-];
-
 const EMPTY_FORM: CourseFormValues = {
   course_id: '',
   course_name: '',
-  semester: '',
 };
 
 const toFormValues = (course: Course | null): CourseFormValues =>
@@ -44,7 +29,6 @@ const toFormValues = (course: Course | null): CourseFormValues =>
     ? {
         course_id: course.course_id?.toString() ?? '',
         course_name: course.course_name || '',
-        semester: course.semester || '',
       }
     : EMPTY_FORM;
 
@@ -57,14 +41,6 @@ const validate = (values: CourseFormValues): CourseFormErrors => {
 
   if (!values.course_id.trim()) {
     errors.course_id = 'Course ID is mandatory';
-  }
-
-  if (!values.semester.trim()) {
-    errors.semester = 'Semester is mandatory';
-  } else if (!isValidSemester(values.semester)) {
-    errors.semester = 'Please select a valid semester';
-  } else if (!SEMESTER_OPTIONS.includes(values.semester)) {
-    errors.semester = 'Future semesters cannot be selected';
   }
 
   return errors;
@@ -139,49 +115,6 @@ export function CourseFormDialog({
           helperText={errors.course_name}
           sx={{ mb: 2 }}
         />
-
-        <Autocomplete
-          fullWidth
-          options={SEMESTER_OPTIONS}
-          value={
-            SEMESTER_OPTIONS.includes(values.semester)
-              ? values.semester
-              : null
-          }
-          onChange={(_, newValue) => {
-            update({
-              semester: newValue ?? '',
-            });
-
-            if (errors.semester) {
-              setErrors((current) => ({
-                ...current,
-                semester: undefined,
-              }));
-            }
-          }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              margin="dense"
-              label="Semester"
-              variant="outlined"
-              placeholder="Select or search semester"
-              error={!!errors.semester}
-              helperText={errors.semester}
-              sx={{ mb: 2 }}
-            />
-          )}
-          slotProps={{
-            paper: {
-              sx: {
-                maxHeight: 320,
-              },
-            },
-          }}
-        />
-
-
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>

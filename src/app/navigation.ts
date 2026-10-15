@@ -10,6 +10,7 @@ export const ROUTES = {
   courseDetail: (courseId: number | string) => `/courses/${courseId}`,
   students: '/students',
   studentDetail: (studentId: number | string) => `/students/${studentId}`,
+  logs: '/logs',
 } as const;
 
 /** One entry in the permanent navigation drawer. */

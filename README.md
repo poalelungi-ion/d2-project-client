@@ -102,21 +102,44 @@ backend.
 | :--- | :--- | :--- |
 | `VITE_API_BASE_URL` | `http://localhost:8000/api` | Root of the backend API |
 
-Two things to know about this value:
+### Configuring the Backend API (Global vs. Local)
 
-* Vite inlines `VITE_`-prefixed variables **at build time**. A production image
-  must be built with the value it will run against; setting it on an existing
-  build has no effect. The Dockerfile takes it as a build arg.
-* It is resolved by the **browser**, not from inside the container, so it must
-  be an address the user's browser can reach.
+#### A. Global Configuration (Affects ALL users across all devices)
+To configure the base API endpoint for all users globally, set `VITE_API_BASE_URL` in `.env` or in your container deployment:
+
+1. **Runtime Container Environment (`/config.js` via `.env`)**:
+   When running the production Nginx container via Docker Compose, `/docker-entrypoint.d/40-generate-config.sh` automatically reads `VITE_API_BASE_URL` from the container's environment (`.env`) and injects it into `/usr/share/nginx/html/config.js` at container boot.
+   - **Advantage**: You can change `VITE_API_BASE_URL` in `.env` on your server and restart containers (`docker compose up -d`) **without needing to rebuild the image**.
+   - Every visitor who opens the web app loads this global default automatically.
+
+2. **Docker Compose & Build Arguments (Build-time)**:
+   In `docker-compose.yml`, `VITE_API_BASE_URL` is also passed as a build argument:
+   ```bash
+   docker compose build --build-arg VITE_API_BASE_URL=https://api.example.org/api client
+   ```
+
+3. **Local Development Server (`.env` file)**:
+   Set `VITE_API_BASE_URL=http://localhost:8000/api` in `.env` before running `npm run dev`.
+
+#### B. Local In-Browser Setting (Rescue & Debugging Tool)
+In case of connection issues or when testing against a different backend without reconfiguring the server:
+- On the **Sign In / Registration** screen, click the **Settings (gear ⚙️)** icon button in the top-right header.
+- Or when authenticated, open **Settings** from the user account menu or click the University logo.
+- Under **Backend API Connection**, you can view the active URL, enter a custom target URL, click **Test Connection** to verify network reachability and CORS, and **Save & Apply**.
+- **Scope**: The custom URL is stored in that specific browser's `localStorage` (`spa_api_base_url`) as a client-side override. Click **Reset Default** anytime to revert back to the global container default.
+
+> **Developer Mode Easter Egg**: Tapping the University logo or System Information card **10 times in a row** (Android developer options mechanic) activates Developer Mode and unlocks the **Teacher Break (Dino Run)** mini-game directly in the settings dialog!
 
 There is no API token here any more. Access is per-account: the user signs in,
 and nothing secret is compiled into the bundle. See **Authentication** below.
 
-The backend must be configured to match: its `CORS_ORIGINS` has to name the
-origin this app is served from (a wildcard does not work for the credentialed
-refresh request), and its `COOKIE_SECURE` has to be `true` once that origin is
-HTTPS.
+### Backend CORS Configuration
+
+The backend's `CORS_ORIGINS` in `.env` must list the exact origin(s) the client is accessed from in the browser:
+- Localhost default: `CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173`
+- Server deployment: `CORS_ORIGINS=http://<server-ip-or-domain>:5173` (or `https://<server-domain>`)
+
+> **Note**: A wildcard (`*`) cannot be used because authentication uses credentialed requests with `httpOnly` refresh cookies (`credentials: 'include'`), which browsers strictly refuse on wildcard origins. Trailing slashes are automatically stripped by the backend. Set `COOKIE_SECURE=true` once running over HTTPS.
 
 ## Authentication
 

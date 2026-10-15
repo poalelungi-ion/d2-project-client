@@ -4,7 +4,7 @@ import { get, post, put } from './client';
 export interface CourseCreatePayload {
   course_id: number | string;
   course_name: string;
-  semester: string;
+  semester?: string;
   study_program?: string | null;
   professor?: string;
 }

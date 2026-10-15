@@ -15,7 +15,7 @@ test.describe('signing in', () => {
     await expect(page.getByRole('heading', { name: /Analysis Hub/ })).toBeVisible();
     // Proves the session belongs to this account rather than merely existing.
     await page.getByRole('button', { name: 'Account menu' }).click();
-    await expect(page.getByText(account.email)).toBeVisible();
+    await expect(page.getByRole('menu').getByText(account.email)).toBeVisible();
   });
 
   test('a wrong password is refused and keeps the user on the form', async ({ page, account }) => {

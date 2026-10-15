@@ -1,5 +1,5 @@
 import { get, post, put } from './client';
-import type { StudentStatus } from '../types';
+import type { AttemptType, StudentStatus } from '../types';
 
 /** Payload for POST /students/ -- see the backend's schemas.StudentCreate. */
 export interface StudentCreatePayload {
@@ -28,7 +28,8 @@ export interface StudentStatusPayload {
 export interface AddGradePayload {
   course_id: number;
   semester: string;
-  grade: number;
+  grade: number | string;
+  attempt_type?: AttemptType;
 }
 
 export const listStudents = (): Promise<Response> => get('/students/');

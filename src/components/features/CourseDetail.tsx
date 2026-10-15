@@ -1,9 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Box, Fade, Paper, Typography } from '@mui/material';
+import { Box, Fade, Paper, Typography, Tabs, Tab, Chip } from '@mui/material';
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import FolderSharedOutlinedIcon from '@mui/icons-material/FolderSharedOutlined';
 import { useNavigate } from 'react-router-dom';
 import type { Course, CourseMark, TranscriptEntry } from '../../types';
 import { ROUTES } from '../../app/navigation';
 import { useApiMutations } from '../../hooks/useApi';
+import { useCourseDriveStore } from '../../stores';
+import { CourseDriveView } from '../drive';
 import { CourseFormDialog } from '../forms/CourseFormDialog';
 import {
   ALL_EXAMS,
@@ -35,6 +39,9 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
   const { loadTranscript } = useApiMutations();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'drive'>('overview');
+  const driveFiles = useCourseDriveStore((s) => s.filesByCourse[String(course.course_id)]);
+  const driveFilesCount = driveFiles?.length ?? 0;
 
   // Which student out of this roster is plotted against the cohort. Only this
   // screen cares, so it stays here.
@@ -127,55 +134,102 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
           onEdit={() => setEditing(true)}
           onBack={returnToList}
         />
-        <CourseFilterBar
-          allMarks={allMarks}
-          semesterOptions={semesterOptions}
-          examOptions={examOptions}
-          mode={mode}
-          onSelectMode={setMode}
-          semesterFilter={semesterFilter}
-          examFilter={examFilter}
-          onSelectSemester={selectSemester}
-          onSelectExam={setExamFilter}
-          compare={compare}
-          onSelectCompare={selectCompare}
-        />
-        {hasSubmissions ? (
-          mode === 'single' ? (
-            <CourseAnalytics
-              marks={marks}
-              allMarks={allMarks}
-              student={analyticsStudent}
-              studentTranscript={analyticsStudentTranscript}
+
+        {/* Modern Material Design 3 Navigation Tabs (US-02) */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+          <Tabs
+            value={activeTab}
+            onChange={(_, val: 'drive' | 'overview') => setActiveTab(val)}
+            textColor="primary"
+            indicatorColor="primary"
+            aria-label="Course Detail views"
+          >
+            <Tab
+              value="overview"
+              icon={<DashboardOutlinedIcon />}
+              iconPosition="start"
+              label="Dashboard Overview"
+              id="tab-dashboard-overview"
             />
-          ) : (
-            <ExamComparison allMarks={allMarks} left={compare.left} right={compare.right} />
-          )
+            <Tab
+              value="drive"
+              icon={<FolderSharedOutlinedIcon />}
+              iconPosition="start"
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <span>Course Drive</span>
+                  <Chip
+                    label={driveFilesCount}
+                    size="small"
+                    sx={{ height: 20, fontSize: '0.725rem', fontWeight: 600 }}
+                  />
+                </Box>
+              }
+              id="tab-course-drive"
+            />
+          </Tabs>
+        </Box>
+
+        {activeTab === 'overview' ? (
+          <>
+            <CourseFilterBar
+              allMarks={allMarks}
+              semesterOptions={semesterOptions}
+              examOptions={examOptions}
+              mode={mode}
+              onSelectMode={setMode}
+              semesterFilter={semesterFilter}
+              examFilter={examFilter}
+              onSelectSemester={selectSemester}
+              onSelectExam={setExamFilter}
+              compare={compare}
+              onSelectCompare={selectCompare}
+            />
+            {hasSubmissions ? (
+              mode === 'single' ? (
+                <CourseAnalytics
+                  marks={marks}
+                  allMarks={allMarks}
+                  student={analyticsStudent}
+                  studentTranscript={analyticsStudentTranscript}
+                />
+              ) : (
+                <ExamComparison allMarks={allMarks} left={compare.left} right={compare.right} />
+              )
+            ) : (
+              <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+                <Typography variant="h6" fontWeight="700" mb={0.5}>
+                  No submissions yet
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Upload exam data to see the pass rate, grade distribution and other statistics.
+                </Typography>
+              </Paper>
+            )}
+            {/* The table carries its own copy of the filter and stays on it in
+                either mode: comparing is a reading of the course, not a change to
+                the roster. */}
+            <CourseMarksTable
+              marks={marks}
+              courseId={course.course_id}
+              courseName={course.course_name}
+              semesterOptions={semesterOptions}
+              examOptions={examOptions}
+              semesterFilter={semesterFilter}
+              examFilter={examFilter}
+              onSelectSemester={selectSemester}
+              onSelectExam={setExamFilter}
+              activeFilter={activeFilter}
+              onSelectStudent={selectAnalyticsStudent}
+              onRefresh={onRefresh}
+            />
+          </>
         ) : (
-          <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
-            <Typography variant="h6" fontWeight="700" mb={0.5}>
-              No submissions yet
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Upload exam data to see the pass rate, grade distribution and other statistics.
-            </Typography>
-          </Paper>
+          <CourseDriveView
+            course={course}
+            onMarksUpdated={onRefresh}
+          />
         )}
-        {/* The table carries its own copy of the filter and stays on it in
-            either mode: comparing is a reading of the course, not a change to
-            the roster. */}
-        <CourseMarksTable
-          marks={marks}
-          semesterOptions={semesterOptions}
-          examOptions={examOptions}
-          semesterFilter={semesterFilter}
-          examFilter={examFilter}
-          onSelectSemester={selectSemester}
-          onSelectExam={setExamFilter}
-          activeFilter={activeFilter}
-          onSelectStudent={selectAnalyticsStudent}
-          onRefresh={onRefresh}
-        />
       </Box>
     </Fade>
   );
