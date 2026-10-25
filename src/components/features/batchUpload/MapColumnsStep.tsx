@@ -253,7 +253,7 @@ export const MapColumnsStep = () => {
               absence codes: NE (no show) and EX (disqualified) fail, AT (medical
               note) is excused. Columns named Passed, Failed, Yes or No are ignored
               &mdash; the system calculates the result. So are course, course number
-              and course id columns: the course, ECTS and the course semester were
+              and course id columns: the course and the course semester were
               already settled in the previous step and apply to every row.
               &quot;Semester&quot; below is the student&apos;s Fachsemester count.
             </Typography>
