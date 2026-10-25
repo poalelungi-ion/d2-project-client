@@ -38,7 +38,7 @@ const COLUMN_MAPPINGS = [
   },
   {
     source: 'Note',
-    example: 'e.g. 1.7, NE, EX, AT',
+    example: 'e.g. 1.7, 2.3, 5.0',
     target: 'Grade',
     status: 'Mapped',
     tone: semantic.success,
@@ -249,9 +249,9 @@ export const MapColumnsStep = () => {
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', lineHeight: 1.5 }}
             >
-              Grades are validated as German marks (1.0 &ndash; 5.0) or official
-              absence codes: NE (no show) and EX (disqualified) fail, AT (medical
-              note) is excused. Columns named Passed, Failed, Yes or No are ignored
+              Grades must be numeric German marks (1.0 &ndash; 5.0). Status codes
+              such as NE, EX, NA and TA are filtered out and those students are
+              not tracked. Columns named Passed, Failed, Yes or No are ignored
               &mdash; the system calculates the result. So are course, course number
               and course id columns: the course, ECTS and the course semester were
               already settled in the previous step and apply to every row.
