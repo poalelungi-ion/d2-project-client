@@ -56,8 +56,8 @@ export const CourseDriveEmptyState = ({ onUploadClick, onLaunchWizard }: CourseD
         color="text.secondary"
         sx={{ maxWidth: 420, mb: 3, lineHeight: 1.6 }}
       >
-        Upload exam result spreadsheets (.xlsx, .csv) or student rosters to organize, store, and
-        automatically parse grades for this course offering.
+        Upload exam result spreadsheets (.xlsx, .csv) or student rosters to organize and store
+        them in this course offering.
       </Typography>
 
       <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>

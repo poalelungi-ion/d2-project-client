@@ -1,64 +1,53 @@
-import { Box, Typography, Stepper, Step, StepLabel, Paper, Chip } from '@mui/material';
+import { useState } from 'react';
+import { Box, Typography, Paper, Chip } from '@mui/material';
 import FolderSharedOutlinedIcon from '@mui/icons-material/FolderSharedOutlined';
-import type { Course, CourseDriveFile } from '../../types';
-import { STEPS } from '../../utils/constants';
+import type { Course } from '../../types';
 import { radii } from '../../styles/tokens';
-import { useCourseDriveStore, useToastStore } from '../../stores';
+import { useAuthStore, useCourseDriveStore, useToastStore } from '../../stores';
 import { CourseDriveTable } from './CourseDriveTable';
 import { CourseDriveEmptyState } from './CourseDriveEmptyState';
-import { UploadWizardProvider } from '../features/batchUpload/UploadWizardProvider';
-import { useUploadWizard } from '../features/batchUpload/uploadWizardContext';
-import { SelectFileStep } from '../features/batchUpload/SelectFileStep';
-import { CourseInfoStep } from '../features/batchUpload/CourseInfoStep';
-import { MapColumnsStep } from '../features/batchUpload/MapColumnsStep';
-import { ReviewStep } from '../features/batchUpload/ReviewStep';
-import { DoneStep } from '../features/batchUpload/DoneStep';
+import { CourseDriveDropZone } from './CourseDriveDropZone';
 
-const STEP_COMPONENTS = [SelectFileStep, CourseInfoStep, MapColumnsStep, ReviewStep, DoneStep];
+const FILE_INPUT_ID = 'course-drive-file';
 
 interface CourseDriveViewProps {
   course: Course;
-  onMarksUpdated?: () => Promise<void>;
-  onLaunchWizard?: () => void;
 }
 
-const CourseDriveWizardBody = ({ course }: { course: Course }) => {
-  const { step, setFile, setPaste, setStep } = useUploadWizard();
-  const { getFilesForCourse, getFileBlob, fetchFileBlobAsync, deleteFile, reparseFile } = useCourseDriveStore();
+/**
+ * Course Document Repository (Course Drive): file storage only.
+ * Grade import stays on Upload Exam Data — this tab does not host the wizard.
+ */
+export const CourseDriveView = ({ course }: CourseDriveViewProps) => {
+  const filesByCourse = useCourseDriveStore((s) => s.filesByCourse);
+  const addFile = useCourseDriveStore((s) => s.addFile);
+  const deleteFile = useCourseDriveStore((s) => s.deleteFile);
+  const reparseFile = useCourseDriveStore((s) => s.reparseFile);
+  const uploadingProgress = useCourseDriveStore((s) => s.uploadingProgress);
+  const currentUser = useAuthStore((s) => s.user);
   const notifyToast = useToastStore((s) => s.notify);
 
   const courseId = course.course_id;
-  const driveFiles = getFilesForCourse(courseId);
+  const driveFiles = filesByCourse[String(courseId)] ?? [];
 
-  const CurrentStep = STEP_COMPONENTS[step];
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadingFileName, setUploadingFileName] = useState('');
 
-  const handleSelectDriveFile = async (doc: CourseDriveFile) => {
-    let realFile = getFileBlob(doc.id, courseId, doc.name);
-    if (!realFile) {
-      realFile = (await fetchFileBlobAsync(doc.id, courseId, doc.name)) ?? undefined;
+  const uploadProgress = Object.values(uploadingProgress)[0] ?? 0;
+
+  const handleUpload = async (file: File) => {
+    setIsUploading(true);
+    setUploadingFileName(file.name);
+    try {
+      const uploader = currentUser?.name || 'Dr. Instructor';
+      await addFile(courseId, file, uploader, course.semester);
+      notifyToast(`File "${file.name}" added to Course Drive`);
+    } catch {
+      notifyToast('Could not store file in Course Drive', 'error');
+    } finally {
+      setIsUploading(false);
+      setUploadingFileName('');
     }
-
-    if (!realFile || realFile.size === 0) {
-      const sampleCsv = [
-        'Student ID,Name,Study Program,Grade,Attempt',
-        '1001,Anna Chiriciuc,SE Master,1.3,Exam 1',
-        '1002,Ion Poalelungi,SE Master,1.7,Exam 1',
-        '1003,Jacqueline Denise,SE Master,2.3,Exam 1',
-        '1005,Erika Musterfrau,SE Master,1.7,Exam 1',
-        '1006,Lukas Schmidt,SE Master,2.7,Exam 1',
-        '1007,Sophie Wagner,SE Master,2.0,Exam 1',
-        '1008,Leon Becker,Data Science Master,2.3,Exam 1',
-      ].join('\n');
-      const csvName = doc.name.endsWith('.csv') || doc.name.endsWith('.xlsx')
-        ? doc.name.replace(/\.xlsx$/, '.csv')
-        : `${doc.name}.csv`;
-      realFile = new File([sampleCsv], csvName, { type: 'text/csv' });
-    }
-
-    setFile(realFile);
-    setPaste('');
-    setStep(0);
-    notifyToast(`Selected "${doc.name}" from Course Documents Repository for ingestion`);
   };
 
   const handleDeleteDriveFile = (fileId: string) => {
@@ -72,25 +61,35 @@ const CourseDriveWizardBody = ({ course }: { course: Course }) => {
     notifyToast('File re-parsed successfully!');
   };
 
+  const openFilePicker = () => {
+    const fileInput = document.getElementById(FILE_INPUT_ID) as HTMLInputElement | null;
+    fileInput?.click();
+  };
+
   return (
     <Box sx={{ py: 2 }}>
-      {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" fontWeight="700">
-          Course Documents Repository &amp; Ingestion
+          Course Document Repository
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Centralized documents repository, integration history, and 5-step automated exam ingestion for{' '}
-          {course.course_name} (ID: {course.course_id}).
+          Store and manage exam spreadsheets for {course.course_name} (ID: {course.course_id}).
+          Import grades with Upload Exam Data.
         </Typography>
       </Box>
 
-      {/* 1. Permanent Course Documents Repository & Integration History ON TOP */}
+      <CourseDriveDropZone
+        onUpload={handleUpload}
+        isUploading={isUploading}
+        uploadProgress={uploadProgress}
+        currentFileName={uploadingFileName}
+        fileInputId={FILE_INPUT_ID}
+      />
+
       <Paper
         variant="outlined"
         sx={{
           p: 3,
-          mb: 4,
           borderRadius: radii.xl,
           bgcolor: 'background.paper',
         }}
@@ -99,7 +98,7 @@ const CourseDriveWizardBody = ({ course }: { course: Course }) => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <FolderSharedOutlinedIcon sx={{ color: 'primary.main', fontSize: 24 }} />
             <Typography variant="h6" fontWeight="700">
-              Course Documents Repository &amp; Integration History
+              Stored files
             </Typography>
           </Box>
           {driveFiles.length > 0 && (
@@ -114,54 +113,19 @@ const CourseDriveWizardBody = ({ course }: { course: Course }) => {
         </Box>
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Historical record and permanent document vault of all examination spreadsheets integrated into this course.
+          Download, re-parse, or remove spreadsheets kept for this course. File operations stay on this tab.
         </Typography>
 
         {driveFiles.length === 0 ? (
-          <CourseDriveEmptyState
-            onUploadClick={() => {
-              setStep(0);
-              const fileInput = document.getElementById('excel-upload-file') as HTMLInputElement | null;
-              fileInput?.click();
-            }}
-          />
+          <CourseDriveEmptyState onUploadClick={openFilePicker} />
         ) : (
           <CourseDriveTable
             files={driveFiles}
-            onSelect={(doc) => { void handleSelectDriveFile(doc); }}
             onDelete={handleDeleteDriveFile}
             onReparse={(id) => { void handleReparseDriveFile(id); }}
           />
         )}
       </Paper>
-
-      {/* 2. 5-Step Ingestion Wizard Stepper */}
-      <Box sx={{ width: '100%', mb: 4 }}>
-        <Stepper activeStep={step} alternativeLabel>
-          {STEPS.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-      </Box>
-
-      {/* Current Step component */}
-      {step === 0 ? <SelectFileStep hideRepository={true} /> : CurrentStep ? <CurrentStep /> : null}
     </Box>
-  );
-};
-
-export const CourseDriveView = ({
-  course,
-  onMarksUpdated,
-}: CourseDriveViewProps) => {
-  return (
-    <UploadWizardProvider
-      course={{ id: course.course_id, name: course.course_name }}
-      onImportSuccess={onMarksUpdated}
-    >
-      <CourseDriveWizardBody course={course} />
-    </UploadWizardProvider>
   );
 };
