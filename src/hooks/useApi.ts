@@ -44,28 +44,7 @@ import {
   GRADE_CONSTRAINT_MESSAGE,
   gradeSaveValue,
   parseGradeInput,
-  withoutIgnoredColumns,
 } from '../utils/gradeOutcome';
-
-const COLUMN_MAPPING: Record<string, string> = {
-  Name: 'name',
-  'Full Name': 'name',
-  'First Name': 'first_name',
-  'Last Name': 'last_name',
-  Vorname: 'first_name',
-  Nachname: 'last_name',
-  Fachsemester: 'semester',
-  Semester: 'semester',
-  Matrikelnr: 'student_id',
-  MatrNr: 'student_id',
-  'Matrikelnr.': 'student_id',
-  Studiengang: 'program',
-  Program: 'program',
-  'Study Program': 'program',
-  Note: 'grade',
-  Grade: 'grade',
-  // Passed/Failed/Yes/No are stripped before upload; they are never a result.
-};
 
 function isTimeoutError(e: unknown): boolean {
   const err = e as { name?: string; message?: string };
@@ -435,7 +414,6 @@ async function previewImport(
   formData.append('ects', courseInfo.ects);
   formData.append('semester', courseInfo.semester);
   formData.append('attemptType', courseInfo.attemptType);
-  formData.append('mapping', JSON.stringify(withoutIgnoredColumns(COLUMN_MAPPING)));
   formData.append('nameSplitRule', nameSplitRule);
 
   try {
