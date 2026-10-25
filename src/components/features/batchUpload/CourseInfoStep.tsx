@@ -51,7 +51,7 @@ export const CourseInfoStep = () => {
           mb: 4,
           color: 'text.secondary',
           fontSize: '1rem',
-          maxWidth: 800,
+          maxWidth: 'none',
         }}
       >
         A table is always for one course and one semester &mdash; that can&apos;t
@@ -68,7 +68,7 @@ export const CourseInfoStep = () => {
           display: 'flex',
           flexDirection: 'column',
           gap: 3,
-          maxWidth: 720,
+          maxWidth: 'none',
         }}
       >
         <Box>

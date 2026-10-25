@@ -170,7 +170,7 @@ export function AddMarkRecordDialog({
   };
 
   return (
-    <Dialog disableRestoreFocus disableEnforceFocus open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog disableRestoreFocus disableEnforceFocus open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ fontWeight: 700 }}>Add Mark Record &mdash; {courseName}</DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
         <Typography variant="body2" color="text.secondary">

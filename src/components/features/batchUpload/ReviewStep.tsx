@@ -16,7 +16,8 @@ import type { PreviewRecord } from '../../../types';
 import { useUploadWizard } from './uploadWizardContext';
 import { useToastStore, useStudyProgramStore } from '../../../stores';
 import { semantic, tint, gradeOutcomeColor } from '../../../styles/colors';
-import { errorCallout } from '../../../styles/mixins';
+import { errorCallout, gridFrame } from '../../../styles/mixins';
+import { layout } from '../../../styles/tokens';
 import {
   evaluateGradeCell,
   isOfficialAbsenceCell,
@@ -166,7 +167,10 @@ export const ReviewStep = () => {
         </Box>
       )}
 
-      <Box className="ag-theme-alpine" sx={{ height: 400, width: '100%', mb: 3 }}>
+      <Box
+        className="ag-theme-alpine"
+        sx={{ ...gridFrame, minHeight: layout.gridMinHeight, height: { xs: 480, md: 560 }, mb: 3 }}
+      >
         <AgGridReact<PreviewRecord>
           rowData={previewData}
           onGridReady={(params: GridReadyEvent<PreviewRecord>) => {

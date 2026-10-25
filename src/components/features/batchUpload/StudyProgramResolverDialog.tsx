@@ -95,7 +95,7 @@ export function StudyProgramResolverDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <AutoFixHighIcon color="primary" />
         Resolve Unrecognized Study Programs

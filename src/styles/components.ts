@@ -201,11 +201,17 @@ export const buildComponents = (mode: ThemeMode): Components<Theme> => {
     // Severity drives the fill, so a warning toast is no longer painted like an
     // error -- which is what the hand-rolled ternary in App.tsx used to do.
     MuiDialog: {
+      defaultProps: {
+        maxWidth: 'lg',
+        fullWidth: true,
+      },
       styleOverrides: {
         paper: {
           borderRadius: radii.xl,
           padding: 8,
           minWidth: 400,
+          width: '100%',
+          maxHeight: '90vh',
         },
       },
     },

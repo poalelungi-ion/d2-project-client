@@ -59,7 +59,7 @@ export const StudentCourseAttemptsDialog = ({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="md"
+      maxWidth={false}
       fullWidth
       PaperProps={{
         sx: {
