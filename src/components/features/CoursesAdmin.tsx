@@ -49,32 +49,10 @@ import { courseColumns } from './columns';
 import { CourseFormDialog } from '../forms/CourseFormDialog';
 import { compareSemesters } from '../../utils/semester';
 import { attemptsBySemester } from '../../utils/courseMarks';
-import { ExamsHeatmap, type HeatmapRow } from './ExamsHeatmap';
+import { ExamsHeatmap } from './ExamsHeatmap';
 
 const ITEMS_PER_PAGE = 20;
 
-const PLACEHOLDER_SEMESTER_DISTRIBUTION: HeatmapRow[] = [
-  {
-    semester: 'WiSe 2023/24',
-    total_students: 48,
-    distribution: { 1: 20, 2: 16, 3: 8, 4: 3, 5: 1 },
-  },
-  {
-    semester: 'SoSe 2024',
-    total_students: 52,
-    distribution: { 1: 15, 2: 20, 3: 11, 4: 4, 5: 2 },
-  },
-  {
-    semester: 'WiSe 2024/25',
-    total_students: 65,
-    distribution: { 1: 25, 2: 24, 3: 12, 4: 3, 5: 1 },
-  },
-  {
-    semester: 'SoSe 2025',
-    total_students: 58,
-    distribution: { 1: 18, 2: 22, 3: 13, 4: 4, 5: 1 },
-  },
-];
 
 export const CoursesAdmin = () => {
   const { courses, loading: loadingCourses, refetch } = useCourses();
@@ -120,12 +98,7 @@ export const CoursesAdmin = () => {
   const allMarks = useMemo(() => courses.flatMap((c) => c.marks || []), [courses]);
   const liveHeatmap = useMemo(() => attemptsBySemester(allMarks), [allMarks]);
 
-  const { semesterHeatmapData, isUsingPlaceholder } = useMemo(() => {
-    if (liveHeatmap.length > 0) {
-      return { semesterHeatmapData: liveHeatmap, isUsingPlaceholder: false };
-    }
-    return { semesterHeatmapData: PLACEHOLDER_SEMESTER_DISTRIBUTION, isUsingPlaceholder: true };
-  }, [liveHeatmap]);
+  const semesterHeatmapData = useMemo(() => liveHeatmap, [liveHeatmap]);
 
   // The card view shows only the first page; the table view paginates itself.
   const paginatedCourses = activeCourses.slice(0, ITEMS_PER_PAGE);
@@ -397,7 +370,7 @@ export const CoursesAdmin = () => {
         </Box>
 
         {/* Section: Semester Exams Distribution Table for All Subjects */}
-        <Collapse in={showDistribution} timeout={300}>
+        <Collapse in={showDistribution && semesterHeatmapData.length > 0} timeout={300}>
           <Paper
             elevation={0}
             sx={{
@@ -427,15 +400,6 @@ export const CoursesAdmin = () => {
                   Track student cohort progression and how many students sat their 1st, 2nd, ... or 15th exam in each semester across all subjects.
                 </Typography>
               </Box>
-              {isUsingPlaceholder && (
-                <Chip
-                  label="Placeholder Sample"
-                  size="small"
-                  color="secondary"
-                  variant="outlined"
-                  sx={{ fontWeight: 600, fontSize: '0.72rem', height: 22 }}
-                />
-              )}
             </Box>
 
             <ExamsHeatmap
