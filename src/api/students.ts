@@ -6,7 +6,7 @@ export interface StudentCreatePayload {
   student_id: number;
   name: string;
   program: string;
-  status: StudentStatus;
+  status?: StudentStatus;
 }
 
 /** Payload for PUT /students/{id} -- StudentCreate plus lock fields. */

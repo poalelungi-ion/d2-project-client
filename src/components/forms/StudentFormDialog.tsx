@@ -6,17 +6,12 @@ import {
   DialogActions,
   TextField,
   Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from '@mui/material';
 import type {
   Student,
   StudentDetails,
   StudentFormErrors,
   StudentFormValues,
-  StudentStatus,
 } from '../../types';
 import { useApiMutations } from '../../hooks/useApi';
 import { useSystemLogStore } from '../../stores';
@@ -37,7 +32,6 @@ const EMPTY_FORM: StudentFormValues = {
   first_name: '',
   last_name: '',
   program: '',
-  status: 'active',
 };
 
 /** Editing splits the stored full name back into the two fields the UI asks for. */
@@ -49,7 +43,6 @@ const toFormValues = (student: Student | StudentDetails | null): StudentFormValu
     first_name: nameParts[0] || '',
     last_name: nameParts.slice(1).join(' ') || '',
     program: student.program || '',
-    status: student.status || 'active',
   };
 };
 
@@ -104,7 +97,7 @@ export function StudentFormDialog({
         level: 'info',
         category: 'student',
         code: student ? 'STUDENT_UPDATED' : 'STUDENT_CREATED',
-        message: `${student ? 'Updated' : 'Created'} student profile: ${values.first_name} ${values.last_name} (ID: ${values.student_id}, Program: ${values.program}, Status: ${values.status})`,
+        message: `${student ? 'Updated' : 'Created'} student profile: ${values.first_name} ${values.last_name} (ID: ${values.student_id}, Program: ${values.program})`,
         actor: 'Staff Administrator',
         details: JSON.stringify({ ...values, studentId: values.student_id }, null, 2),
       });
@@ -180,22 +173,6 @@ export function StudentFormDialog({
           helperText={errors.program}
           sx={{ mb: 2 }}
         />
-        {student && (
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel id="student-status-label">Status</InputLabel>
-            <Select
-              labelId="student-status-label"
-              id="student-status"
-              value={values.status}
-              label="Status"
-              onChange={(e) => update({ status: e.target.value as StudentStatus })}
-            >
-              <MenuItem value="active">Active</MenuItem>
-              <MenuItem value="graduated">Graduated</MenuItem>
-              <MenuItem value="dropped">Dropped</MenuItem>
-            </Select>
-          </FormControl>
-        )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button onClick={onClose} color="inherit">

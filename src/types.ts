@@ -217,7 +217,7 @@ export interface StudentFormValues {
   first_name: string;
   last_name: string;
   program: string;
-  status: StudentStatus;
+  status?: StudentStatus;
 }
 
 export type StudentFormErrors = Partial<Record<keyof StudentFormValues, string>>;
