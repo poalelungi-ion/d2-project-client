@@ -90,9 +90,11 @@ describe('Task #104087: Restrict Data Upload Entry Point Exclusively to Course D
 
       // Student detail actions exist
       expect(screen.getByText('Jane Doe')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /add exam record/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /edit full record/i })).toBeInTheDocument();
 
-      // No upload buttons, wizard triggers, or file inputs exist
+      // No upload buttons, manual exam record forms, wizard triggers, or file inputs exist on student page (#104087)
+      expect(screen.queryByRole('button', { name: /add exam record/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /add manual exam record/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /upload/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /import/i })).not.toBeInTheDocument();
       expect(screen.queryByText(/upload exam data/i)).not.toBeInTheDocument();
