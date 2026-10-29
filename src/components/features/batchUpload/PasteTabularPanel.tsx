@@ -5,7 +5,6 @@ import {
   TableChartOutlined as TableChartOutlinedIcon,
   FileDownloadOutlined as FileDownloadOutlinedIcon,
   CheckCircleOutline as CheckCircleOutlineIcon,
-  PlaylistAdd as PlaylistAddIcon,
   Clear as ClearIcon,
 } from '@mui/icons-material';
 import { isTabularPaste } from '../../../utils/tabularPaste';
@@ -21,8 +20,6 @@ interface PasteTabularPanelProps {
   onFileGenerated: (file: File) => Promise<void>;
   onClearOtherSources: () => void;
 }
-
-const SAMPLE_DATA = `Matrikelnr\tName\tStudiengang\tFachsemester\tNote\n1012345\tMustermann, Max\tSoftware Engineering\t3\t1.7\n1012346\tMusterfrau, Anna\tInformatik\t2\t1.3\n1012347\tSchmidt, Lukas\tData Science\t4\t2.0`;
 
 export const PasteTabularPanel = ({
   paste,
@@ -41,13 +38,6 @@ export const PasteTabularPanel = ({
     const lines = paste.trim().split(/\r?\n/).filter((l) => l.trim().length > 0);
     return lines.length > 1 ? lines.length - 1 : lines.length;
   }, [paste]);
-
-  const handleInsertSampleData = () => {
-    setPaste(SAMPLE_DATA);
-    setPasteError(null);
-    onClearOtherSources();
-    notifyToast('Sample grade table inserted!', 'info');
-  };
 
   const handleClearPaste = () => {
     setPaste('');
@@ -170,15 +160,6 @@ export const PasteTabularPanel = ({
           >
             Paste from Clipboard
           </Button>
-          <Button
-            variant="text"
-            size="small"
-            startIcon={<PlaylistAddIcon />}
-            onClick={handleInsertSampleData}
-            sx={{ textTransform: 'none', fontWeight: 600 }}
-          >
-            Insert Example
-          </Button>
           {hasPaste && (
             <Button
               variant="text"
@@ -199,7 +180,7 @@ export const PasteTabularPanel = ({
         minRows={7}
         maxRows={14}
         fullWidth
-        placeholder={'Matrikelnr\tName\tStudiengang\tFachsemester\tNote\n1012345\tSchneider, Lena\tSE Master\t3\t1.7\n1012346\tMuster, Max\tCS Bachelor\t1\t2.3'}
+        placeholder={'Matrikelnr\tName\tStudiengang\tFachsemester\tNote'}
         value={paste}
         onChange={(e) => {
           setPasteError(null);

@@ -192,7 +192,7 @@ export const SelectFileStep = ({ hideRepository = false }: SelectFileStepProps) 
         setActiveStep(1);
         return;
       }
-      notifyToast('Please paste tabular rows or click "Insert Example" first.', 'error');
+      notifyToast('Please paste tabular rows into the input field first.', 'error');
       return;
     }
   };
