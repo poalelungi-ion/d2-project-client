@@ -76,6 +76,7 @@ export interface CourseMark {
   student_id: number | null;
   student_name: string;
   program: string;
+  study_program?: string;
   semester: string;
   grade: number | null;
   passed: boolean;
@@ -110,6 +111,7 @@ export interface Student {
   student_id: number;
   name: string;
   program: string;
+  study_program?: string;
   status: StudentStatus;
   total_exams: number;
   passed_exams: number;
@@ -144,6 +146,7 @@ export interface StudentDetails {
   student_id: number;
   name: string;
   program: string;
+  study_program?: string;
   status: StudentStatus;
   version: number;
   transcript: TranscriptEntry[];
@@ -160,6 +163,7 @@ export interface PreviewRecord {
   last_name: string;
   name: string;
   program: string;
+  study_program?: string;
   semester: string;
   grade: string;
   missing_fields: string[];
@@ -217,6 +221,7 @@ export interface StudentFormValues {
   first_name: string;
   last_name: string;
   program: string;
+  study_program?: string;
   status?: StudentStatus;
 }
 
