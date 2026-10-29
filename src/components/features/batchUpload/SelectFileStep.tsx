@@ -10,7 +10,6 @@ import {
 } from '@mui/material';
 import {
   ContentPaste as ContentPasteIcon,
-  FolderSharedOutlined as FolderSharedOutlinedIcon,
   CloudUploadOutlined as CloudUploadOutlinedIcon,
 } from '@mui/icons-material';
 import { useUploadWizard } from './uploadWizardContext';
@@ -19,10 +18,7 @@ import {
   useAuthStore,
   useToastStore,
 } from '../../../stores';
-import type { CourseDriveFile } from '../../../types';
 import { CourseDriveDropZone } from '../../drive/CourseDriveDropZone';
-import { CourseDriveTable } from '../../drive/CourseDriveTable';
-import { CourseDriveEmptyState } from '../../drive/CourseDriveEmptyState';
 import { isTabularPaste } from '../../../utils/tabularPaste';
 import { radii } from '../../../styles/tokens';
 import { PasteTabularPanel } from './PasteTabularPanel';
@@ -31,7 +27,7 @@ interface SelectFileStepProps {
   hideRepository?: boolean;
 }
 
-export const SelectFileStep = ({ hideRepository = false }: SelectFileStepProps) => {
+export const SelectFileStep = ({ hideRepository: _hideRepository = false }: SelectFileStepProps) => {
   const {
     file,
     setFile,
@@ -42,12 +38,7 @@ export const SelectFileStep = ({ hideRepository = false }: SelectFileStepProps) 
   } = useUploadWizard();
 
   const {
-    getFilesForCourse,
-    getFileBlob,
-    fetchFileBlobAsync,
     addFile,
-    deleteFile,
-    reparseFile,
     uploadingProgress,
   } = useCourseDriveStore();
 
@@ -55,10 +46,8 @@ export const SelectFileStep = ({ hideRepository = false }: SelectFileStepProps) 
   const notifyToast = useToastStore((s) => s.notify);
 
   const courseId = courseInfo?.courseId;
-  const driveFiles = courseId ? getFilesForCourse(courseId) : [];
 
   const [sourceTab, setSourceTab] = useState<'upload' | 'paste'>(paste.trim() ? 'paste' : 'upload');
-  const [selectedDriveFileId, setSelectedDriveFileId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadingFileName, setUploadingFileName] = useState('');
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
@@ -75,7 +64,6 @@ export const SelectFileStep = ({ hideRepository = false }: SelectFileStepProps) 
   const handleUploadNewFile = async (droppedOrSelectedFile: File) => {
     // 1. Immediately update wizard state so step navigation and tests receive the file synchronously
     setFile(droppedOrSelectedFile);
-    setSelectedDriveFileId(null);
     setPasteError(null);
 
     // 2. Persist to Course Drive history for this course
@@ -86,7 +74,7 @@ export const SelectFileStep = ({ hideRepository = false }: SelectFileStepProps) 
         const uploader = currentUser?.name || 'Dr. Instructor';
         const created = await addFile(courseId, droppedOrSelectedFile, uploader, courseInfo?.semester);
         setActiveFileId(created.id);
-        notifyToast(`File "${droppedOrSelectedFile.name}" added to Course Drive`);
+        notifyToast(`File "${droppedOrSelectedFile.name}" selected for upload`);
       } catch {
         notifyToast('Could not store file in Course Drive history', 'error');
       } finally {
@@ -94,56 +82,6 @@ export const SelectFileStep = ({ hideRepository = false }: SelectFileStepProps) 
         setActiveFileId(null);
         setUploadingFileName('');
       }
-    }
-  };
-
-  const handleSelectDriveFile = async (doc: CourseDriveFile) => {
-    setSelectedDriveFileId(doc.id);
-    let realFile = getFileBlob(doc.id, courseId, doc.name);
-    if (!realFile) {
-      realFile = (await fetchFileBlobAsync(doc.id, courseId, doc.name)) ?? undefined;
-    }
-
-    if (!realFile || realFile.size === 0) {
-      const sampleCsv = [
-        'Student ID,Name,Study Program,Grade,Attempt',
-        '1001,Anna Chiriciuc,SE Master,1.3,Exam 1',
-        '1002,Ion Poalelungi,SE Master,1.7,Exam 1',
-        '1003,Jacqueline Denise,SE Master,2.3,Exam 1',
-        '1005,Erika Musterfrau,SE Master,1.7,Exam 1',
-        '1006,Lukas Schmidt,SE Master,2.7,Exam 1',
-        '1007,Sophie Wagner,SE Master,2.0,Exam 1',
-        '1008,Leon Becker,Data Science Master,2.3,Exam 1',
-      ].join('\n');
-      const csvName = doc.name.endsWith('.csv') || doc.name.endsWith('.xlsx')
-        ? doc.name.replace(/\.xlsx$/, '.csv')
-        : `${doc.name}.csv`;
-      realFile = new File([sampleCsv], csvName, { type: 'text/csv' });
-    }
-
-    setFile(realFile);
-    setPaste('');
-    setPasteError(null);
-    setSourceTab('upload');
-    notifyToast(`Selected "${doc.name}" from Course Drive for ingestion`);
-  };
-
-  const handleDeleteDriveFile = (fileId: string) => {
-    if (courseId) {
-      deleteFile(courseId, fileId);
-      if (selectedDriveFileId === fileId) {
-        setSelectedDriveFileId(null);
-        setFile(null);
-      }
-      notifyToast('File deleted from Course Drive');
-    }
-  };
-
-  const handleReparseDriveFile = async (fileId: string) => {
-    if (courseId) {
-      notifyToast('Re-parsing file data...');
-      await reparseFile(courseId, fileId);
-      notifyToast('File re-parsed successfully!');
     }
   };
 
@@ -192,7 +130,7 @@ export const SelectFileStep = ({ hideRepository = false }: SelectFileStepProps) 
         setActiveStep(1);
         return;
       }
-      notifyToast('Please paste tabular rows or click "Insert Example" first.', 'error');
+      notifyToast('Please paste tabular rows into the input field first.', 'error');
       return;
     }
   };
@@ -205,53 +143,11 @@ export const SelectFileStep = ({ hideRepository = false }: SelectFileStepProps) 
         variant="body1"
         sx={{ mb: 3.5, color: 'text.secondary', fontSize: '1rem', maxWidth: 860 }}
       >
-        Select an existing document from this course&apos;s repository, drop a new spreadsheet
-        (.xlsx, .csv), or paste tabular grade rows directly from your clipboard.
+        Drop a new spreadsheet (.xlsx, .csv) or paste tabular grade rows directly from your clipboard.
         The 5-step wizard validates students, resolves study programs, maps columns, and imports grades.
       </Typography>
 
-      {/* Section 1: Course Documents Repository (rendered only when not already pinned on top) */}
-      {!hideRepository && (
-        <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <FolderSharedOutlinedIcon sx={{ color: 'primary.main', fontSize: 24 }} />
-              <Typography variant="h6" fontWeight="700">
-                Course Documents Repository
-              </Typography>
-            </Box>
-            {driveFiles.length > 0 && (
-              <Chip
-                label={`${driveFiles.length} ${driveFiles.length === 1 ? 'file' : 'files'} stored`}
-                size="small"
-                color="primary"
-                variant="outlined"
-                sx={{ fontWeight: 600 }}
-              />
-            )}
-          </Box>
-
-          {driveFiles.length === 0 ? (
-            <CourseDriveEmptyState
-              onUploadClick={() => {
-                setSourceTab('upload');
-                const fileInput = document.getElementById('excel-upload-file') as HTMLInputElement | null;
-                fileInput?.click();
-              }}
-            />
-          ) : (
-            <CourseDriveTable
-              files={driveFiles}
-              selectedFileId={selectedDriveFileId}
-              onSelect={(doc) => { void handleSelectDriveFile(doc); }}
-              onDelete={handleDeleteDriveFile}
-              onReparse={(id) => { void handleReparseDriveFile(id); }}
-            />
-          )}
-        </Box>
-      )}
-
-      {/* Section 2: Ingestion Source (Upload vs Paste Tabbed Card) */}
+      {/* Ingestion Source (Upload vs Paste Tabbed Card) */}
       <Paper
         elevation={0}
         sx={{
@@ -338,13 +234,12 @@ export const SelectFileStep = ({ hideRepository = false }: SelectFileStepProps) 
             onFileGenerated={handleUploadNewFile}
             onClearOtherSources={() => {
               setFile(null);
-              setSelectedDriveFileId(null);
             }}
           />
         </Box>
       </Paper>
 
-      {/* Section 3: Continue Navigation */}
+      {/* Continue Navigation */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 'auto', pt: 1 }}>
         <Button
           variant="contained"
