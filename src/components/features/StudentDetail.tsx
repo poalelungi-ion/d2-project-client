@@ -12,10 +12,7 @@ import {
   Chip,
 } from '@mui/material';
 import {
-  Restore as RestoreIcon,
   ChevronLeft as ChevronLeftIcon,
-  Cancel as CancelIcon,
-  CheckCircle as CheckCircleIcon,
   AddCircleOutline as AddCircleOutlineIcon,
   Edit as EditIcon,
   TrendingUp as TrendingUpIcon,
@@ -33,7 +30,7 @@ import {
 import { AgGridReact } from 'ag-grid-react';
 import type { RowClickedEvent } from 'ag-grid-community';
 import { useNavigate } from 'react-router-dom';
-import type { StudentDetails, StudentStatus, TranscriptEntry } from '../../types';
+import type { StudentDetails, TranscriptEntry } from '../../types';
 import { ROUTES } from '../../app/navigation';
 import { useApiMutations } from '../../hooks/useApi';
 import { radii } from '../../styles/tokens';
@@ -59,7 +56,7 @@ interface StudentDetailProps {
 }
 
 export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
-  const { updateProgram, setStudentStatus } = useApiMutations();
+  const { updateProgram } = useApiMutations();
   const [program, setProgram] = useState(student.program);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addGradeDialogOpen, setAddGradeDialogOpen] = useState(false);
@@ -134,10 +131,6 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
     if (await updateProgram(student.student_id, program, student.version)) onRefresh();
   };
 
-  const handleStudentStatus = async (status: StudentStatus) => {
-    if (await setStudentStatus(student.student_id, status, student.version)) onRefresh();
-  };
-
   return (
     <Fade in={true} timeout={800}>
       <Box sx={{ flexGrow: 1, width: '100%', pb: 6 }}>
@@ -187,45 +180,6 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
             >
               Edit Full Record
             </Button>
-            {student.status === 'active' && (
-              <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  color="success"
-                  startIcon={<CheckCircleIcon />}
-                  onClick={() => void handleStudentStatus('graduated')}
-                >
-                  Graduate
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<CancelIcon />}
-                  onClick={() => void handleStudentStatus('failed')}
-                >
-                  Fail Student
-                </Button>
-              </Box>
-            )}
-            {student.status !== 'active' && (
-              <Box sx={{ ml: 'auto', display: 'flex', gap: 2, alignItems: 'center' }}>
-                <Typography
-                  variant="h6"
-                  color={student.status === 'graduated' ? 'success.main' : 'error.main'}
-                  sx={{ fontWeight: 'bold', textTransform: 'capitalize' }}
-                >
-                  Status: {student.status}
-                </Typography>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<RestoreIcon />}
-                  onClick={() => void handleStudentStatus('active')}
-                >
-                  Restore to Active
-                </Button>
-              </Box>
-            )}
           </Box>
         </Box>
 
