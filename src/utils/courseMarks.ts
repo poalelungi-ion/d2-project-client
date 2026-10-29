@@ -159,7 +159,13 @@ function groupByStudent(marks: readonly CourseMark[]): Map<number, CourseMark[]>
     byStudent.set(mark.student_id, sittings);
   }
   for (const sittings of byStudent.values()) {
-    sittings.sort((a, b) => compareSemesters(a.semester, b.semester));
+    sittings.sort((a, b) => {
+      const semDiff = compareSemesters(a.semester, b.semester);
+      if (semDiff !== 0) return semDiff;
+      if (a.attempt_type === 'Exam 1' && b.attempt_type === 'Exam 2') return -1;
+      if (a.attempt_type === 'Exam 2' && b.attempt_type === 'Exam 1') return 1;
+      return (a.result_id || 0) - (b.result_id || 0);
+    });
   }
   return byStudent;
 }
