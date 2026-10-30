@@ -64,8 +64,6 @@ export const BatchUploadWizard = () => {
             display: 'flex',
             flexDirection: 'column',
             p: 4,
-            maxWidth: 1600,
-            mx: 'auto',
             width: '100%',
           }}
         >

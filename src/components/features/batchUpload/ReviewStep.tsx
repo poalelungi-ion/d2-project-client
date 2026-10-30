@@ -1,14 +1,20 @@
+import { useEffect, useMemo, useState } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import type {
   CellValueChangedEvent,
+  GridApi,
   GridReadyEvent,
   ICellRendererParams,
+  IRowNode,
   RowClassParams,
   RowDataUpdatedEvent,
 } from 'ag-grid-community';
 import { Box, Typography, Button } from '@mui/material';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+
 import type { PreviewRecord } from '../../../types';
 import { useUploadWizard } from './uploadWizardContext';
+import { useToastStore, useStudyProgramStore } from '../../../stores';
 import { semantic, tint, gradeOutcomeColor } from '../../../styles/colors';
 import { errorCallout } from '../../../styles/mixins';
 import {
@@ -20,20 +26,105 @@ import {
   STUDY_PROGRAM_OPTIONS,
   formatValidationIssues,
   isAllowedStudyProgram,
+  normalizeStudyProgram,
 } from '../../../utils/studyProgram';
+import { StudyProgramResolverDialog } from './StudyProgramResolverDialog';
 
 export const ReviewStep = () => {
   const {
     preview: previewData,
-    setGridApi,
+    setGridApi: setWizardGridApi,
     setStep: setActiveStep,
     confirmImport,
   } = useUploadWizard();
+  const [gridApi, setGridApi] = useState<GridApi<PreviewRecord> | null>(null);
+  const notify = useToastStore((s) => s.notify);
+
+  const [resolverOpen, setResolverOpen] = useState(false);
+  const [dynamicPrograms, setDynamicPrograms] = useState<string[]>([]);
+
+  // Automatically normalize aliases on initial load (e.g. M.Sc. SE -> SE Master)
+  useEffect(() => {
+    let modified = false;
+    for (const row of previewData) {
+      const normalized = normalizeStudyProgram(row.program);
+      if (normalized !== row.program) {
+        row.program = normalized;
+        modified = true;
+      }
+      if (row.invalid_fields?.includes('Study Program') && isAllowedStudyProgram(row.program, dynamicPrograms)) {
+        row.invalid_fields = row.invalid_fields.filter((f) => f !== 'Study Program');
+        row.is_valid = (row.missing_fields?.length ?? 0) === 0 && row.invalid_fields.length === 0;
+        modified = true;
+      }
+    }
+    if (modified && gridApi) {
+      gridApi.refreshCells({ force: true });
+      gridApi.redrawRows();
+    }
+  }, [previewData, dynamicPrograms, gridApi]);
+
+  const unmappedPrograms = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of previewData) {
+      if (r.invalid_fields?.includes('Study Program') && r.program) {
+        set.add(r.program);
+      }
+    }
+    return Array.from(set);
+  }, [previewData]);
+
+  const availableProgramOptions = useMemo(() => {
+    return Array.from(new Set([...STUDY_PROGRAM_OPTIONS, ...dynamicPrograms]));
+  }, [dynamicPrograms]);
+
+  const handleApplyMappings = (mappings: Record<string, string>, newPrograms: string[]) => {
+    const updatedDynamics = Array.from(new Set([...dynamicPrograms, ...newPrograms]));
+    setDynamicPrograms(updatedDynamics);
+
+    // Persist new mappings to store so SettingsDialog and future imports recognize them
+    const { addAlias } = useStudyProgramStore.getState();
+    for (const [source, target] of Object.entries(mappings)) {
+      addAlias(target, source);
+    }
+
+    for (const row of previewData) {
+      if (mappings[row.program]) {
+        row.program = mappings[row.program];
+      }
+      if (isAllowedStudyProgram(row.program, updatedDynamics)) {
+        row.invalid_fields = (row.invalid_fields ?? []).filter((f) => f !== 'Study Program');
+        row.is_valid = (row.missing_fields?.length ?? 0) === 0 && row.invalid_fields.length === 0;
+      }
+    }
+
+    if (gridApi) {
+      gridApi.refreshCells({ force: true });
+      gridApi.redrawRows();
+      gridApi.forEachNode((node: IRowNode<PreviewRecord>) => {
+        if (node.data?.is_valid) {
+          node.setSelected(true);
+        }
+      });
+    }
+
+    notify('Study programs successfully mapped and validated!');
+  };
 
   const hasErrors = previewData.some((r) => !r.is_valid);
 
   return (
     <Box sx={{ py: 2 }}>
+      {resolverOpen && (
+        <StudyProgramResolverDialog
+          open={resolverOpen}
+          onClose={() => setResolverOpen(false)}
+          unmappedPrograms={unmappedPrograms}
+          existingPrograms={availableProgramOptions}
+          onApply={handleApplyMappings}
+        />
+      )}
+
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" fontWeight="700">
           Review Data &amp; Validation
@@ -44,7 +135,29 @@ export const ReviewStep = () => {
         </Typography>
       </Box>
 
-      {hasErrors && (
+      {unmappedPrograms.length > 0 && (
+        <Box sx={{ ...errorCallout, mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box>
+            <Typography variant="body1" color="error" fontWeight="bold">
+              Unmapped Study Programs Detected ({unmappedPrograms.length})
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              The following programs are not recognized: {unmappedPrograms.join(', ')}.
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AutoFixHighIcon />}
+            onClick={() => setResolverOpen(true)}
+            sx={{ textTransform: 'none', ml: 2 }}
+          >
+            Resolve &amp; Map Programs
+          </Button>
+        </Box>
+      )}
+
+      {hasErrors && unmappedPrograms.length === 0 && (
         <Box sx={{ ...errorCallout, mb: 3 }}>
           <Typography variant="body1" color="error" fontWeight="bold">
             Warning: Some records are missing required fields. You can still import, but
@@ -56,9 +169,12 @@ export const ReviewStep = () => {
       <Box className="ag-theme-alpine" sx={{ height: 400, width: '100%', mb: 3 }}>
         <AgGridReact<PreviewRecord>
           rowData={previewData}
-          onGridReady={(params: GridReadyEvent<PreviewRecord>) => setGridApi(params.api)}
+          onGridReady={(params: GridReadyEvent<PreviewRecord>) => {
+            setGridApi(params.api);
+            setWizardGridApi(params.api);
+          }}
           onRowDataUpdated={(params: RowDataUpdatedEvent<PreviewRecord>) => {
-            params.api.forEachNode((node) => {
+            params.api.forEachNode((node: IRowNode<PreviewRecord>) => {
               if (!node.data) return;
               if (node.data.is_valid) node.setSelected(true);
             });
@@ -68,7 +184,9 @@ export const ReviewStep = () => {
             const invalid = (event.data.invalid_fields ?? []).filter(
               (field) => field !== 'Study Program',
             );
-            event.data.invalid_fields = isAllowedStudyProgram(String(event.newValue ?? ''))
+            const newValue = normalizeStudyProgram(String(event.newValue ?? ''));
+            event.data.program = newValue;
+            event.data.invalid_fields = isAllowedStudyProgram(newValue, dynamicPrograms)
               ? invalid
               : [...invalid, 'Study Program'];
             event.data.is_valid =
@@ -76,7 +194,7 @@ export const ReviewStep = () => {
               event.data.invalid_fields.length === 0;
             event.api.refreshCells({
               rowNodes: [event.node],
-              columns: ['validationIssues'],
+              columns: ['program', 'validationIssues'],
               force: true,
             });
             event.api.redrawRows({ rowNodes: [event.node] });
@@ -101,7 +219,7 @@ export const ReviewStep = () => {
               flex: 1.4,
               minWidth: 180,
               cellEditor: 'agSelectCellEditor',
-              cellEditorParams: { values: STUDY_PROGRAM_OPTIONS },
+              cellEditorParams: { values: availableProgramOptions },
             },
             { field: 'semester', headerName: 'Semester', editable: true, flex: 0.8, minWidth: 100 },
             { field: 'grade', headerName: 'Grade', editable: true, flex: 0.6, minWidth: 90 },

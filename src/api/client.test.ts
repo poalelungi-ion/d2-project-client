@@ -1,11 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   API_BASE_URL,
+  DEFAULT_API_BASE_URL,
   authHeader,
   get,
+  getApiBaseUrl,
+  getEffectiveDefaultApiBaseUrl,
+  getRuntimeApiBaseUrl,
   refreshSession,
+  resetApiBaseUrl,
   setAccessToken,
+  setApiBaseUrl,
   setSessionExpiredHandler,
+  testApiConnection,
 } from './client';
 
 /**
@@ -40,11 +47,13 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
   setAccessToken(null);
   setSessionExpiredHandler(() => {});
+  resetApiBaseUrl();
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
   setAccessToken(null);
+  resetApiBaseUrl();
 });
 
 /** Arguments of the nth fetch call, as [url, init]. */
@@ -157,3 +166,53 @@ describe('concurrent refreshes', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('dynamic base URL resolution', () => {
+  it('falls back to DEFAULT_API_BASE_URL when nothing is in storage', () => {
+    expect(getApiBaseUrl()).toBe(DEFAULT_API_BASE_URL);
+  });
+
+  it('updates the base URL when setApiBaseUrl is called', async () => {
+    setApiBaseUrl('http://custom-host:9999/api/');
+    expect(getApiBaseUrl()).toBe('http://custom-host:9999/api');
+
+    fetchMock.mockResolvedValue(jsonResponse([]));
+    await get('/courses/');
+    expect(callArgs(0)[0]).toBe('http://custom-host:9999/api/courses/');
+  });
+
+  it('removes custom override on resetApiBaseUrl', () => {
+    setApiBaseUrl('http://temporary:8080/api');
+    expect(getApiBaseUrl()).toBe('http://temporary:8080/api');
+    resetApiBaseUrl();
+    expect(getApiBaseUrl()).toBe(DEFAULT_API_BASE_URL);
+  });
+
+  it('reports connection success when backend returns any HTTP status', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ detail: 'Not authenticated' }, 401));
+    const result = await testApiConnection('http://localhost:8000/api');
+    expect(result.ok).toBe(true);
+    expect(result.status).toBe(401);
+  });
+
+  it('reports connection failure when fetch throws network error', async () => {
+    fetchMock.mockRejectedValue(new Error('Failed to fetch'));
+    const result = await testApiConnection('http://invalid-host:1234/api');
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/Failed to fetch|Unable to connect/);
+  });
+
+  it('reads runtime API Base URL from window.__APP_CONFIG__ when present', () => {
+    (window as unknown as { __APP_CONFIG__: { API_BASE_URL: string } }).__APP_CONFIG__ = {
+      API_BASE_URL: 'http://runtime-server:8000/api',
+    };
+    expect(getRuntimeApiBaseUrl()).toBe('http://runtime-server:8000/api');
+    expect(getEffectiveDefaultApiBaseUrl()).toBe('http://runtime-server:8000/api');
+    expect(getApiBaseUrl()).toBe('http://runtime-server:8000/api');
+
+    delete (window as unknown as { __APP_CONFIG__?: unknown }).__APP_CONFIG__;
+    expect(getRuntimeApiBaseUrl()).toBeNull();
+    expect(getApiBaseUrl()).toBe(DEFAULT_API_BASE_URL);
+  });
+});
+

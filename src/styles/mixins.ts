@@ -1,6 +1,6 @@
 import type { SxProps, Theme } from '@mui/material/styles';
 import { badge, semantic, tint, wash } from './colors';
-import { borders, gradients, layout, radii, shadows, typography } from './tokens';
+import { borders, gradients, radii, shadows, typography } from './tokens';
 
 /**
  * Reusable `sx` fragments for patterns that are a *composition* rather than a
@@ -135,7 +135,6 @@ export const dropZone = (hasFile: boolean): SxProps<Theme> => ({
 export const gridContainer: SxProps<Theme> = {
   flex: 1,
   width: '100%',
-  height: layout.gridHeight,
   mt: 2,
 };
 

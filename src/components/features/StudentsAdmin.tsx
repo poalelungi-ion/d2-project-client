@@ -10,6 +10,7 @@ import {
   Avatar,
   Fade,
   Divider,
+  Paper,
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
@@ -29,7 +30,7 @@ import { useQueryParam } from '../../hooks/useQueryParam';
 import { VIEW_MODES } from '../../utils/constants';
 import { formatGrade } from '../../utils/gradeOutcome';
 import { semantic } from '../../styles/colors';
-import { borders, shadows } from '../../styles/tokens';
+import { borders, radii, shadows } from '../../styles/tokens';
 import { gridContainer, pageSubtitle, pageTitle } from '../../styles/mixins';
 import { studentColumns } from './columns';
 import { StudentFormDialog } from '../forms/StudentFormDialog';
@@ -84,8 +85,11 @@ export const StudentsAdmin = () => {
           sx={{
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             mb: 4,
+            width: '100%',
+            flexWrap: 'wrap',
+            gap: 2,
           }}
         >
           <Box>
@@ -96,7 +100,7 @@ export const StudentsAdmin = () => {
               Manage the student directory and view individual marks.
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
             <ToggleButtonGroup
               value={studentViewMode}
               exclusive
@@ -112,7 +116,6 @@ export const StudentsAdmin = () => {
               placeholder="Search students..."
               value={studentSearchQuery}
               onChange={(e) => setStudentSearchQuery(e.target.value)}
-              sx={{ bgcolor: 'background.paper' }}
             />
 
             <Button variant="cta" startIcon={<AddIcon />} onClick={() => openStudentForm()}>
@@ -122,7 +125,7 @@ export const StudentsAdmin = () => {
         </Box>
 
         {studentViewMode === 'grid' ? (
-          <Grid container spacing={3}>
+          <Grid container spacing={3} sx={{ width: '100%' }}>
             {activeStudents.map((student) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={student.student_id}>
                 <Card
@@ -191,19 +194,31 @@ export const StudentsAdmin = () => {
             ))}
           </Grid>
         ) : (
-          <Box className="ag-theme-alpine" sx={gridContainer}>
-            <AgGridReact<Student>
-              rowData={activeStudents}
-              columnDefs={studentRosterColumnDefs}
-              defaultColDef={{ resizable: true, sortable: true, filter: true }}
-              animateRows={true}
-              pagination={true}
-              paginationPageSize={20}
-              onRowClicked={(e: RowClickedEvent<Student>) => {
-                if (e.data) void navigate(ROUTES.studentDetail(e.data.student_id));
-              }}
-            />
-          </Box>
+          <Paper
+            elevation={0}
+            sx={{
+              ...gridContainer,
+              borderRadius: radii.xl,
+              overflow: 'hidden',
+              border: (theme) => `1px solid ${theme.app.surface.panelBorder}`,
+            }}
+          >
+            <Box className="ag-theme-alpine" sx={{ width: '100%' }}>
+              <AgGridReact<Student>
+                domLayout="autoHeight"
+                rowData={activeStudents}
+                columnDefs={studentRosterColumnDefs}
+                defaultColDef={{ resizable: true, sortable: true, filter: true }}
+                animateRows={true}
+                pagination={true}
+                paginationPageSize={15}
+                paginationPageSizeSelector={[10, 15, 20, 50]}
+                onRowClicked={(e: RowClickedEvent<Student>) => {
+                  if (e.data) void navigate(ROUTES.studentDetail(e.data.student_id));
+                }}
+              />
+            </Box>
+          </Paper>
         )}
       </Box>
     </Fade>

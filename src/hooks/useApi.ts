@@ -20,10 +20,12 @@ import type {
   AddGradePayload,
   CourseCreatePayload,
   CourseUpdatePayload,
+  GradeSaveRow,
   StudentCreatePayload,
   StudentUpdatePayload,
 } from '../api/index';
 import type {
+  AttemptType,
   Course,
   CourseFormValues,
   NameSplitRule,
@@ -342,9 +344,11 @@ async function saveTranscript(
     version: number;
     grade: number | null;
     absence_code?: string | null;
+    attempt_type?: AttemptType;
+    semester?: string;
   }>,
 ): Promise<TranscriptSaveResult> {
-  const payload: Array<{ result_id: number; version: number; grade: number | string }> = [];
+  const payload: GradeSaveRow[] = [];
   for (const row of rows) {
     const value = gradeSaveValue(row);
     if (value == null || !parseGradeInput(value).ok) {
@@ -355,6 +359,8 @@ async function saveTranscript(
       result_id: row.result_id,
       version: row.version,
       grade: value,
+      attempt_type: row.attempt_type,
+      semester: row.semester,
     });
   }
 
@@ -476,7 +482,17 @@ async function confirmImport(
         (parsedNum != null && !isNaN(parsedNum) ? parsedNum : undefined);
       return { success: true, courseId, message };
     }
-    notify(`Error: ${data.detail}`, 'error');
+    let errorDetail = 'Upload validation failed';
+    if (typeof data.detail === 'string') {
+      errorDetail = data.detail;
+    } else if (Array.isArray(data.detail)) {
+      errorDetail = (data.detail as Array<{ msg?: string; loc?: string[] }>)
+        .map((e) => e?.msg || (e?.loc ? `${e.loc.join('.')}: invalid` : JSON.stringify(e)))
+        .join('; ');
+    } else if (data.detail && typeof data.detail === 'object') {
+      errorDetail = JSON.stringify(data.detail);
+    }
+    notify(`Error: ${errorDetail}`, 'error');
   } catch {
     notify('Network error', 'error');
   }

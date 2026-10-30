@@ -4,33 +4,31 @@ import {
   Typography,
   Button,
   TextField,
-  MenuItem,
-  Select,
 } from '@mui/material';
 
-import type { AttemptType } from '../../../types';
 import { useUploadWizard } from './uploadWizardContext';
 import { fieldLabel, monoChip, toneSurface } from '../../../styles/mixins';
 import { semantic } from '../../../styles/colors';
 import { radii } from '../../../styles/tokens';
+import { ExamAttemptSelector } from './ExamAttemptSelector';
 import {
   generateSemesters,
   getCurrentSemester,
+  getNextSemester,
   isValidSemester,
 } from '../../../utils/semester';
 
-const ATTEMPT_TYPES: readonly AttemptType[] = [
-  'Exam 1',
-  'Exam 2',
-  'Other',
-];
-
-const SEMESTERS = generateSemesters();
 const CURRENT_SEMESTER = getCurrentSemester();
+const NEXT_SEMESTER = getNextSemester(CURRENT_SEMESTER);
+const ALL_SEMESTERS = generateSemesters();
+const otherSemesters = [...ALL_SEMESTERS]
+  .filter((s) => s !== NEXT_SEMESTER && s !== CURRENT_SEMESTER)
+  .reverse();
 
 const SEMESTER_OPTIONS = [
+  NEXT_SEMESTER,
   CURRENT_SEMESTER,
-  ...SEMESTERS.filter((semester) => semester !== CURRENT_SEMESTER),
+  ...otherSemesters,
 ];
 
 export const CourseInfoStep = () => {
@@ -70,7 +68,7 @@ export const CourseInfoStep = () => {
           display: 'flex',
           flexDirection: 'column',
           gap: 3,
-          maxWidth: 600,
+          maxWidth: 720,
         }}
       >
         <Box>
@@ -150,43 +148,13 @@ export const CourseInfoStep = () => {
         </Box>
 
         <Box>
-          <Typography
-            variant="overline"
-            sx={fieldLabel}
-            id="attempt-type-label"
-          >
-            ATTEMPT TYPE
+          <Typography variant="overline" sx={fieldLabel}>
+            EXAM SITTING / ATTEMPT
           </Typography>
-
-          <Select
-            fullWidth
-            variant="outlined"
-            labelId="attempt-type-label"
-            value={uploadCourseInfo.attemptType}
-            onChange={(e) =>
-              setUploadCourseInfo({
-                attemptType: e.target.value as AttemptType,
-              })
-            }
-          >
-            {ATTEMPT_TYPES.map((attempt) => (
-              <MenuItem key={attempt} value={attempt}>
-                {attempt}
-              </MenuItem>
-            ))}
-          </Select>
-
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{
-              mt: 0.5,
-              display: 'block',
-            }}
-          >
-            Saved on every record in this import, so you can compare how the
-            first and second sitting of this course went later.
-          </Typography>
+          <ExamAttemptSelector
+            attemptType={uploadCourseInfo.attemptType}
+            onChange={(attemptType) => setUploadCourseInfo({ attemptType })}
+          />
         </Box>
 
         <Box>
@@ -220,10 +188,16 @@ export const CourseInfoStep = () => {
                 }
               />
             )}
+            ListboxProps={{
+              sx: {
+                maxHeight: 320,
+                overflowY: 'auto',
+              },
+            }}
             slotProps={{
               paper: {
                 sx: {
-                  maxHeight: 320,
+                  overflow: 'hidden',
                 },
               },
             }}
