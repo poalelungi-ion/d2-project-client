@@ -128,8 +128,6 @@ In case of connection issues or when testing against a different backend without
 - Under **Backend API Connection**, you can view the active URL, enter a custom target URL, click **Test Connection** to verify network reachability and CORS, and **Save & Apply**.
 - **Scope**: The custom URL is stored in that specific browser's `localStorage` (`spa_api_base_url`) as a client-side override. Click **Reset Default** anytime to revert back to the global container default.
 
-> **Developer Mode Easter Egg**: Tapping the University logo or System Information card **10 times in a row** (Android developer options mechanic) activates Developer Mode and unlocks the **Teacher Break (Dino Run)** mini-game directly in the settings dialog!
-
 There is no API token here any more. Access is per-account: the user signs in,
 and nothing secret is compiled into the bundle. See **Authentication** below.
 

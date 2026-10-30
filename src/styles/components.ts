@@ -29,6 +29,15 @@ import {
 export const buildComponents = (mode: ThemeMode): Components<Theme> => {
   const brandColor = mode === 'light' ? brand.main : brand.mainDark;
 
+  // Menus, Select lists and Autocomplete popups sit on top of other content,
+  // so they drop the glass blur and translucency MuiPaper gives every surface.
+  const floatingPaper = {
+    backgroundColor: surfaces.floating[mode],
+    backdropFilter: 'none',
+    WebkitBackdropFilter: 'none',
+    boxShadow: shadows.floating[mode],
+  };
+
   return {
     // Replaces the old src/index.css: the page gradient, the font stack and the
     // ag-grid theming now come from the same tokens as everything else, instead
@@ -72,6 +81,19 @@ export const buildComponents = (mode: ThemeMode): Components<Theme> => {
           transition: transitions.surface,
         },
       },
+    },
+
+    // Covers Menu and Select too: both render their list in a Popover.
+    MuiPopover: {
+      styleOverrides: { paper: floatingPaper },
+    },
+
+    MuiMenu: {
+      styleOverrides: { paper: floatingPaper },
+    },
+
+    MuiAutocomplete: {
+      styleOverrides: { paper: floatingPaper },
     },
 
     MuiCard: {
