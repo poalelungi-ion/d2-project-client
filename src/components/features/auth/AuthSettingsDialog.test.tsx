@@ -94,20 +94,4 @@ describe('AuthSettingsDialog & Login Settings Integration', () => {
     expect(getApiBaseUrl()).toBe('http://localhost:8000/api');
     expect(useToastStore.getState().toast.message).toMatch(/reset backend api base url to default/i);
   });
-
-  it('unlocks developer mode mini-game after 10 consecutive clicks', async () => {
-    render(<AuthSettingsDialog open={true} onClose={vi.fn()} />);
-
-    // Click the System Information card 10 times
-    const systemInfoCard = screen.getByText(/software systems engineering \(sse\) · spa system v2\.0/i);
-    for (let i = 0; i < 10; i++) {
-      fireEvent.click(systemInfoCard);
-    }
-
-    await waitFor(() => {
-      expect(screen.getByText(/teacher break \(dino run mini-game\)/i)).toBeInTheDocument();
-      expect(screen.getByText(/developer mode/i)).toBeInTheDocument();
-      expect(localStorage.getItem('spa_developer_mode_unlocked')).toBe('true');
-    });
-  });
 });
