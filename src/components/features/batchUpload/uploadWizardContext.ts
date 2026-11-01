@@ -19,6 +19,7 @@ export interface UploadWizardValue {
   setCourseInfo: (patch: Partial<UploadCourseInfo>) => void;
   setNameSplitRule: (rule: NameSplitRule) => void;
   setColumnMapping?: (mapping: Record<string, string>) => void;
+  setPreview?: (rows: PreviewRecord[]) => void;
   setGridApi: (api: GridApi<PreviewRecord> | null) => void;
 
   runPreview: () => Promise<void>;

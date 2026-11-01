@@ -44,9 +44,52 @@ import {
 } from '../../../utils/studyProgram';
 import { StudyProgramResolverDialog } from './StudyProgramResolverDialog';
 
+/**
+ * Re-evaluates a preview row after inline editing in AG Grid (#104089) so that
+ * edits to any column (`student_id`, `first_name`, `last_name`, `program`,
+ * `semester`, `grade`) immediately update `missing_fields`, `invalid_fields`,
+ * `outcome`, `absence_code`, and `is_valid`.
+ */
+export function revalidatePreviewRow(
+  row: PreviewRecord,
+  dynamicPrograms: readonly string[] = [],
+): void {
+  row.student_id = String(row.student_id ?? '').trim();
+  row.first_name = String(row.first_name ?? '').trim();
+  row.last_name = String(row.last_name ?? '').trim();
+  row.name = [row.first_name, row.last_name].filter(Boolean).join(' ') || String(row.name ?? '').trim();
+  row.program = normalizeStudyProgram(String(row.program ?? '').trim());
+  row.semester = String(row.semester ?? '').trim();
+  row.grade = String(row.grade ?? '').trim();
+
+  const missing: string[] = [];
+  if (!row.student_id) missing.push('Matrikelnr');
+  if (!row.last_name && !row.first_name) missing.push('Name');
+  if (!row.grade) missing.push('Grade');
+
+  const invalid = (row.invalid_fields ?? []).filter(
+    (f) => f !== 'Study Program' && f !== 'Grade',
+  );
+  if (row.program && !isAllowedStudyProgram(row.program, dynamicPrograms)) {
+    invalid.push('Study Program');
+  }
+
+  const gradeEval = evaluateGradeCell(row.grade);
+  row.outcome = gradeEval.outcome;
+  row.absence_code = gradeEval.absenceCode;
+  if (row.grade && gradeEval.outcome === 'invalid') {
+    invalid.push('Grade');
+  }
+
+  row.missing_fields = missing;
+  row.invalid_fields = invalid;
+  row.is_valid = missing.length === 0 && invalid.length === 0;
+}
+
 export const ReviewStep = () => {
   const {
     preview: previewData,
+    setPreview: setWizardPreview,
     setGridApi: setWizardGridApi,
     setStep: setActiveStep,
     confirmImport,
@@ -140,6 +183,7 @@ export const ReviewStep = () => {
     }
 
     setMappingRevision((r) => r + 1);
+    setWizardPreview?.([...previewData]);
 
     if (gridApi) {
       gridApi.refreshCells({ force: true });
@@ -340,6 +384,9 @@ export const ReviewStep = () => {
       >
         <AgGridReact<PreviewRecord>
           rowData={previewData}
+          singleClickEdit={true}
+          stopEditingWhenCellsLoseFocus={true}
+          suppressRowClickSelection={true}
           onGridReady={(params: GridReadyEvent<PreviewRecord>) => {
             setGridApi(params.api);
             setWizardGridApi(params.api);
@@ -351,22 +398,18 @@ export const ReviewStep = () => {
             });
           }}
           onCellValueChanged={(event: CellValueChangedEvent<PreviewRecord>) => {
-            if (event.colDef.field !== 'program' || !event.data) return;
-            const invalid = (event.data.invalid_fields ?? []).filter(
-              (field) => field !== 'Study Program',
-            );
-            const newValue = normalizeStudyProgram(String(event.newValue ?? ''));
-            event.data.program = newValue;
-            event.data.invalid_fields = isAllowedStudyProgram(newValue, dynamicPrograms)
-              ? invalid
-              : [...invalid, 'Study Program'];
-            event.data.is_valid =
-              (event.data.missing_fields?.length ?? 0) === 0 &&
-              event.data.invalid_fields.length === 0;
+            if (!event.data) return;
+            revalidatePreviewRow(event.data, dynamicPrograms);
+            if (event.data.is_valid) {
+              event.node.setSelected(true);
+            }
             setMappingRevision((r) => r + 1);
+            setWizardPreview?.([...previewData]);
+            const colsToRefresh = ['outcome', 'validationIssues'];
+            if (event.colDef.field) colsToRefresh.push(event.colDef.field);
             event.api.refreshCells({
               rowNodes: [event.node],
-              columns: ['program', 'validationIssues'],
+              columns: colsToRefresh,
               force: true,
             });
             event.api.redrawRows({ rowNodes: [event.node] });
@@ -427,6 +470,7 @@ export const ReviewStep = () => {
               headerName: 'Validation Issues',
               flex: 2,
               minWidth: 240,
+              editable: false,
               valueGetter: (params) =>
                 formatValidationIssues(
                   params.data?.missing_fields,
@@ -445,7 +489,7 @@ export const ReviewStep = () => {
               },
             },
           ]}
-          defaultColDef={{ resizable: true, sortable: true, flex: 1, minWidth: 90 }}
+          defaultColDef={{ resizable: true, sortable: true, editable: true, flex: 1, minWidth: 90 }}
           getRowStyle={(params: RowClassParams<PreviewRecord>) =>
             params.data && !params.data.is_valid
               ? { background: tint(semantic.error).bg }

@@ -62,13 +62,15 @@ export function UploadWizardProvider({
   const setFile = useCallback((next: File | null) => {
     setFileState(next);
     setColumnMapping({});
+    setPreview([]);
     if (next) setPasteState('');
   }, []);
 
   const setPaste = useCallback((text: string) => {
     setPasteState(text);
     setColumnMapping({});
-    if (text) setFileState(null);
+    setPreview([]);
+    setFileState(null);
   }, []);
 
   const sourceLabel = file?.name ?? (paste.trim() ? 'Pasted data' : '');
@@ -112,6 +114,9 @@ export function UploadWizardProvider({
   const confirmImport = useCallback(async () => {
     const api = gridApiRef.current;
     if (!api) return;
+
+    // Ensure any in-progress inline cell edit in AG Grid is committed before reading selected rows (#104089)
+    api.stopEditing?.();
 
     const selectedRows = api.getSelectedRows();
     if (selectedRows.length === 0) {
@@ -162,6 +167,7 @@ export function UploadWizardProvider({
       setCourseInfo,
       setNameSplitRule,
       setColumnMapping,
+      setPreview,
       setGridApi,
       runPreview,
       confirmImport,
