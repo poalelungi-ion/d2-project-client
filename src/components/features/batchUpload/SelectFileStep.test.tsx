@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { ThemeProvider } from '@mui/material/styles';
 
 import { getGlassTheme } from '../../../styles/theme';
 import type { UploadCourseInfo } from '../../../types';
+import { useCourseDriveStore } from '../../../stores';
 import { UploadWizardContext } from './uploadWizardContext';
 import type { UploadWizardValue } from './uploadWizardContext';
 import { SelectFileStep } from './SelectFileStep';
@@ -64,6 +65,10 @@ const renderStep = () => {
 };
 
 describe('SelectFileStep', () => {
+  beforeEach(() => {
+    useCourseDriveStore.setState({ filesByCourse: {}, uploadingProgress: {} });
+  });
+
   it('accepts a second spreadsheet that uses the same file name', () => {
     const { setFile } = renderStep();
     const first = sheet('grades.xlsx', 'first');
@@ -78,5 +83,17 @@ describe('SelectFileStep', () => {
     expect(setFile).toHaveBeenCalledWith(second);
     expect(setFile).toHaveBeenCalledTimes(2);
     expect(fileInput().value).toBe('');
+  });
+
+  it('lets the lecturer remove a staged file and resets the dropzone', () => {
+    const { setFile } = renderStep();
+    fireEvent.change(fileInput(), { target: { files: [sheet('grades.xlsx', 'only')] } });
+    expect(screen.getByText('Selected: grades.xlsx')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /remove file/i }));
+    expect(setFile).toHaveBeenLastCalledWith(null);
+    expect(screen.queryByText('Selected: grades.xlsx')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /browse from computer/i })).toBeInTheDocument();
+    expect(screen.getByText(/Drag & drop exam spreadsheet here/i)).toBeInTheDocument();
   });
 });
