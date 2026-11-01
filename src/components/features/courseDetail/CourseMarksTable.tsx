@@ -36,6 +36,7 @@ import { useApiMutations } from '../../../hooks/useApi';
 import { notify, useThemeStore, useSystemLogStore } from '../../../stores';
 import { chart, gradeOutcomeColor, surfaces } from '../../../styles/colors';
 import { radii } from '../../../styles/tokens';
+import { gridFrame } from '../../../styles/mixins';
 import {
   GRADE_CONSTRAINT_MESSAGE,
   formatGrade,
@@ -617,7 +618,7 @@ export const CourseMarksTable = ({
         </Box>
       </Box>
 
-      <Box className="ag-theme-alpine" sx={{ width: '100%', p: 2 }}>
+      <Box className="ag-theme-alpine" sx={{ ...gridFrame, p: 2 }}>
         {viewMode === 'individual' ? (
           <AgGridReact<CourseMark>
             ref={courseGridRef}

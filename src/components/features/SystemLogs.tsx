@@ -43,7 +43,7 @@ import {
 } from '@mui/icons-material';
 import { useSystemLogStore, useToastStore, type LogLevel, type LogCategory, type SystemLogItem } from '../../stores';
 import { radii } from '../../styles/tokens';
-import { pageTitle } from '../../styles/mixins';
+import { pageShell, pageTitle } from '../../styles/mixins';
 
 const LEVEL_COLORS: Record<LogLevel, { bg: string; text: string; border: string; icon: typeof InfoOutlinedIcon }> = {
   info: {
@@ -560,7 +560,7 @@ export const SystemLogs = ({ embedded = false }: { embedded?: boolean }) => {
 
   return (
     <Fade in={true} timeout={400}>
-      <Box sx={{ width: '100%' }}>
+      <Box sx={embedded ? { width: '100%' } : pageShell}>
         {!embedded && (
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, flexWrap: 'wrap', gap: 2 }}>
             <Box>

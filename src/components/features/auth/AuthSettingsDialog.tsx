@@ -158,7 +158,7 @@ export const AuthSettingsDialog = ({ open, onClose }: AuthSettingsDialogProps) =
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 2, pb: 1.5 }}>
         <Box
           onClick={handleEasterEggClick}
@@ -177,7 +177,7 @@ export const AuthSettingsDialog = ({ open, onClose }: AuthSettingsDialogProps) =
         </Box>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ maxHeight: '72vh' }}>
+      <DialogContent dividers sx={{ maxHeight: '90vh' }}>
         {/* Appearance Section */}
         <Box sx={{ mb: 3 }}>
           <Typography

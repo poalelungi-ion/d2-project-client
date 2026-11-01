@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import type { UploadCourseHandoff } from '../../../types';
 import { ROUTES } from '../../../app/navigation';
 import { STEPS } from '../../../utils/constants';
-import { pageTitle } from '../../../styles/mixins';
+import { pageShell, pageTitle } from '../../../styles/mixins';
 import { UploadWizardProvider } from './UploadWizardProvider';
 import { useUploadWizard } from './uploadWizardContext';
 import { SelectFileStep } from './SelectFileStep';
@@ -58,15 +58,7 @@ export const BatchUploadWizard = () => {
   return (
     <UploadWizardProvider course={course}>
       <Fade in={true} timeout={800}>
-        <Box
-          sx={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            p: 4,
-            width: '100%',
-          }}
-        >
+        <Box sx={pageShell}>
           <Typography variant="h4" gutterBottom sx={{ ...pageTitle, mb: 1 }}>
             Import grades
           </Typography>

@@ -20,6 +20,7 @@ import {
   summariseMarks,
 } from '../../utils/courseMarks';
 import type { ExamSelection } from '../../utils/courseMarks';
+import { pageShell } from '../../styles/mixins';
 import { CourseAnalytics } from './courseDetail/CourseAnalytics';
 import { CourseFilterBar } from './courseDetail/CourseFilterBar';
 import type { ComparePair, CompareSide, CourseViewMode } from './courseDetail/CourseFilterBar';
@@ -111,7 +112,7 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
 
   return (
     <Fade in={true} timeout={800}>
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+      <Box sx={{ ...pageShell, display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
         {editing && (
           <CourseFormDialog
             course={course}

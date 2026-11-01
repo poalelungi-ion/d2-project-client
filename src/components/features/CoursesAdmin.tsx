@@ -43,7 +43,7 @@ import { useQueryParam } from '../../hooks/useQueryParam';
 import { COURSE_SORTS, VIEW_MODES } from '../../utils/constants';
 import { formatGrade } from '../../utils/gradeOutcome';
 import { passRateColor } from '../../styles/colors';
-import { gridContainer, metaChip } from '../../styles/mixins';
+import { gridContainer, gridFrame, metaChip, pageShell } from '../../styles/mixins';
 import { radii } from '../../styles/tokens';
 import { courseColumns } from './columns';
 import { CourseFormDialog } from '../forms/CourseFormDialog';
@@ -132,7 +132,7 @@ export const CoursesAdmin = () => {
 
   return (
     <Fade in={true} timeout={800}>
-      <Box sx={{ flexGrow: 1 }}>
+      <Box sx={pageShell}>
         {form && (
           <CourseFormDialog
             course={form.course}
@@ -407,6 +407,7 @@ export const CoursesAdmin = () => {
               border: '1px solid',
               borderColor: 'divider',
               bgcolor: 'background.paper',
+              flexShrink: 0,
             }}
           >
             <Box
@@ -539,7 +540,7 @@ export const CoursesAdmin = () => {
               border: (theme) => `1px solid ${theme.app.surface.panelBorder}`,
             }}
           >
-            <Box className="ag-theme-alpine" sx={{ width: '100%' }}>
+            <Box className="ag-theme-alpine" sx={gridFrame}>
               <AgGridReact<Course>
                 domLayout="autoHeight"
                 rowData={activeCourses}

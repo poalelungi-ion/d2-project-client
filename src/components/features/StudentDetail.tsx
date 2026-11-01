@@ -37,7 +37,7 @@ import type { StudentDetails, StudentStatus, TranscriptEntry } from '../../types
 import { ROUTES } from '../../app/navigation';
 import { useApiMutations } from '../../hooks/useApi';
 import { radii } from '../../styles/tokens';
-import { pageTitle } from '../../styles/mixins';
+import { gridFrame, pageShell, pageTitle } from '../../styles/mixins';
 import { chart } from '../../styles/colors';
 import { averageGradeBySemester, type SemesterGradeAverage } from '../../utils/semester';
 import { groupTranscriptByCourse } from '../../utils/studentTranscript';
@@ -140,7 +140,7 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
 
   return (
     <Fade in={true} timeout={800}>
-      <Box sx={{ flexGrow: 1, width: '100%', pb: 6 }}>
+      <Box sx={{ ...pageShell, pb: 6 }}>
         {/* Header Profile Section */}
         <Box sx={{ mb: 3 }}>
           <Button
@@ -391,7 +391,7 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
             </Box>
           </Box>
 
-          <Box className="ag-theme-alpine" sx={{ width: '100%', p: 2 }}>
+          <Box className="ag-theme-alpine" sx={{ ...gridFrame, p: 2 }}>
             {transcriptViewMode === 'compact' ? (
               <AgGridReact<StudentCourseHistoryRow>
                 domLayout="autoHeight"

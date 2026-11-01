@@ -106,7 +106,7 @@ export function AddGradeDialog({ student, onClose, onSaved }: AddGradeDialogProp
   };
 
   return (
-    <Dialog disableRestoreFocus disableEnforceFocus open onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog disableRestoreFocus disableEnforceFocus open onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Add Manual Exam Record</DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
         <Typography variant="body2" color="text.secondary">

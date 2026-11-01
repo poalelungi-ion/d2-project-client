@@ -31,7 +31,7 @@ import { VIEW_MODES } from '../../utils/constants';
 import { formatGrade } from '../../utils/gradeOutcome';
 import { semantic } from '../../styles/colors';
 import { borders, radii, shadows } from '../../styles/tokens';
-import { gridContainer, pageSubtitle, pageTitle } from '../../styles/mixins';
+import { gridContainer, gridFrame, pageShell, pageSubtitle, pageTitle } from '../../styles/mixins';
 import { studentColumns } from './columns';
 import { StudentFormDialog } from '../forms/StudentFormDialog';
 
@@ -72,7 +72,7 @@ export const StudentsAdmin = () => {
 
   return (
     <Fade in={true} timeout={800}>
-      <Box sx={{ flexGrow: 1 }}>
+      <Box sx={pageShell}>
         {form && (
           <StudentFormDialog
             student={form.student}
@@ -203,7 +203,7 @@ export const StudentsAdmin = () => {
               border: (theme) => `1px solid ${theme.app.surface.panelBorder}`,
             }}
           >
-            <Box className="ag-theme-alpine" sx={{ width: '100%' }}>
+            <Box className="ag-theme-alpine" sx={gridFrame}>
               <AgGridReact<Student>
                 domLayout="autoHeight"
                 rowData={activeStudents}

@@ -8,6 +8,13 @@ import { borders, gradients, radii, shadows, typography } from './tokens';
  * depend on a value the call site passes in.
  */
 
+/** Full-width page column: no max-width cap, natural document flow (#104095). */
+export const pageShell: SxProps<Theme> = {
+  width: '100%',
+  maxWidth: 'none',
+  flexGrow: 1,
+};
+
 /** The h3 + subtitle pair that opens every screen. */
 export const pageTitle: SxProps<Theme> = {
   fontWeight: typography.displayWeight,
@@ -131,11 +138,15 @@ export const dropZone = (hasFile: boolean): SxProps<Theme> => ({
   },
 });
 
-/** Standard sizing for every ag-grid on a list screen. */
+/** Standard sizing for every ag-grid on a list screen: full width, height follows rows. */
 export const gridContainer: SxProps<Theme> = {
-  flex: 1,
   width: '100%',
   mt: 2,
+};
+
+/** Inner AG Grid host: full width so autoHeight grids are not width-capped. */
+export const gridFrame: SxProps<Theme> = {
+  width: '100%',
 };
 
 /** Recharts has no theme access, so its tooltip is styled by hand. */
