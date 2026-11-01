@@ -208,7 +208,7 @@ export const studentCourseHistoryColumns = (
   },
   {
     field: 'best_grade',
-    headerName: 'Best Grade',
+    headerName: 'Best Mark',
     minWidth: 120,
     flex: 1,
     cellRenderer: (params: ICellRendererParams<import('./StudentCourseAttemptsDialog').StudentCourseHistoryRow, number>) => {
@@ -238,22 +238,6 @@ export const studentCourseHistoryColumns = (
         </div>
       );
     },
-  },
-  {
-    field: 'exam1_grade',
-    headerName: 'Exam 1',
-    minWidth: 100,
-    flex: 0.9,
-    valueFormatter: (params: ValueFormatterParams<import('./StudentCourseAttemptsDialog').StudentCourseHistoryRow, number | null>) =>
-      params.value != null ? formatGrade(params.value, params.data?.exam1_absence) : '—',
-  },
-  {
-    field: 'exam2_grade',
-    headerName: 'Exam 2 (Retake)',
-    minWidth: 120,
-    flex: 1.1,
-    valueFormatter: (params: ValueFormatterParams<import('./StudentCourseAttemptsDialog').StudentCourseHistoryRow, number | null>) =>
-      params.value != null ? formatGrade(params.value, params.data?.exam2_absence) : '—',
   },
   {
     field: 'final_status',

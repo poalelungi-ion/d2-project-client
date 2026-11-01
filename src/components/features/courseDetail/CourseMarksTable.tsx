@@ -213,10 +213,13 @@ export const historyColumnDefs = (
   { field: 'program', headerName: 'Study Program', flex: 2, editable: false },
   { field: 'semester', headerName: 'Semester', flex: 1, editable: false, comparator: bySemesterOrder },
   {
+    field: 'best_grade',
     colId: 'best_grade',
     headerName: 'Best Mark',
     flex: 1.2,
     editable: false,
+    valueFormatter: (params: ValueFormatterParams<CourseHistoryRow, number | null>) =>
+      formatGrade(params.value, params.data?.best_absence),
     cellRenderer: (params: ICellRendererParams<CourseHistoryRow>) => {
       if (!params.data) return null;
       const { best_grade, best_absence, best_outcome, best_attempt_label } = params.data;
@@ -251,24 +254,6 @@ export const historyColumnDefs = (
         </Box>
       );
     },
-  },
-  {
-    field: 'exam1_grade',
-    headerName: 'Exam 1 Grade',
-    flex: 1,
-    editable: false,
-    valueFormatter: (params: ValueFormatterParams<CourseHistoryRow, number | null>) =>
-      formatGrade(params.value, params.data?.exam1_absence),
-    cellStyle: { fontWeight: 'bold' },
-  },
-  {
-    field: 'exam2_grade',
-    headerName: 'Exam 2 Grade',
-    flex: 1,
-    editable: false,
-    valueFormatter: (params: ValueFormatterParams<CourseHistoryRow, number | null>) =>
-      formatGrade(params.value, params.data?.exam2_absence),
-    cellStyle: { fontWeight: 'bold' },
   },
   {
     colId: 'attempts',
