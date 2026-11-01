@@ -205,6 +205,10 @@ export const ReviewStep = () => {
             event.api.redrawRows({ rowNodes: [event.node] });
           }}
           rowSelection="multiple"
+          // Selection is what gets imported, so only the checkboxes change it.
+          // Otherwise clicking a cell to edit it selects that row alone and
+          // silently drops every other row from the import.
+          suppressRowClickSelection={true}
           columnDefs={[
             {
               field: 'student_id',
