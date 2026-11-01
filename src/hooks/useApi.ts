@@ -244,7 +244,7 @@ async function saveStudent(
         student_id: studentId,
         name,
         program: values.program,
-        status: values.status,
+        ...(values.status ? { status: values.status } : {}),
       };
       res = await createStudent(payload);
     } else {
@@ -253,7 +253,7 @@ async function saveStudent(
         new_student_id: studentId,
         name,
         program: values.program,
-        status: values.status,
+        ...(values.status ? { status: values.status } : {}),
         version,
       };
       res = await updateStudent(studentId, payload);
