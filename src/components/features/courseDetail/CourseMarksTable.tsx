@@ -641,7 +641,6 @@ export const CourseMarksTable = ({
             onRowClicked={(e: RowClickedEvent<CourseMark>) => {
               if (e.data) onSelectStudent(e.data);
             }}
-            rowSelection="single"
           />
         ) : (
           <AgGridReact<CourseHistoryRow>
@@ -662,7 +661,6 @@ export const CourseMarksTable = ({
             onRowClicked={(e: RowClickedEvent<CourseHistoryRow>) => {
               if (e.data && e.data.marks.length > 0) onSelectStudent(e.data.marks[0]);
             }}
-            rowSelection="single"
           />
         )}
       </Box>
