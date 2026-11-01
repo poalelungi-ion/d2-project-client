@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Typography,
@@ -55,7 +55,11 @@ interface StudentDetailProps {
 
 export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
   const { updateProgram } = useApiMutations();
-  const [program, setProgram] = useState(student.program);
+  const [program, setProgram] = useState(student.study_program || student.program);
+
+  useEffect(() => {
+    setProgram(student.study_program || student.program);
+  }, [student.study_program, student.program, student.version]);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [transcriptViewMode, setTranscriptViewMode] = useState<'compact' | 'individual'>('compact');
   const [searchQuery, setSearchQuery] = useState('');
@@ -377,7 +381,10 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
           <StudentFormDialog
             student={student}
             onClose={() => setEditDialogOpen(false)}
-            onSaved={() => {
+            onSaved={(_id, updatedRecord) => {
+              if (updatedRecord?.study_program || updatedRecord?.program) {
+                setProgram(updatedRecord.study_program || updatedRecord.program);
+              }
               setEditDialogOpen(false);
               onRefresh();
             }}
