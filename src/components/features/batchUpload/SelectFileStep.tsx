@@ -214,7 +214,6 @@ export const SelectFileStep = ({ hideRepository: _hideRepository = false }: Sele
             selectedFileName={file?.name}
             onClear={() => {
               setFile(null);
-              setSelectedDriveFileId(null);
               setIsUploading(false);
               setUploadingFileName('');
               setActiveFileId(null);
