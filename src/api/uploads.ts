@@ -12,6 +12,20 @@ export interface UploadConfirmPayload {
   records: PreviewRecord[];
 }
 
+export interface UploadHeadersResponse {
+  status: string;
+  headers: string[];
+  row_count: number;
+  samples: Record<string, string>;
+}
+
+/**
+ * Extracts column headers, row count, and sample values from an uploaded spreadsheet
+ * or pasted tabular text for dynamic column mapping.
+ */
+export const inspectUploadHeaders = (formData: FormData): Promise<Response> =>
+  postForm('/upload/headers/', formData);
+
 /**
  * Parses a file or pasted table (the `paste` form field) and returns rows
  * for review without saving. Same endpoint either way.

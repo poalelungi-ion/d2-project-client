@@ -11,12 +11,14 @@ export interface UploadWizardValue {
   courseInfo: UploadCourseInfo;
   nameSplitRule: NameSplitRule;
   preview: PreviewRecord[];
+  columnMapping?: Record<string, string>;
 
   setStep: (step: number) => void;
   setFile: (file: File | null) => void;
   setPaste: (text: string) => void;
   setCourseInfo: (patch: Partial<UploadCourseInfo>) => void;
   setNameSplitRule: (rule: NameSplitRule) => void;
+  setColumnMapping?: (mapping: Record<string, string>) => void;
   setGridApi: (api: GridApi<PreviewRecord> | null) => void;
 
   runPreview: () => Promise<void>;

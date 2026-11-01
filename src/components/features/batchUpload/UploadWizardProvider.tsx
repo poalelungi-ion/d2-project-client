@@ -40,6 +40,7 @@ export function UploadWizardProvider({
   const [file, setFileState] = useState<File | null>(null);
   const [paste, setPasteState] = useState('');
   const [nameSplitRule, setNameSplitRule] = useState<NameSplitRule>('Last, First');
+  const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
   const [preview, setPreview] = useState<PreviewRecord[]>([]);
   // In this system a course's id is its course number -- the catalogue form
   // labels the field "Course Number / ID" -- so the active course fills both.
@@ -60,11 +61,13 @@ export function UploadWizardProvider({
 
   const setFile = useCallback((next: File | null) => {
     setFileState(next);
+    setColumnMapping({});
     if (next) setPasteState('');
   }, []);
 
   const setPaste = useCallback((text: string) => {
     setPasteState(text);
+    setColumnMapping({});
     if (text) setFileState(null);
   }, []);
 
@@ -99,12 +102,12 @@ export function UploadWizardProvider({
       notify('Please select a file or paste tabular data first.', 'error');
       return;
     }
-    const rows = await previewImport(source, courseInfo, nameSplitRule);
+    const rows = await previewImport(source, courseInfo, nameSplitRule, columnMapping);
     if (rows) {
       setPreview(rows);
       setStep(3);
     }
-  }, [file, paste, courseInfo, nameSplitRule, previewImport]);
+  }, [file, paste, courseInfo, nameSplitRule, columnMapping, previewImport]);
 
   const confirmImport = useCallback(async () => {
     const api = gridApiRef.current;
@@ -138,6 +141,7 @@ export function UploadWizardProvider({
     setStep(0);
     setFileState(null);
     setPasteState('');
+    setColumnMapping({});
     setPreview([]);
     gridApiRef.current = null;
   }, []);
@@ -150,12 +154,14 @@ export function UploadWizardProvider({
       sourceLabel,
       courseInfo,
       nameSplitRule,
+      columnMapping,
       preview,
       setStep,
       setFile,
       setPaste,
       setCourseInfo,
       setNameSplitRule,
+      setColumnMapping,
       setGridApi,
       runPreview,
       confirmImport,
@@ -168,6 +174,7 @@ export function UploadWizardProvider({
       sourceLabel,
       courseInfo,
       nameSplitRule,
+      columnMapping,
       preview,
       setFile,
       setPaste,

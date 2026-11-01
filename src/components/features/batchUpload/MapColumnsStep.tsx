@@ -1,18 +1,32 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Typography, Grid, Card, Button, TextField, useTheme } from '@mui/material';
-import { CheckCircle as CheckCircleIcon } from '@mui/icons-material';
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  Button,
+  TextField,
+  MenuItem,
+  CircularProgress,
+  useTheme,
+} from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import type { NameSplitRule } from '../../../types';
 import { useUploadWizard } from './uploadWizardContext';
+import { inspectUploadHeaders, type UploadHeadersResponse } from '../../../api/uploads';
 import { semantic, tint } from '../../../styles/colors';
 import { borders, radii } from '../../../styles/tokens';
 import { monoChip, segmentedOption, segmentedTrack } from '../../../styles/mixins';
 import {
   CANONICAL_HEADERS,
   FIELD_LABEL,
+  TARGET_FIELD_OPTIONS,
   classifyHeaders,
   fieldForHeader,
   headersAreImportable,
   headersFromTabularText,
+  samplesFromTabularText,
   type ClassifiedHeader,
 } from '../../../utils/columnNames';
 
@@ -30,15 +44,16 @@ const CONTRACT_ROWS: ClassifiedHeader[] = CANONICAL_HEADERS.map((name) => ({
   source: name,
   target: name,
   status: 'Mapped',
+  field: fieldForHeader(name),
 }));
 
 const TARGET_SCHEMA = [
-  { name: 'Matrikelnummer', req: 'required' },
-  { name: 'First name', req: 'optional' },
-  { name: 'Last name', req: 'required' },
-  { name: 'Study program', req: 'optional' },
-  { name: 'Semester (Fachsemester)', req: 'optional' },
-  { name: 'Grade', req: 'required' },
+  { name: 'Matrikelnummer', req: 'required', field: 'student_id' },
+  { name: 'First name', req: 'optional', field: 'first_name' },
+  { name: 'Last name', req: 'required', field: 'last_name' },
+  { name: 'Study program', req: 'optional', field: 'program' },
+  { name: 'Semester (Fachsemester)', req: 'optional', field: 'semester' },
+  { name: 'Grade', req: 'required', field: 'grade' },
 ] as const;
 
 const NAME_SPLIT_RULES: readonly NameSplitRule[] = ['Last, First', 'First Last'];
@@ -57,49 +72,183 @@ export const MapColumnsStep = () => {
     sourceLabel,
     nameSplitRule,
     setNameSplitRule,
+    setColumnMapping,
     setStep: setActiveStep,
     runPreview,
   } = useUploadWizard();
 
   const theme = useTheme();
   const [fileHeaders, setFileHeaders] = useState<string[] | null>(null);
+  const [fileSamples, setFileSamples] = useState<Record<string, string>>({});
+  const [detectedRowCount, setDetectedRowCount] = useState<number | null>(null);
+  const [loadingHeaders, setLoadingHeaders] = useState(false);
+  const [userOverrides, setUserOverrides] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    setUserOverrides({});
     if (paste.trim()) {
-      setFileHeaders(headersFromTabularText(paste));
+      const headers = headersFromTabularText(paste);
+      const { samples, rowCount } = samplesFromTabularText(paste);
+      setFileHeaders(headers);
+      setFileSamples(samples);
+      setDetectedRowCount(rowCount);
+      setLoadingHeaders(false);
       return;
     }
     if (file && /\.(csv|tsv)$/i.test(file.name)) {
       let cancelled = false;
+      setLoadingHeaders(true);
       void file.text().then((text) => {
-        if (!cancelled) setFileHeaders(headersFromTabularText(text));
+        if (!cancelled) {
+          const headers = headersFromTabularText(text);
+          const { samples, rowCount } = samplesFromTabularText(text);
+          setFileHeaders(headers);
+          setFileSamples(samples);
+          setDetectedRowCount(rowCount);
+          setLoadingHeaders(false);
+        }
       });
       return () => {
         cancelled = true;
       };
     }
+    if (file) {
+      let cancelled = false;
+      setLoadingHeaders(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      void inspectUploadHeaders(formData)
+        .then(async (res) => {
+          if (cancelled || !res.ok) return;
+          const data = (await res.json()) as UploadHeadersResponse;
+          if (!cancelled && Array.isArray(data.headers) && data.headers.length > 0) {
+            setFileHeaders(data.headers);
+            setFileSamples(data.samples ?? {});
+            setDetectedRowCount(typeof data.row_count === 'number' ? data.row_count : null);
+          }
+        })
+        .catch(() => {
+          // Fallback to contract rows if offline or in unit test without server
+        })
+        .finally(() => {
+          if (!cancelled) setLoadingHeaders(false);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
     setFileHeaders(null);
+    setFileSamples({});
+    setDetectedRowCount(null);
+    setLoadingHeaders(false);
   }, [file, paste]);
 
   const rows = useMemo(
-    () => (fileHeaders && fileHeaders.length > 0 ? classifyHeaders(fileHeaders) : CONTRACT_ROWS),
-    [fileHeaders],
+    () =>
+      fileHeaders && fileHeaders.length > 0
+        ? classifyHeaders(fileHeaders, userOverrides)
+        : classifyHeaders(
+            CONTRACT_ROWS.map((r) => r.source),
+            userOverrides,
+          ),
+    [fileHeaders, userOverrides],
   );
+
+  // Sync resolved column mapping into wizard context so runPreview sends it to the backend
+  useEffect(() => {
+    if (!setColumnMapping) return;
+    const mappingObj: Record<string, string> = {};
+    for (const row of rows) {
+      if (row.status === 'Mapped' && row.field) {
+        mappingObj[row.source] = row.field;
+      } else if (row.status === 'Ignored') {
+        mappingObj[row.source] = 'ignore';
+      }
+    }
+    setColumnMapping(mappingObj);
+  }, [rows, setColumnMapping]);
+
   const checkingFile = fileHeaders != null && fileHeaders.length > 0;
   const canContinue = !checkingFile || headersAreImportable(rows);
-  const hasCombinedName = rows.some(
-    (row) => row.status === 'Mapped' && fieldForHeader(row.source) === 'name',
+
+  const mappedFields = useMemo(() => {
+    const set = new Set<string>();
+    for (const row of rows) {
+      if (row.status === 'Mapped') {
+        const f = row.field ?? fieldForHeader(row.target) ?? fieldForHeader(row.source);
+        if (f) set.add(f);
+      }
+    }
+    return set;
+  }, [rows]);
+
+  const hasCombinedName = mappedFields.has('name');
+  const hasUnresolvedColumns = rows.some(
+    (row) => row.status === 'Unrecognized' || row.status === 'Duplicate',
   );
+
+  const handleMappingChange = (sourceColumn: string, selectedValue: string) => {
+    setUserOverrides((prev) => ({
+      ...prev,
+      [sourceColumn]: selectedValue,
+    }));
+  };
+
+  const handleIgnoreAllUnresolved = () => {
+    setUserOverrides((prev) => {
+      const next = { ...prev };
+      for (const row of rows) {
+        if (row.status === 'Unrecognized' || row.status === 'Duplicate') {
+          next[row.source] = 'ignore';
+        }
+      }
+      return next;
+    });
+  };
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-        <Box sx={{ ...monoChip, mr: 2 }}>{sourceLabel}</Box>
-        <Typography variant="body2" color="text.secondary">
-          {checkingFile
-            ? `${fileHeaders?.length ?? 0} column${fileHeaders?.length === 1 ? '' : 's'} in the file`
-            : 'Headers must match the standard names. Excel files are checked on the next step.'}
-        </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 2,
+          mb: 4,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ ...monoChip, mr: 2 }}>{sourceLabel}</Box>
+          {loadingHeaders ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CircularProgress size={14} />
+              <Typography variant="body2" color="text.secondary">
+                Inspecting spreadsheet columns...
+              </Typography>
+            </Box>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              {checkingFile
+                ? `${fileHeaders?.length ?? 0} column${fileHeaders?.length === 1 ? '' : 's'}${
+                    detectedRowCount != null ? ` · ${detectedRowCount} rows` : ''
+                  } in the file`
+                : 'Map your file columns to the target schema fields below.'}
+            </Typography>
+          )}
+        </Box>
+
+        {hasUnresolvedColumns && (
+          <Button
+            size="small"
+            variant="outlined"
+            color="primary"
+            onClick={handleIgnoreAllUnresolved}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
+            Ignore Unrecognized / Duplicate Columns
+          </Button>
+        )}
       </Box>
 
       <Grid container spacing={4}>
@@ -121,10 +270,16 @@ export const MapColumnsStep = () => {
                 borderBottom: borders.hairline(theme.app.surface.hairline),
               }}
             >
-              <Typography variant="overline" sx={{ width: '40%', fontWeight: 700, color: 'text.secondary' }}>
+              <Typography
+                variant="overline"
+                sx={{ width: '40%', fontWeight: 700, color: 'text.secondary' }}
+              >
                 COLUMN IN FILE
               </Typography>
-              <Typography variant="overline" sx={{ width: '40%', fontWeight: 700, color: 'text.secondary' }}>
+              <Typography
+                variant="overline"
+                sx={{ width: '40%', fontWeight: 700, color: 'text.secondary' }}
+              >
                 MAPS TO
               </Typography>
               <Typography
@@ -134,42 +289,78 @@ export const MapColumnsStep = () => {
                 STATUS
               </Typography>
             </Box>
-            {rows.map((mapping, index) => (
-              <Box
-                key={`${mapping.source}-${index}`}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  px: 3,
-                  py: 2,
-                  borderBottom:
-                    index === rows.length - 1 ? 'none' : (t) => `1px solid ${t.palette.divider}`,
-                }}
-              >
-                <Box sx={{ width: '40%' }}>
-                  <Typography variant="subtitle2" fontWeight="700">
-                    {mapping.source}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {EXAMPLES[mapping.source] ?? EXAMPLES[FIELD_LABEL[fieldForHeader(mapping.source) ?? ''] ?? ''] ?? ''}
-                  </Typography>
+            {rows.map((mapping, index) => {
+              const resolvedField =
+                mapping.field ?? fieldForHeader(mapping.target) ?? fieldForHeader(mapping.source);
+              const selectValue =
+                mapping.status === 'Ignored'
+                  ? 'ignore'
+                  : mapping.status === 'Unrecognized' || !resolvedField
+                    ? '—'
+                    : resolvedField;
+
+              const sampleText =
+                fileSamples[mapping.source] ??
+                EXAMPLES[mapping.source] ??
+                EXAMPLES[mapping.target] ??
+                EXAMPLES[FIELD_LABEL[fieldForHeader(mapping.source) ?? ''] ?? ''] ??
+                '';
+
+              return (
+                <Box
+                  key={`${mapping.source}-${index}`}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    px: 3,
+                    py: 2,
+                    borderBottom:
+                      index === rows.length - 1
+                        ? 'none'
+                        : (t) => `1px solid ${t.palette.divider}`,
+                  }}
+                >
+                  <Box sx={{ width: '40%', pr: 2 }}>
+                    <Typography variant="subtitle2" fontWeight="700">
+                      {mapping.source}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {sampleText}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ width: '40%' }}>
+                    <TextField
+                      select
+                      size="small"
+                      fullWidth
+                      value={selectValue}
+                      onChange={(e) => handleMappingChange(mapping.source, e.target.value)}
+                      sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'background.paper' } }}
+                    >
+                      {selectValue === '—' && (
+                        <MenuItem value="—" disabled>
+                          — (Select target or ignore)
+                        </MenuItem>
+                      )}
+                      {TARGET_FIELD_OPTIONS.map((opt) => (
+                        <MenuItem key={opt.field} value={opt.field}>
+                          {opt.displayLabel}
+                        </MenuItem>
+                      ))}
+                      <MenuItem value="ignore">Ignored (Skip column)</MenuItem>
+                    </TextField>
+                  </Box>
+                  <Box sx={{ width: '20%', textAlign: 'right' }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: statusColor(mapping.status), fontWeight: 700 }}
+                    >
+                      {mapping.status}
+                    </Typography>
+                  </Box>
                 </Box>
-                <Box sx={{ width: '40%' }}>
-                  <TextField
-                    size="small"
-                    fullWidth
-                    value={mapping.target}
-                    InputProps={{ readOnly: true }}
-                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'background.paper' } }}
-                  />
-                </Box>
-                <Box sx={{ width: '20%', textAlign: 'right' }}>
-                  <Typography variant="caption" sx={{ color: statusColor(mapping.status), fontWeight: 700 }}>
-                    {mapping.status}
-                  </Typography>
-                </Box>
-              </Box>
-            ))}
+              );
+            })}
           </Box>
 
           {hasCombinedName && (
@@ -224,7 +415,8 @@ export const MapColumnsStep = () => {
               borderRadius: radii.lg,
               p: 3,
               bgcolor: (t) => (t.palette.mode === 'dark' ? t.app.surface.solid : 'grey.50'),
-              borderColor: (t) => (t.palette.mode === 'dark' ? t.app.surface.hairline : t.palette.divider),
+              borderColor: (t) =>
+                t.palette.mode === 'dark' ? t.app.surface.hairline : t.palette.divider,
             }}
           >
             <Typography
@@ -240,35 +432,50 @@ export const MapColumnsStep = () => {
               TARGET SCHEMA
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
-              {TARGET_SCHEMA.map((f) => (
-                <Box
-                  key={f.name}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main', mr: 1 }} />
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                      {f.name}
-                    </Typography>
-                  </Box>
-                  <Typography
-                    variant="caption"
+              {TARGET_SCHEMA.map((f) => {
+                const isSatisfied =
+                  mappedFields.has(f.field) ||
+                  ((f.field === 'first_name' || f.field === 'last_name') && hasCombinedName);
+                return (
+                  <Box
+                    key={f.name}
                     sx={{
-                      color: 'text.secondary',
-                      fontWeight: 500,
-                      textTransform: 'uppercase',
-                      fontSize: '0.7rem',
-                      letterSpacing: '0.05em',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
                     }}
                   >
-                    {f.req}
-                  </Typography>
-                </Box>
-              ))}
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      {isSatisfied ? (
+                        <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main', mr: 1 }} />
+                      ) : (
+                        <RadioButtonUncheckedIcon
+                          sx={{
+                            fontSize: 16,
+                            color: f.req === 'required' ? 'warning.main' : 'text.disabled',
+                            mr: 1,
+                          }}
+                        />
+                      )}
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                        {f.name}
+                      </Typography>
+                    </Box>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'text.secondary',
+                        fontWeight: 500,
+                        textTransform: 'uppercase',
+                        fontSize: '0.7rem',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      {f.req}
+                    </Typography>
+                  </Box>
+                );
+              })}
             </Box>
             <Typography
               variant="caption"
@@ -276,11 +483,10 @@ export const MapColumnsStep = () => {
             >
               Grades must be numeric German marks (1.0 &ndash; 5.0). Status codes
               such as NE, EX, NA and TA are filtered out and those students are
-              not tracked. Columns named Passed, Failed, Yes or No are ignored
-              &mdash; the system calculates the result. So are course, course number
-              and course id columns: the course and the course semester were
-              already settled in the previous step and apply to every row.
-              &quot;Semester&quot; below is the student&apos;s Fachsemester count.
+              not tracked. Extra columns (such as task points 1a, 1b, Points,
+              Attended, Publish, Attest, Notes, Passed/Failed, or course columns)
+              are ignored automatically, and you can dynamically map any column
+              using the dropdowns on the left.
             </Typography>
           </Card>
         </Grid>

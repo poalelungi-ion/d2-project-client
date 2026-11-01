@@ -405,6 +405,7 @@ async function previewImport(
   source: PreviewSource,
   courseInfo: UploadCourseInfo,
   nameSplitRule: NameSplitRule,
+  mapping?: Record<string, string>,
 ): Promise<PreviewRecord[] | null> {
   const formData = new FormData();
   if ('file' in source) formData.append('file', source.file);
@@ -414,6 +415,9 @@ async function previewImport(
   formData.append('semester', courseInfo.semester);
   formData.append('attemptType', courseInfo.attemptType);
   formData.append('nameSplitRule', nameSplitRule);
+  if (mapping && Object.keys(mapping).length > 0) {
+    formData.append('mapping', JSON.stringify(mapping));
+  }
 
   try {
     const res = await previewUpload(formData);
