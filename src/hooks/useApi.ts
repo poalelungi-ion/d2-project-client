@@ -411,7 +411,6 @@ async function previewImport(
   else formData.append('paste', source.paste);
   formData.append('course', courseInfo.courseNumber);
   formData.append('courseName', courseInfo.courseName);
-  formData.append('ects', courseInfo.ects);
   formData.append('semester', courseInfo.semester);
   formData.append('attemptType', courseInfo.attemptType);
   formData.append('nameSplitRule', nameSplitRule);
@@ -444,7 +443,6 @@ async function confirmImport(
       courseId: courseInfo.courseId,
       course: courseInfo.courseNumber,
       courseName: courseInfo.courseName,
-      ects: courseInfo.ects,
       semester: courseInfo.semester,
       attemptType: courseInfo.attemptType,
       records,

@@ -242,7 +242,6 @@ export interface UploadCourseInfo {
   courseId: number | null;
   courseNumber: string;
   courseName: string;
-  ects: string;
   attemptType: AttemptType;
   semester: string;
 }

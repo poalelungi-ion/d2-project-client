@@ -278,7 +278,7 @@ export const MapColumnsStep = () => {
               such as NE, EX, NA and TA are filtered out and those students are
               not tracked. Columns named Passed, Failed, Yes or No are ignored
               &mdash; the system calculates the result. So are course, course number
-              and course id columns: the course, ECTS and the course semester were
+              and course id columns: the course and the course semester were
               already settled in the previous step and apply to every row.
               &quot;Semester&quot; below is the student&apos;s Fachsemester count.
             </Typography>
