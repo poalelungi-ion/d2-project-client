@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { ThemeProvider } from '@mui/material/styles';
 
 import { getGlassTheme } from '../../../styles/theme';
-import type { UploadCourseInfo } from '../../../types';
+import type { CourseDriveFile, UploadCourseInfo } from '../../../types';
 import { useCourseDriveStore } from '../../../stores';
 import { UploadWizardContext } from './uploadWizardContext';
 import type { UploadWizardValue } from './uploadWizardContext';
@@ -85,15 +85,36 @@ describe('SelectFileStep', () => {
     expect(fileInput().value).toBe('');
   });
 
-  it('lets the lecturer remove a staged file and resets the dropzone', () => {
-    const { setFile } = renderStep();
-    fireEvent.change(fileInput(), { target: { files: [sheet('grades.xlsx', 'only')] } });
-    expect(screen.getByText('Selected: grades.xlsx')).toBeInTheDocument();
+  it('decouples Course Drive and does not display or embed file management elements (#104090)', () => {
+    renderStep();
 
-    fireEvent.click(screen.getByRole('button', { name: /remove file/i }));
-    expect(setFile).toHaveBeenLastCalledWith(null);
-    expect(screen.queryByText('Selected: grades.xlsx')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /browse from computer/i })).toBeInTheDocument();
-    expect(screen.getByText(/Drag & drop exam spreadsheet here/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Course Documents Repository/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/No files in Course Drive yet/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /Course Documents Repository/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Upload your first file/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  });
+
+  it('does not embed Course Drive stored files table even when files exist for course (#104090)', () => {
+    const mockFile: CourseDriveFile = {
+      id: 'stored-1',
+      course_id: 101,
+      name: 'stored_exam_grades.xlsx',
+      size_bytes: 32768,
+      uploaded_at: '2026-10-15T10:00:00.000Z',
+      uploaded_by: 'Dr. Instructor',
+      status: 'parsed',
+    };
+    useCourseDriveStore.setState({
+      filesByCourse: { '101': [mockFile] },
+      uploadingProgress: {},
+    });
+
+    renderStep();
+
+    expect(screen.queryByText('stored_exam_grades.xlsx')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Course Documents Repository/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /select for ingestion/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
 });

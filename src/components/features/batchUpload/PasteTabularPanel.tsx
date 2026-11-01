@@ -83,7 +83,7 @@ export const PasteTabularPanel = ({
           type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         });
         await onFileGenerated(excelFile);
-        notifyToast(`Created Excel file "${filename}" and added to Course Drive!`);
+        notifyToast(`Created Excel file "${filename}"!`);
         return;
       }
     } catch {
@@ -91,7 +91,7 @@ export const PasteTabularPanel = ({
     }
     const csvFile = new File([paste], `pasted_table_${timestamp}.csv`, { type: 'text/csv' });
     await onFileGenerated(csvFile);
-    notifyToast(`Created spreadsheet file "${csvFile.name}" and added to Course Drive!`);
+    notifyToast(`Created spreadsheet file "${csvFile.name}"!`);
   };
 
   const handleDownloadExcelFromPaste = async () => {
@@ -220,7 +220,7 @@ export const PasteTabularPanel = ({
             }}
             sx={{ fontWeight: 600, textTransform: 'none', borderRadius: radii.md }}
           >
-            Save as Excel (.xlsx) to Course Drive
+            Save as Excel (.xlsx)
           </Button>
           <Button
             variant="outlined"
