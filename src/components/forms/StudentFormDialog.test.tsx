@@ -214,4 +214,47 @@ describe('StudentFormDialog (#97930 & #104082: Student Data Profile)', () => {
       expect(onClose).toHaveBeenCalledTimes(1);
     });
   });
+
+  it('updates study_program on profile save and returns the updated student record (#104081)', async () => {
+    const updatedRecord: Student = {
+      ...sampleStudent,
+      program: 'Data Science Master',
+      study_program: 'Data Science Master',
+      version: 4,
+    };
+    mockSaveStudent.mockResolvedValue({
+      success: true,
+      data: updatedRecord,
+    });
+
+    const { onClose, onSaved } = renderDialog(sampleStudent);
+
+    // Pick new study program from dropdown
+    fireEvent.mouseDown(screen.getByLabelText(/study program/i));
+    const option = await screen.findByRole('option', { name: /data science master/i });
+    fireEvent.click(option);
+
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    await waitFor(() => {
+      expect(mockSaveStudent).toHaveBeenCalledTimes(1);
+    });
+
+    const [payload, version] = mockSaveStudent.mock.calls[0] as [
+      Record<string, unknown>,
+      number | undefined,
+    ];
+    expect(payload).toEqual({
+      student_id: '12345',
+      first_name: 'Ada',
+      last_name: 'Lovelace',
+      program: 'Data Science Master',
+    });
+    expect(version).toBe(3);
+
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalledWith(12345, updatedRecord);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+  });
 });

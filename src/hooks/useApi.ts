@@ -234,6 +234,7 @@ export interface SaveStudentResult {
   success: boolean;
   conflict?: boolean;
   error?: string;
+  data?: StudentDetails | Student;
 }
 
 async function saveStudent(
@@ -249,7 +250,8 @@ async function saveStudent(
       const payload: StudentCreatePayload = {
         student_id: studentId,
         name,
-        program: values.program,
+        program: values.study_program || values.program,
+        study_program: values.study_program || values.program,
         ...(values.status ? { status: values.status } : {}),
       };
       res = await createStudent(payload);
@@ -258,7 +260,8 @@ async function saveStudent(
         student_id: studentId,
         new_student_id: studentId,
         name,
-        program: values.program,
+        program: values.study_program || values.program,
+        study_program: values.study_program || values.program,
         ...(values.status ? { status: values.status } : {}),
         version,
       };
@@ -267,7 +270,8 @@ async function saveStudent(
 
     if (res.ok) {
       notify(version === undefined ? 'Student profile created' : 'Student profile updated');
-      return { success: true };
+      const data = (await res.json().catch(() => null)) as (StudentDetails | Student) | null;
+      return { success: true, data: data ?? undefined };
     }
     const detail = await errorDetail(res);
     notify(`Error: ${detail}`, 'error');
@@ -374,7 +378,11 @@ async function updateProgram(
   version: number,
 ): Promise<boolean> {
   try {
-    const res = await updateStudent(studentId, { program, version });
+    const res = await updateStudent(studentId, {
+      program,
+      study_program: program,
+      version,
+    });
     if (res.ok) {
       notify('Student program updated successfully!');
       return true;

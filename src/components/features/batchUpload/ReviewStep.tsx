@@ -386,6 +386,9 @@ export const ReviewStep = () => {
           rowData={previewData}
           singleClickEdit={true}
           stopEditingWhenCellsLoseFocus={true}
+          // Selection is what gets imported, so only the checkboxes change it.
+          // Otherwise clicking a cell to edit it selects that row alone and
+          // silently drops every other row from the import.
           suppressRowClickSelection={true}
           onGridReady={(params: GridReadyEvent<PreviewRecord>) => {
             setGridApi(params.api);

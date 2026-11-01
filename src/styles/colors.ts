@@ -81,6 +81,9 @@ export const surfaces: Record<string, ByMode<string>> = {
   tableHeader: { light: 'rgba(241, 245, 249, 0.9)', dark: 'rgba(30, 30, 30, 0.9)' },
   tableRowHover: { light: 'rgba(241, 245, 249, 0.6)', dark: 'rgba(60, 60, 60, 0.6)' },
   tableStripe: { light: alpha(common.black, 0.02), dark: alpha(common.black, 0.1) },
+  /** Opaque fill for menus, select lists and autocomplete popups. These float
+   *  over content, so a frosted fill lets the text underneath bleed through. */
+  floating: { light: common.white, dark: 'rgb(45, 45, 45)' },
 };
 
 /**

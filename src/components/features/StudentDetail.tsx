@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Typography,
@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 import {
   ChevronLeft as ChevronLeftIcon,
-  AddCircleOutline as AddCircleOutlineIcon,
   Edit as EditIcon,
   TrendingUp as TrendingUpIcon,
   Search as SearchIcon,
@@ -45,7 +44,6 @@ import {
 } from './StudentCourseAttemptsDialog';
 import { StudyProgramSelect } from '../forms/StudyProgramSelect';
 import { StudentFormDialog } from '../forms/StudentFormDialog';
-import { AddGradeDialog } from '../forms/AddGradeDialog';
 import { UNASSIGNED_PROGRAM } from '../../utils/studyProgram';
 
 interface StudentDetailProps {
@@ -57,9 +55,12 @@ interface StudentDetailProps {
 
 export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
   const { updateProgram } = useApiMutations();
-  const [program, setProgram] = useState(student.program);
+  const [program, setProgram] = useState(student.study_program || student.program);
+
+  useEffect(() => {
+    setProgram(student.study_program || student.program);
+  }, [student.study_program, student.program, student.version]);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [addGradeDialogOpen, setAddGradeDialogOpen] = useState(false);
   const [transcriptViewMode, setTranscriptViewMode] = useState<'compact' | 'individual'>('compact');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourseHistory, setSelectedCourseHistory] = useState<StudentCourseHistoryRow | null>(null);
@@ -332,16 +333,6 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
                 <ToggleButton value="compact">Per-Course (Compact)</ToggleButton>
                 <ToggleButton value="individual">All Sittings</ToggleButton>
               </ToggleButtonGroup>
-
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<AddCircleOutlineIcon />}
-                onClick={() => setAddGradeDialogOpen(true)}
-                sx={{ textTransform: 'none', fontWeight: 600 }}
-              >
-                Add Exam Record
-              </Button>
             </Box>
           </Box>
 
@@ -390,20 +381,11 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
           <StudentFormDialog
             student={student}
             onClose={() => setEditDialogOpen(false)}
-            onSaved={() => {
+            onSaved={(_id, updatedRecord) => {
+              if (updatedRecord?.study_program || updatedRecord?.program) {
+                setProgram(updatedRecord.study_program || updatedRecord.program);
+              }
               setEditDialogOpen(false);
-              onRefresh();
-            }}
-          />
-        )}
-
-        {/* Dialog: Add Exam Record */}
-        {addGradeDialogOpen && (
-          <AddGradeDialog
-            student={student}
-            onClose={() => setAddGradeDialogOpen(false)}
-            onSaved={() => {
-              setAddGradeDialogOpen(false);
               onRefresh();
             }}
           />

@@ -34,6 +34,11 @@ export const shadows = {
   brandGlow: `0 8px 20px ${alpha(brand.main, 0.3)}`,
   avatar: `0 4px 15px ${alpha(common.black, 0.1)}`,
   tooltip: `0 8px 32px ${alpha(common.black, 0.1)}`,
+  /** Menus and popups: stronger than glass so they read as above the page. */
+  floating: {
+    light: `0 12px 32px ${alpha(common.black, 0.12)}`,
+    dark: `0 12px 32px ${alpha(common.black, 0.7)}`,
+  } as ByMode<string>,
 } as const;
 
 export const gradients = {

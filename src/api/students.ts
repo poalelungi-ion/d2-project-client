@@ -5,7 +5,8 @@ import type { AttemptType, StudentStatus } from '../types';
 export interface StudentCreatePayload {
   student_id: number;
   name: string;
-  program: string;
+  program?: string;
+  study_program?: string;
   status?: StudentStatus;
 }
 
@@ -14,7 +15,8 @@ export interface StudentUpdatePayload {
   student_id?: number;
   new_student_id?: number;
   name?: string;
-  program: string;
+  program?: string;
+  study_program?: string;
   status?: StudentStatus;
   version: number;
 }

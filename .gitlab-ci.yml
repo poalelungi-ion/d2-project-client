@@ -126,8 +126,11 @@ publish_image:
     # The image's own entrypoint is the executor; clear it so GitLab can run
     # the script below in a shell.
     entrypoint: [""]
-  # Default branch only: an image per MR would fill the registry.
+  # Default branch only: an image per MR would fill the registry. Scheduled
+  # pipelines also run on main, but only to run e2e -- they must not publish.
   rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   # Skip downloading earlier jobs' artifacts (Playwright traces, reports): they
   # would only land in the build context.

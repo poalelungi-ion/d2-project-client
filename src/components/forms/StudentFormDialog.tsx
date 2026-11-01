@@ -24,7 +24,7 @@ interface StudentFormDialogProps {
   existingStudentIds?: number[];
   onClose: () => void;
   /** Called after a successful save with the saved student ID. */
-  onSaved: (savedStudentId?: number) => void;
+  onSaved: (savedStudentId?: number, updatedRecord?: StudentDetails | Student) => void;
 }
 
 const EMPTY_FORM: StudentFormValues = {
@@ -42,7 +42,8 @@ const toFormValues = (student: Student | StudentDetails | null): StudentFormValu
     student_id: student.student_id?.toString() ?? '',
     first_name: nameParts[0] || '',
     last_name: nameParts.slice(1).join(' ') || '',
-    program: student.program || '',
+    program: student.study_program || student.program || '',
+
   };
 };
 
@@ -68,7 +69,8 @@ const validate = (
       errors.student_id = 'Student ID already exists';
     }
   }
-  if (!values.program.trim()) errors.program = 'Study Program is mandatory';
+  const prog = values.study_program || values.program;
+  if (!prog || !prog.trim()) errors.program = 'Study Program is mandatory';
   return errors;
 };
 
@@ -101,7 +103,11 @@ export function StudentFormDialog({
         actor: 'Staff Administrator',
         details: JSON.stringify({ ...values, studentId: values.student_id }, null, 2),
       });
-      onSaved(parseInt(values.student_id, 10));
+      if (result.data) {
+        onSaved(parseInt(values.student_id, 10), result.data);
+      } else {
+        onSaved(parseInt(values.student_id, 10));
+      }
       onClose();
     } else if (result.conflict) {
       useSystemLogStore.getState().addLog({
@@ -167,8 +173,8 @@ export function StudentFormDialog({
           sx={{ mb: 2 }}
         />
         <StudyProgramSelect
-          value={values.program}
-          onChange={(program) => update({ program })}
+          value={values.study_program || values.program}
+          onChange={(prog) => update({ program: prog })}
           error={!!errors.program}
           helperText={errors.program}
           sx={{ mb: 2 }}
