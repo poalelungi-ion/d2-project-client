@@ -51,7 +51,7 @@ export const CourseInfoStep = () => {
           mb: 4,
           color: 'text.secondary',
           fontSize: '1rem',
-          maxWidth: 800,
+          maxWidth: 'none',
         }}
       >
         A table is always for one course and one semester &mdash; that can&apos;t
@@ -68,7 +68,7 @@ export const CourseInfoStep = () => {
           display: 'flex',
           flexDirection: 'column',
           gap: 3,
-          maxWidth: 720,
+          maxWidth: 'none',
         }}
       >
         <Box>
@@ -115,35 +115,6 @@ export const CourseInfoStep = () => {
             Taken from the course you started this upload in and attached to
             every row, so there is nothing to type. A course or course-number
             column in the file is ignored.
-          </Typography>
-        </Box>
-
-        <Box>
-          <Typography variant="overline" sx={fieldLabel}>
-            ECTS (CREDITS FOR THIS COURSE)
-          </Typography>
-
-          <TextField
-            fullWidth
-            variant="outlined"
-            value={uploadCourseInfo.ects}
-            onChange={(e) =>
-              setUploadCourseInfo({
-                ects: e.target.value,
-              })
-            }
-          />
-
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{
-              mt: 0.5,
-              display: 'block',
-            }}
-          >
-            Recorded with the import. The course itself is fixed by the tab you
-            came from, so the credits here never split it into a second course.
           </Typography>
         </Box>
 

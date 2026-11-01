@@ -37,7 +37,6 @@ const EMPTY_FORM: AddGradeFormValues = {
 };
 
 const COMMON_GRADES = ['1.0', '1.3', '1.7', '2.0', '2.3', '2.7', '3.0', '3.3', '3.7', '4.0', '5.0'];
-const ABSENCE_CODES = ['NE', 'EX', 'AT'];
 
 export function AddGradeDialog({ student, onClose, onSaved }: AddGradeDialogProps) {
   // Its own request: the dialog is the only thing on this screen that needs
@@ -107,7 +106,7 @@ export function AddGradeDialog({ student, onClose, onSaved }: AddGradeDialogProp
   };
 
   return (
-    <Dialog disableRestoreFocus disableEnforceFocus open onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog disableRestoreFocus disableEnforceFocus open onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Add Manual Exam Record</DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
         <Typography variant="body2" color="text.secondary">
@@ -171,13 +170,13 @@ export function AddGradeDialog({ student, onClose, onSaved }: AddGradeDialogProp
         <Box>
           <TextField
             fullWidth
-            label="Grade (1.0–5.0) or Code (NE, EX, AT)"
+            label="Grade (1.0–5.0)"
             value={gradeInput}
             onChange={(e) => {
               setGradeInput(e.target.value);
               update({ grade: e.target.value });
             }}
-            helperText="Enter 1.0–4.0 (pass), 5.0 (fail), NE (absent), EX (excused), or AT (medical cert)"
+            helperText="German scale: 1.0–4.0 (pass), 5.0 (fail). Status codes such as NE, EX, NA and TA are ignored."
           />
 
           <Box sx={{ mt: 1.5 }}>
@@ -195,18 +194,6 @@ export function AddGradeDialog({ student, onClose, onSaved }: AddGradeDialogProp
                   onClick={() => handleSelectGradeChip(g)}
                   clickable
                   sx={{ fontWeight: gradeInput === g ? 700 : 500 }}
-                />
-              ))}
-              {ABSENCE_CODES.map((code) => (
-                <Chip
-                  key={code}
-                  label={code}
-                  size="small"
-                  color={gradeInput === code ? 'warning' : 'default'}
-                  variant={gradeInput === code ? 'filled' : 'outlined'}
-                  onClick={() => handleSelectGradeChip(code)}
-                  clickable
-                  sx={{ fontWeight: gradeInput === code ? 700 : 500 }}
                 />
               ))}
             </Box>

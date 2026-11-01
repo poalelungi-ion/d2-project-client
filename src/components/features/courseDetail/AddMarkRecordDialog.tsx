@@ -38,7 +38,6 @@ export interface AddMarkRecordDialogProps {
 }
 
 const COMMON_GRADES = ['1.0', '1.3', '1.7', '2.0', '2.3', '2.7', '3.0', '3.3', '3.7', '4.0', '5.0'];
-const ABSENCE_CODES = ['NE', 'EX', 'AT'];
 
 export function AddMarkRecordDialog({
   courseId,
@@ -170,7 +169,7 @@ export function AddMarkRecordDialog({
   };
 
   return (
-    <Dialog disableRestoreFocus disableEnforceFocus open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog disableRestoreFocus disableEnforceFocus open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ fontWeight: 700 }}>Add Mark Record &mdash; {courseName}</DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
         <Typography variant="body2" color="text.secondary">
@@ -272,10 +271,10 @@ export function AddMarkRecordDialog({
           <TextField
             fullWidth
             size="small"
-            label="Grade (1.0–5.0) or Code (NE, EX, AT)"
+            label="Grade (1.0–5.0)"
             value={gradeInput}
             onChange={(e) => setGradeInput(e.target.value)}
-            helperText="German scale: 1.0–4.0 (pass), 5.0 (fail), NE (absent), EX (excused), AT (medical cert)"
+            helperText="German scale: 1.0–4.0 (pass), 5.0 (fail). Status codes such as NE, EX, NA and TA are ignored."
           />
 
           <Box sx={{ mt: 1.5 }}>
@@ -293,18 +292,6 @@ export function AddMarkRecordDialog({
                   onClick={() => handleSelectGradeChip(g)}
                   clickable
                   sx={{ fontWeight: gradeInput === g ? 700 : 500 }}
-                />
-              ))}
-              {ABSENCE_CODES.map((code) => (
-                <Chip
-                  key={code}
-                  label={code}
-                  size="small"
-                  color={gradeInput === code ? 'warning' : 'default'}
-                  variant={gradeInput === code ? 'filled' : 'outlined'}
-                  onClick={() => handleSelectGradeChip(code)}
-                  clickable
-                  sx={{ fontWeight: gradeInput === code ? 700 : 500 }}
                 />
               ))}
             </Box>

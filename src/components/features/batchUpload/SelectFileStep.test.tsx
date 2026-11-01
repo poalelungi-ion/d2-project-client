@@ -14,7 +14,6 @@ const COURSE: UploadCourseInfo = {
   courseId: 101,
   courseNumber: '101',
   courseName: 'Software Architecture',
-  ects: '6',
   attemptType: 'Exam 1',
   semester: 'WiSe 2024/25',
 };

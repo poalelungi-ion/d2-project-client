@@ -44,28 +44,7 @@ import {
   GRADE_CONSTRAINT_MESSAGE,
   gradeSaveValue,
   parseGradeInput,
-  withoutIgnoredColumns,
 } from '../utils/gradeOutcome';
-
-const COLUMN_MAPPING: Record<string, string> = {
-  Name: 'name',
-  'Full Name': 'name',
-  'First Name': 'first_name',
-  'Last Name': 'last_name',
-  Vorname: 'first_name',
-  Nachname: 'last_name',
-  Fachsemester: 'semester',
-  Semester: 'semester',
-  Matrikelnr: 'student_id',
-  MatrNr: 'student_id',
-  'Matrikelnr.': 'student_id',
-  Studiengang: 'program',
-  Program: 'program',
-  'Study Program': 'program',
-  Note: 'grade',
-  Grade: 'grade',
-  // Passed/Failed/Yes/No are stripped before upload; they are never a result.
-};
 
 function isTimeoutError(e: unknown): boolean {
   const err = e as { name?: string; message?: string };
@@ -249,6 +228,7 @@ export interface SaveStudentResult {
   success: boolean;
   conflict?: boolean;
   error?: string;
+  data?: StudentDetails | Student;
 }
 
 async function saveStudent(
@@ -264,8 +244,9 @@ async function saveStudent(
       const payload: StudentCreatePayload = {
         student_id: studentId,
         name,
-        program: values.program,
-        status: values.status,
+        program: values.study_program || values.program,
+        study_program: values.study_program || values.program,
+        ...(values.status ? { status: values.status } : {}),
       };
       res = await createStudent(payload);
     } else {
@@ -273,8 +254,9 @@ async function saveStudent(
         student_id: studentId,
         new_student_id: studentId,
         name,
-        program: values.program,
-        status: values.status,
+        program: values.study_program || values.program,
+        study_program: values.study_program || values.program,
+        ...(values.status ? { status: values.status } : {}),
         version,
       };
       res = await updateStudent(studentId, payload);
@@ -282,7 +264,8 @@ async function saveStudent(
 
     if (res.ok) {
       notify(version === undefined ? 'Student profile created' : 'Student profile updated');
-      return { success: true };
+      const data = (await res.json().catch(() => null)) as (StudentDetails | Student) | null;
+      return { success: true, data: data ?? undefined };
     }
     const detail = await errorDetail(res);
     notify(`Error: ${detail}`, 'error');
@@ -389,7 +372,11 @@ async function updateProgram(
   version: number,
 ): Promise<boolean> {
   try {
-    const res = await updateStudent(studentId, { program, version });
+    const res = await updateStudent(studentId, {
+      program,
+      study_program: program,
+      version,
+    });
     if (res.ok) {
       notify('Student program updated successfully!');
       return true;
@@ -432,10 +419,8 @@ async function previewImport(
   else formData.append('paste', source.paste);
   formData.append('course', courseInfo.courseNumber);
   formData.append('courseName', courseInfo.courseName);
-  formData.append('ects', courseInfo.ects);
   formData.append('semester', courseInfo.semester);
   formData.append('attemptType', courseInfo.attemptType);
-  formData.append('mapping', JSON.stringify(withoutIgnoredColumns(COLUMN_MAPPING)));
   formData.append('nameSplitRule', nameSplitRule);
 
   try {
@@ -466,7 +451,6 @@ async function confirmImport(
       courseId: courseInfo.courseId,
       course: courseInfo.courseNumber,
       courseName: courseInfo.courseName,
-      ects: courseInfo.ects,
       semester: courseInfo.semester,
       attemptType: courseInfo.attemptType,
       records,

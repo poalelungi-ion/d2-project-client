@@ -53,11 +53,14 @@ export const layout = {
   drawerWidth: 260,
   /** Sign-in and registration card: wide enough for an email field, no wider. */
   authCardWidth: 440,
-  /** Every ag-grid on a list screen. */
-  gridHeight: 600,
-  /** Main pane top padding, clearing the fixed app bar. */
+  /**
+   * Review-grid floor: taller than the old 400px box, without eating
+   * sibling sections on list pages (#104095).
+   */
+  gridMinHeight: 480,
+  /** Main pane padding: tight enough that the workspace uses the screen. */
   contentTop: 10,
-  contentPadding: 4,
+  contentPadding: { xs: 2, md: 3 },
 } as const;
 
 export const transitions = {

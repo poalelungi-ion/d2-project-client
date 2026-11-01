@@ -211,13 +211,16 @@ export const SelectFileStep = ({ hideRepository: _hideRepository = false }: Sele
             isUploading={isUploading}
             uploadProgress={currentProgress}
             currentFileName={uploadingFileName}
+            selectedFileName={file?.name}
+            onClear={() => {
+              setFile(null);
+              setSelectedDriveFileId(null);
+              setIsUploading(false);
+              setUploadingFileName('');
+              setActiveFileId(null);
+            }}
             fileInputId="excel-upload-file"
           />
-          {file && (
-            <Typography variant="body1" color="success.main" fontWeight="600" sx={{ mt: 1.5 }}>
-              Selected: {file.name}
-            </Typography>
-          )}
         </Box>
 
         {/* Tab 2: Paste Studio Panel */}

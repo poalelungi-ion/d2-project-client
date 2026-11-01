@@ -58,6 +58,7 @@ describe('CourseFormDialog', () => {
     expect(screen.queryByLabelText(/semester/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/assigned professor/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/study program/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/ects/i)).not.toBeInTheDocument();
   });
 
   it('renders Create New Course without an Assigned Professor, Study Program, or Semester input field', () => {
@@ -67,6 +68,7 @@ describe('CourseFormDialog', () => {
     expect(screen.queryByLabelText(/semester/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/assigned professor/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/study program/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/ects/i)).not.toBeInTheDocument();
   });
 
   it('submits course updates without study_program, professor, or semester in the payload (#99886)', async () => {

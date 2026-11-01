@@ -67,7 +67,7 @@ export type RegisterFormErrors = Partial<Record<keyof RegisterFormValues, string
 /** Lifecycle states the backend stores on a student profile. */
 export type StudentStatus = 'active' | 'graduated' | 'dropped' | 'failed';
 
-/** Pass/fail derived by the system from the numeric grade or NE/EX/AT. */
+/** Pass/fail derived by the system from the numeric grade (1.0–5.0). */
 export type GradeOutcome = 'passed' | 'failed' | 'excused' | 'invalid';
 
 /** One student's result in a course, as embedded in the course list response. */
@@ -76,6 +76,7 @@ export interface CourseMark {
   student_id: number | null;
   student_name: string;
   program: string;
+  study_program?: string;
   semester: string;
   grade: number | null;
   passed: boolean;
@@ -110,6 +111,7 @@ export interface Student {
   student_id: number;
   name: string;
   program: string;
+  study_program?: string;
   status: StudentStatus;
   total_exams: number;
   passed_exams: number;
@@ -144,6 +146,7 @@ export interface StudentDetails {
   student_id: number;
   name: string;
   program: string;
+  study_program?: string;
   status: StudentStatus;
   version: number;
   transcript: TranscriptEntry[];
@@ -160,6 +163,7 @@ export interface PreviewRecord {
   last_name: string;
   name: string;
   program: string;
+  study_program?: string;
   semester: string;
   grade: string;
   missing_fields: string[];
@@ -217,7 +221,8 @@ export interface StudentFormValues {
   first_name: string;
   last_name: string;
   program: string;
-  status: StudentStatus;
+  study_program?: string;
+  status?: StudentStatus;
 }
 
 export type StudentFormErrors = Partial<Record<keyof StudentFormValues, string>>;
@@ -242,7 +247,6 @@ export interface UploadCourseInfo {
   courseId: number | null;
   courseNumber: string;
   courseName: string;
-  ects: string;
   attemptType: AttemptType;
   semester: string;
 }

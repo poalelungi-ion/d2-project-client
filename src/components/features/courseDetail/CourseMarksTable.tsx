@@ -36,6 +36,7 @@ import { useApiMutations } from '../../../hooks/useApi';
 import { notify, useThemeStore, useSystemLogStore } from '../../../stores';
 import { chart, gradeOutcomeColor, surfaces } from '../../../styles/colors';
 import { radii } from '../../../styles/tokens';
+import { gridFrame } from '../../../styles/mixins';
 import {
   GRADE_CONSTRAINT_MESSAGE,
   formatGrade,
@@ -218,12 +219,44 @@ export const historyColumnDefs = (
     editable: false,
     cellRenderer: (params: ICellRendererParams<CourseHistoryRow>) => {
       if (!params.data) return null;
-      const { best_grade, best_absence, best_outcome, best_attempt_label } = params.data;
+      const row = params.data;
+      const { best_grade, best_absence, best_outcome, best_attempt_label } = row;
       const text = formatGrade(best_grade, best_absence);
       if (!text || text === '—') return <span>—</span>;
       const isPass = best_outcome === 'passed' || (best_grade != null && best_grade <= 4.0);
       return (
-        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', gap: 1 }}>
+        <Box
+          data-testid="best-mark-entry"
+          role="button"
+          tabIndex={0}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRevealHistory(row);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onRevealHistory(row);
+            }
+          }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            height: '100%',
+            gap: 1,
+            cursor: 'pointer',
+            outline: 'none',
+            '&:hover span': {
+              filter: 'brightness(0.95)',
+              transform: 'scale(1.04)',
+            },
+            '&:focus-visible span': {
+              boxShadow: '0 0 0 2px rgba(25, 118, 210, 0.5)',
+            },
+          }}
+          title={`Click to view ${row.student_name}'s complete chronological mark history`}
+          aria-label={`View complete chronological mark history for ${row.student_name}`}
+        >
           <span
             style={{
               display: 'inline-flex',
@@ -240,6 +273,8 @@ export const historyColumnDefs = (
               border: `1px solid ${isPass ? chartColors.pass : chartColors.fail}`,
               boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
               boxSizing: 'border-box',
+              cursor: 'pointer',
+              transition: 'transform 0.15s ease, filter 0.15s ease',
             }}
           >
             {text}
@@ -560,7 +595,7 @@ export const CourseMarksTable = ({
           <Typography variant="body1" color="text.secondary">
             {viewMode === 'history'
               ? 'Per-Person History across exam attempts. Click "Edit" or action menu to modify marks or student profile.'
-              : 'Click a grade to edit inline (1.0–5.0 or NE/EX/AT), then save, or use the "Edit" button for the modal editor.'}
+              : 'Click a grade to edit inline (1.0–5.0), then save, or use the "Edit" button for the modal editor.'}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {activeFilter
@@ -617,7 +652,7 @@ export const CourseMarksTable = ({
         </Box>
       </Box>
 
-      <Box className="ag-theme-alpine" sx={{ width: '100%', p: 2 }}>
+      <Box className="ag-theme-alpine" sx={{ ...gridFrame, p: 2 }}>
         {viewMode === 'individual' ? (
           <AgGridReact<CourseMark>
             ref={courseGridRef}
@@ -659,8 +694,16 @@ export const CourseMarksTable = ({
             animateRows={true}
             pagination={true}
             paginationPageSize={20}
+            onCellClicked={(event) => {
+              if (event.colDef.colId === 'best_grade' && event.data) {
+                setRevealedStudentHistory(event.data);
+              }
+            }}
             onRowClicked={(e: RowClickedEvent<CourseHistoryRow>) => {
-              if (e.data && e.data.marks.length > 0) onSelectStudent(e.data.marks[0]);
+              if (e.data) {
+                setRevealedStudentHistory(e.data);
+                if (e.data.marks.length > 0) onSelectStudent(e.data.marks[0]);
+              }
             }}
             rowSelection="single"
           />
@@ -687,7 +730,7 @@ export const CourseMarksTable = ({
           <ListItemIcon>
             <EditIcon fontSize="small" color="primary" />
           </ListItemIcon>
-          <ListItemText primary="Edit Grade &amp; Sitting" secondary="Modify numeric grade or NE/EX/AT" />
+          <ListItemText primary="Edit Grade &amp; Sitting" secondary="Modify the numeric grade (1.0–5.0)" />
         </MenuItem>
 
         <MenuItem

@@ -208,7 +208,7 @@ export const studentCourseHistoryColumns = (
   },
   {
     field: 'best_grade',
-    headerName: 'Best Grade',
+    headerName: 'Best Mark',
     minWidth: 120,
     flex: 1,
     cellRenderer: (params: ICellRendererParams<import('./StudentCourseAttemptsDialog').StudentCourseHistoryRow, number>) => {

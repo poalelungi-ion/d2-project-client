@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
+import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
 
 import { useToastStore, isAcceptedSpreadsheet } from '../../stores';
 import { radii } from '../../styles/tokens';
@@ -18,6 +19,9 @@ interface CourseDriveDropZoneProps {
   isUploading?: boolean;
   uploadProgress?: number;
   currentFileName?: string;
+  /** Staged spreadsheet shown in the dropzone until the lecturer removes it. */
+  selectedFileName?: string;
+  onClear?: () => void;
   fileInputId?: string;
 }
 
@@ -26,6 +30,8 @@ export const CourseDriveDropZone = ({
   isUploading = false,
   uploadProgress = 0,
   currentFileName,
+  selectedFileName,
+  onClear,
   fileInputId = 'excel-upload-file',
 }: CourseDriveDropZoneProps) => {
   const notify = useToastStore((s) => s.notify);
@@ -89,6 +95,16 @@ export const CourseDriveDropZone = ({
     }
   };
 
+  const handleClear = (e: { stopPropagation: () => void }) => {
+    e.stopPropagation();
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    onClear?.();
+  };
+
+  const hasStagedFile = Boolean(selectedFileName);
+
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     if (isUploading) return;
     const files = e.clipboardData.files;
@@ -124,9 +140,9 @@ export const CourseDriveDropZone = ({
             : 'rgba(0, 0, 0, 0.01)';
         },
         transition: 'all 0.2s ease-in-out',
-        cursor: isUploading ? 'default' : 'pointer',
+        cursor: isUploading || hasStagedFile ? 'default' : 'pointer',
       }}
-      onClick={isUploading ? undefined : handleClickBrowse}
+      onClick={isUploading || hasStagedFile ? undefined : handleClickBrowse}
     >
       <input
         ref={fileInputRef}
@@ -137,7 +153,7 @@ export const CourseDriveDropZone = ({
         onChange={handleFileInputChange}
       />
 
-      {isUploading ? (
+      {isUploading && !hasStagedFile ? (
         // US-04: Active circular spinner and linear progress indicator during upload/parsing
         <Box sx={{ maxWidth: 460, mx: 'auto', py: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 2 }}>
@@ -169,6 +185,49 @@ export const CourseDriveDropZone = ({
             Extracting student grades, sitting attempts, and verifying study program matriculations...
           </Typography>
         </Box>
+      ) : hasStagedFile ? (
+        <Stack spacing={1.5} alignItems="center">
+          <InsertDriveFileOutlinedIcon sx={{ fontSize: 36, color: 'success.main' }} />
+          <Typography variant="body1" color="success.main" fontWeight="700">
+            Selected: {selectedFileName}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Remove this file to return to an empty dropzone, or replace it with another spreadsheet.
+          </Typography>
+          <Stack direction="row" spacing={1.5}>
+            <Button
+              variant="outlined"
+              size="medium"
+              color="inherit"
+              onClick={handleClear}
+              sx={{
+                borderRadius: radii.md,
+                textTransform: 'none',
+                px: 3,
+                fontWeight: 600,
+              }}
+            >
+              Remove file
+            </Button>
+            <Button
+              variant="contained"
+              size="medium"
+              color="primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClickBrowse();
+              }}
+              sx={{
+                borderRadius: radii.md,
+                textTransform: 'none',
+                px: 3,
+                fontWeight: 600,
+              }}
+            >
+              Replace file
+            </Button>
+          </Stack>
+        </Stack>
       ) : (
         <Stack spacing={1.5} alignItems="center">
           <Box

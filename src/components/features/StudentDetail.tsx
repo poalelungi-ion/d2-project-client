@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Typography,
@@ -12,11 +12,7 @@ import {
   Chip,
 } from '@mui/material';
 import {
-  Restore as RestoreIcon,
   ChevronLeft as ChevronLeftIcon,
-  Cancel as CancelIcon,
-  CheckCircle as CheckCircleIcon,
-  AddCircleOutline as AddCircleOutlineIcon,
   Edit as EditIcon,
   TrendingUp as TrendingUpIcon,
   Search as SearchIcon,
@@ -33,11 +29,11 @@ import {
 import { AgGridReact } from 'ag-grid-react';
 import type { RowClickedEvent } from 'ag-grid-community';
 import { useNavigate } from 'react-router-dom';
-import type { StudentDetails, StudentStatus, TranscriptEntry } from '../../types';
+import type { StudentDetails, TranscriptEntry } from '../../types';
 import { ROUTES } from '../../app/navigation';
 import { useApiMutations } from '../../hooks/useApi';
 import { radii } from '../../styles/tokens';
-import { pageTitle } from '../../styles/mixins';
+import { gridFrame, pageShell, pageTitle } from '../../styles/mixins';
 import { chart } from '../../styles/colors';
 import { averageGradeBySemester, type SemesterGradeAverage } from '../../utils/semester';
 import { groupTranscriptByCourse } from '../../utils/studentTranscript';
@@ -48,7 +44,6 @@ import {
 } from './StudentCourseAttemptsDialog';
 import { StudyProgramSelect } from '../forms/StudyProgramSelect';
 import { StudentFormDialog } from '../forms/StudentFormDialog';
-import { AddGradeDialog } from '../forms/AddGradeDialog';
 import { UNASSIGNED_PROGRAM } from '../../utils/studyProgram';
 
 interface StudentDetailProps {
@@ -59,10 +54,13 @@ interface StudentDetailProps {
 }
 
 export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
-  const { updateProgram, setStudentStatus } = useApiMutations();
-  const [program, setProgram] = useState(student.program);
+  const { updateProgram } = useApiMutations();
+  const [program, setProgram] = useState(student.study_program || student.program);
+
+  useEffect(() => {
+    setProgram(student.study_program || student.program);
+  }, [student.study_program, student.program, student.version]);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [addGradeDialogOpen, setAddGradeDialogOpen] = useState(false);
   const [transcriptViewMode, setTranscriptViewMode] = useState<'compact' | 'individual'>('compact');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourseHistory, setSelectedCourseHistory] = useState<StudentCourseHistoryRow | null>(null);
@@ -134,13 +132,9 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
     if (await updateProgram(student.student_id, program, student.version)) onRefresh();
   };
 
-  const handleStudentStatus = async (status: StudentStatus) => {
-    if (await setStudentStatus(student.student_id, status, student.version)) onRefresh();
-  };
-
   return (
     <Fade in={true} timeout={800}>
-      <Box sx={{ flexGrow: 1, width: '100%', pb: 6 }}>
+      <Box sx={{ ...pageShell, pb: 6 }}>
         {/* Header Profile Section */}
         <Box sx={{ mb: 3 }}>
           <Button
@@ -187,45 +181,6 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
             >
               Edit Full Record
             </Button>
-            {student.status === 'active' && (
-              <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  color="success"
-                  startIcon={<CheckCircleIcon />}
-                  onClick={() => void handleStudentStatus('graduated')}
-                >
-                  Graduate
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<CancelIcon />}
-                  onClick={() => void handleStudentStatus('failed')}
-                >
-                  Fail Student
-                </Button>
-              </Box>
-            )}
-            {student.status !== 'active' && (
-              <Box sx={{ ml: 'auto', display: 'flex', gap: 2, alignItems: 'center' }}>
-                <Typography
-                  variant="h6"
-                  color={student.status === 'graduated' ? 'success.main' : 'error.main'}
-                  sx={{ fontWeight: 'bold', textTransform: 'capitalize' }}
-                >
-                  Status: {student.status}
-                </Typography>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<RestoreIcon />}
-                  onClick={() => void handleStudentStatus('active')}
-                >
-                  Restore to Active
-                </Button>
-              </Box>
-            )}
           </Box>
         </Box>
 
@@ -378,20 +333,10 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
                 <ToggleButton value="compact">Per-Course (Compact)</ToggleButton>
                 <ToggleButton value="individual">All Sittings</ToggleButton>
               </ToggleButtonGroup>
-
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<AddCircleOutlineIcon />}
-                onClick={() => setAddGradeDialogOpen(true)}
-                sx={{ textTransform: 'none', fontWeight: 600 }}
-              >
-                Add Exam Record
-              </Button>
             </Box>
           </Box>
 
-          <Box className="ag-theme-alpine" sx={{ width: '100%', p: 2 }}>
+          <Box className="ag-theme-alpine" sx={{ ...gridFrame, p: 2 }}>
             {transcriptViewMode === 'compact' ? (
               <AgGridReact<StudentCourseHistoryRow>
                 domLayout="autoHeight"
@@ -436,20 +381,11 @@ export const StudentDetail = ({ student, onRefresh }: StudentDetailProps) => {
           <StudentFormDialog
             student={student}
             onClose={() => setEditDialogOpen(false)}
-            onSaved={() => {
+            onSaved={(_id, updatedRecord) => {
+              if (updatedRecord?.study_program || updatedRecord?.program) {
+                setProgram(updatedRecord.study_program || updatedRecord.program);
+              }
               setEditDialogOpen(false);
-              onRefresh();
-            }}
-          />
-        )}
-
-        {/* Dialog: Add Exam Record */}
-        {addGradeDialogOpen && (
-          <AddGradeDialog
-            student={student}
-            onClose={() => setAddGradeDialogOpen(false)}
-            onSaved={() => {
-              setAddGradeDialogOpen(false);
               onRefresh();
             }}
           />

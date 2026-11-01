@@ -20,6 +20,7 @@ import {
   summariseMarks,
 } from '../../utils/courseMarks';
 import type { ExamSelection } from '../../utils/courseMarks';
+import { pageShell } from '../../styles/mixins';
 import { CourseAnalytics } from './courseDetail/CourseAnalytics';
 import { CourseFilterBar } from './courseDetail/CourseFilterBar';
 import type { ComparePair, CompareSide, CourseViewMode } from './courseDetail/CourseFilterBar';
@@ -111,7 +112,7 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
 
   return (
     <Fade in={true} timeout={800}>
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+      <Box sx={{ ...pageShell, display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
         {editing && (
           <CourseFormDialog
             course={course}
@@ -135,7 +136,7 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
           onBack={returnToList}
         />
 
-        {/* Modern Material Design 3 Navigation Tabs (US-02) */}
+        {/* Course navigation: overview analytics vs Course Drive file vault (#104092) */}
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
           <Tabs
             value={activeTab}
@@ -155,6 +156,7 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
               value="drive"
               icon={<FolderSharedOutlinedIcon />}
               iconPosition="start"
+              aria-label="Course Document Repository"
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <span>Course Drive</span>
@@ -225,10 +227,7 @@ export const CourseDetail = ({ course, onRefresh }: CourseDetailProps) => {
             />
           </>
         ) : (
-          <CourseDriveView
-            course={course}
-            onMarksUpdated={onRefresh}
-          />
+          <CourseDriveView course={course} />
         )}
       </Box>
     </Fade>

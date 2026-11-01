@@ -5,6 +5,7 @@ import { ThemeProvider } from '@mui/material/styles';
 
 import { CourseDetail } from './CourseDetail';
 import { getGlassTheme } from '../../styles/theme';
+import { useCourseDriveStore } from '../../stores';
 import type { AttemptType, Course, CourseMark } from '../../types';
 
 let nextId = 1;
@@ -479,6 +480,39 @@ describe('lecture-view grade edits', () => {
     expect(screen.getByRole('button', { name: /save marks/i })).toBeInTheDocument();
     expect(within(marksPanel()).getByText('Grade')).toBeInTheDocument();
     expect(screen.getByText(/click a grade to edit/i)).toBeInTheDocument();
+  });
+});
+
+describe('Course Document Repository tab (#104092)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useCourseDriveStore.setState({ filesByCourse: {}, uploadingProgress: {} });
+  });
+
+  it('keeps a dedicated Course Drive tab on the course navigation bar', () => {
+    renderDetail();
+
+    expect(screen.getByRole('tab', { name: /course document repository/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /dashboard overview/i })).toBeInTheDocument();
+  });
+
+  it('keeps file management off the overview and isolated on the Course Drive tab', () => {
+    renderDetail();
+
+    expect(screen.getByText('Detailed Course Marks')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /course document repository/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/No files in Course Drive yet/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Drag & drop exam spreadsheet here/i)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: /course document repository/i }));
+
+    expect(screen.getByRole('heading', { name: /course document repository/i })).toBeInTheDocument();
+    expect(screen.getByText(/No files in Course Drive yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/Drag & drop exam spreadsheet here/i)).toBeInTheDocument();
+    expect(screen.queryByText('Detailed Course Marks')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Map columns/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Launch 5-Step Ingestion Wizard/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Select for Ingestion/i)).not.toBeInTheDocument();
   });
 });
 

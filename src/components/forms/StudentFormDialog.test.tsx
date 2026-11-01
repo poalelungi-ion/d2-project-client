@@ -46,7 +46,7 @@ const renderDialog = (
   return { onClose, onSaved };
 };
 
-describe('StudentFormDialog (#97930: Student Data Profile)', () => {
+describe('StudentFormDialog (#97930 & #104082: Student Data Profile)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSaveStudent.mockResolvedValue({ success: true });
@@ -68,14 +68,14 @@ describe('StudentFormDialog (#97930: Student Data Profile)', () => {
     expect(mockSaveStudent).not.toHaveBeenCalled();
   });
 
-  it('renders Edit Student pre-populated with current student metadata (AC1 & AC3)', () => {
+  it('renders Edit Student pre-populated with current student metadata without Status field (#104082)', () => {
     renderDialog(sampleStudent);
 
     expect(screen.getByText('Edit Student')).toBeInTheDocument();
     expect(screen.getByLabelText(/student id \/ matrikelnummer/i)).toHaveValue(12345);
     expect(screen.getByLabelText(/first name/i)).toHaveValue('Ada');
     expect(screen.getByLabelText(/last name/i)).toHaveValue('Lovelace');
-    expect(screen.getByLabelText(/status/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/status/i)).not.toBeInTheDocument();
   });
 
   it('enforces validation before submission, highlighting missing mandatory fields (AC1)', () => {
@@ -143,7 +143,7 @@ describe('StudentFormDialog (#97930: Student Data Profile)', () => {
     expect(await screen.findByText('Student ID already exists')).toBeInTheDocument();
   });
 
-  it('successfully submits student creation payload and triggers onSaved and onClose (AC2)', async () => {
+  it('successfully submits student creation payload without status field (#104082)', async () => {
     const { onClose, onSaved } = renderDialog(null, []);
 
     fireEvent.change(screen.getByLabelText(/student id \/ matrikelnummer/i), {
@@ -175,7 +175,6 @@ describe('StudentFormDialog (#97930: Student Data Profile)', () => {
       first_name: 'Katherine',
       last_name: 'Johnson',
       program: 'Data Science Master',
-      status: 'active',
     });
     expect(version).toBeUndefined();
 
@@ -185,7 +184,7 @@ describe('StudentFormDialog (#97930: Student Data Profile)', () => {
     });
   });
 
-  it('successfully submits student edit payload with modified fields and version (AC3)', async () => {
+  it('successfully submits student edit payload without status field (#104082)', async () => {
     const { onClose, onSaved } = renderDialog(sampleStudent);
 
     fireEvent.change(screen.getByLabelText(/first name/i), {
@@ -207,12 +206,54 @@ describe('StudentFormDialog (#97930: Student Data Profile)', () => {
       first_name: 'Augusta Ada',
       last_name: 'Lovelace',
       program: 'SE Master',
-      status: 'active',
     });
     expect(version).toBe(3);
 
     await waitFor(() => {
       expect(onSaved).toHaveBeenCalledWith(12345);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('updates study_program on profile save and returns the updated student record (#104081)', async () => {
+    const updatedRecord: Student = {
+      ...sampleStudent,
+      program: 'Data Science Master',
+      study_program: 'Data Science Master',
+      version: 4,
+    };
+    mockSaveStudent.mockResolvedValue({
+      success: true,
+      data: updatedRecord,
+    });
+
+    const { onClose, onSaved } = renderDialog(sampleStudent);
+
+    // Pick new study program from dropdown
+    fireEvent.mouseDown(screen.getByLabelText(/study program/i));
+    const option = await screen.findByRole('option', { name: /data science master/i });
+    fireEvent.click(option);
+
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    await waitFor(() => {
+      expect(mockSaveStudent).toHaveBeenCalledTimes(1);
+    });
+
+    const [payload, version] = mockSaveStudent.mock.calls[0] as [
+      Record<string, unknown>,
+      number | undefined,
+    ];
+    expect(payload).toEqual({
+      student_id: '12345',
+      first_name: 'Ada',
+      last_name: 'Lovelace',
+      program: 'Data Science Master',
+    });
+    expect(version).toBe(3);
+
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalledWith(12345, updatedRecord);
       expect(onClose).toHaveBeenCalledTimes(1);
     });
   });

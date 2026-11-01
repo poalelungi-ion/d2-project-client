@@ -16,7 +16,8 @@ import type { PreviewRecord } from '../../../types';
 import { useUploadWizard } from './uploadWizardContext';
 import { useToastStore, useStudyProgramStore } from '../../../stores';
 import { semantic, tint, gradeOutcomeColor } from '../../../styles/colors';
-import { errorCallout } from '../../../styles/mixins';
+import { errorCallout, gridFrame } from '../../../styles/mixins';
+import { layout } from '../../../styles/tokens';
 import {
   evaluateGradeCell,
   isOfficialAbsenceCell,
@@ -130,7 +131,8 @@ export const ReviewStep = () => {
           Review Data &amp; Validation
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Pass, Fail and Excused are calculated from the grade or NE/EX/AT. File
+          Pass and Fail are calculated from numeric grades (1.0–5.0). Status
+          codes such as NE, EX, NA and TA are omitted from the import. File
           columns named Passed, Failed, Yes or No are ignored.
         </Typography>
       </Box>
@@ -166,7 +168,10 @@ export const ReviewStep = () => {
         </Box>
       )}
 
-      <Box className="ag-theme-alpine" sx={{ height: 400, width: '100%', mb: 3 }}>
+      <Box
+        className="ag-theme-alpine"
+        sx={{ ...gridFrame, minHeight: layout.gridMinHeight, height: { xs: 480, md: 560 }, mb: 3 }}
+      >
         <AgGridReact<PreviewRecord>
           rowData={previewData}
           onGridReady={(params: GridReadyEvent<PreviewRecord>) => {

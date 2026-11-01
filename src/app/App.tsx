@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import {
   Box,
+  Container,
   Drawer,
   CssBaseline,
   List,
@@ -26,7 +27,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 
 import { getGlassTheme } from '../styles/theme';
-import { gradients, shadows, radii } from '../styles/tokens';
+import { gradients, shadows, radii, layout } from '../styles/tokens';
 import { navItem } from '../styles/mixins';
 import { useAuthStore, useThemeStore, useToastStore } from '../stores';
 import { initials } from '../utils/userName';
@@ -411,17 +412,33 @@ export default function App() {
           </Box>
         </Drawer>
 
-        {/* Main Content View */}
+        {/* Main Content View: fluid full-viewport workspace (#104095) */}
         <Box
           component="main"
           sx={{
             flexGrow: 1,
+            minWidth: 0,
             height: '100vh',
-            overflowY: 'auto',
-            p: { xs: 2.5, md: 4 },
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'auto',
+            p: layout.contentPadding,
           }}
         >
-          <Outlet />
+          <Container
+            maxWidth={false}
+            disableGutters
+            data-testid="workspace-container"
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              width: '100%',
+              minHeight: '100%',
+            }}
+          >
+            <Outlet />
+          </Container>
         </Box>
       </Box>
 
