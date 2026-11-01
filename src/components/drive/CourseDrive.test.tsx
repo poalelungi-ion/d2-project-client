@@ -38,8 +38,18 @@ describe('Course Drive UI (US-02 & US-04)', () => {
     it('displays friendly empty state when no files exist for the course', () => {
       renderWithTheme(<CourseDriveView course={mockCourse} />);
 
+      expect(screen.getByRole('heading', { name: /course document repository/i })).toBeInTheDocument();
       expect(screen.getByText(/No files in Course Drive yet/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Upload your first file/i })).toBeInTheDocument();
+    });
+
+    it('keeps file management on this view without the ingestion wizard', () => {
+      renderWithTheme(<CourseDriveView course={mockCourse} />);
+
+      expect(screen.getByText(/Drag & drop exam spreadsheet here/i)).toBeInTheDocument();
+      expect(screen.queryByText(/Map columns/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Launch 5-Step Ingestion Wizard/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Select for Ingestion/i)).not.toBeInTheDocument();
     });
 
     it('renders clean data table displaying file name, upload date, and status badge when files exist', () => {
@@ -68,6 +78,31 @@ describe('Course Drive UI (US-02 & US-04)', () => {
       expect(screen.getByText('Dr. Instructor')).toBeInTheDocument();
       expect(screen.getByText('Parsed Successfully')).toBeInTheDocument();
       expect(screen.getByText('44 KB')).toBeInTheDocument();
+    });
+
+    it('lists stored files with download, delete, and re-parse only — not ingestion select', () => {
+      const mockFiles: CourseDriveFile[] = [
+        {
+          id: 'file-1',
+          course_id: 101,
+          name: 'exam_results_wise25.xlsx',
+          size_bytes: 45056,
+          uploaded_at: '2026-10-12T14:30:00.000Z',
+          uploaded_by: 'Dr. Instructor',
+          status: 'parsed',
+          status_message: 'Parsed Successfully: 42 records processed',
+        },
+      ];
+      useCourseDriveStore.setState({
+        filesByCourse: { '101': mockFiles },
+        uploadingProgress: {},
+      });
+
+      renderWithTheme(<CourseDriveView course={mockCourse} />);
+
+      expect(screen.getByText('exam_results_wise25.xlsx')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /select for ingestion/i })).not.toBeInTheDocument();
+      expect(screen.queryByText(/Map columns/i)).not.toBeInTheDocument();
     });
   });
 
