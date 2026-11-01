@@ -80,7 +80,6 @@ export const MapColumnsStep = () => {
   const theme = useTheme();
   const [fileHeaders, setFileHeaders] = useState<string[] | null>(null);
   const [fileSamples, setFileSamples] = useState<Record<string, string>>({});
-  const [detectedRowCount, setDetectedRowCount] = useState<number | null>(null);
   const [loadingHeaders, setLoadingHeaders] = useState(false);
   const [userOverrides, setUserOverrides] = useState<Record<string, string>>({});
 
@@ -88,10 +87,9 @@ export const MapColumnsStep = () => {
     setUserOverrides({});
     if (paste.trim()) {
       const headers = headersFromTabularText(paste);
-      const { samples, rowCount } = samplesFromTabularText(paste);
+      const { samples } = samplesFromTabularText(paste);
       setFileHeaders(headers);
       setFileSamples(samples);
-      setDetectedRowCount(rowCount);
       setLoadingHeaders(false);
       return;
     }
@@ -101,10 +99,9 @@ export const MapColumnsStep = () => {
       void file.text().then((text) => {
         if (!cancelled) {
           const headers = headersFromTabularText(text);
-          const { samples, rowCount } = samplesFromTabularText(text);
+          const { samples } = samplesFromTabularText(text);
           setFileHeaders(headers);
           setFileSamples(samples);
-          setDetectedRowCount(rowCount);
           setLoadingHeaders(false);
         }
       });
@@ -124,7 +121,6 @@ export const MapColumnsStep = () => {
           if (!cancelled && Array.isArray(data.headers) && data.headers.length > 0) {
             setFileHeaders(data.headers);
             setFileSamples(data.samples ?? {});
-            setDetectedRowCount(typeof data.row_count === 'number' ? data.row_count : null);
           }
         })
         .catch(() => {
@@ -139,7 +135,6 @@ export const MapColumnsStep = () => {
     }
     setFileHeaders(null);
     setFileSamples({});
-    setDetectedRowCount(null);
     setLoadingHeaders(false);
   }, [file, paste]);
 
@@ -230,9 +225,7 @@ export const MapColumnsStep = () => {
           ) : (
             <Typography variant="body2" color="text.secondary">
               {checkingFile
-                ? `${fileHeaders?.length ?? 0} column${fileHeaders?.length === 1 ? '' : 's'}${
-                    detectedRowCount != null ? ` · ${detectedRowCount} rows` : ''
-                  } in the file`
+                ? `${fileHeaders?.length ?? 0} column${fileHeaders?.length === 1 ? '' : 's'} in the file`
                 : 'Map your file columns to the target schema fields below.'}
             </Typography>
           )}

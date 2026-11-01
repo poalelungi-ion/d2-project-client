@@ -46,7 +46,7 @@ describe('Course Drive UI (US-02 & US-04)', () => {
     it('keeps file management on this view without the ingestion wizard', () => {
       renderWithTheme(<CourseDriveView course={mockCourse} />);
 
-      expect(screen.getByText(/Drag & drop exam spreadsheet here/i)).toBeInTheDocument();
+      expect(screen.queryByText(/Drag & drop exam spreadsheet here/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/Map columns/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/Launch 5-Step Ingestion Wizard/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/Select for Ingestion/i)).not.toBeInTheDocument();

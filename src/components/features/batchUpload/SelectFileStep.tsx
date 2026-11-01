@@ -1,9 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Typography,
   Button,
-  Chip,
   Tabs,
   Tab,
   Paper,
@@ -55,11 +54,22 @@ export const SelectFileStep = ({ hideRepository: _hideRepository = false }: Sele
 
   const hasPaste = Boolean(paste.trim());
 
-  const detectedRowCount = useMemo(() => {
-    if (!paste.trim()) return 0;
-    const lines = paste.trim().split(/\r?\n/).filter((l) => l.trim().length > 0);
-    return lines.length > 1 ? lines.length - 1 : lines.length;
-  }, [paste]);
+  const saveFileToCourseDrive = async (fileToSave: File) => {
+    if (!courseId) return;
+    setIsUploading(true);
+    setUploadingFileName(fileToSave.name);
+    try {
+      const uploader = currentUser?.name || 'Dr. Instructor';
+      const created = await addFile(courseId, fileToSave, uploader, courseInfo?.semester);
+      setActiveFileId(created.id);
+    } catch {
+      notifyToast('Could not store file in Course Drive history', 'error');
+    } finally {
+      setIsUploading(false);
+      setActiveFileId(null);
+      setUploadingFileName('');
+    }
+  };
 
   const handleUploadNewFile = async (droppedOrSelectedFile: File) => {
     // 1. Immediately update wizard state so step navigation and tests receive the file synchronously
@@ -68,20 +78,8 @@ export const SelectFileStep = ({ hideRepository: _hideRepository = false }: Sele
 
     // 2. Persist to Course Drive history for this course
     if (courseId) {
-      setIsUploading(true);
-      setUploadingFileName(droppedOrSelectedFile.name);
-      try {
-        const uploader = currentUser?.name || 'Dr. Instructor';
-        const created = await addFile(courseId, droppedOrSelectedFile, uploader, courseInfo?.semester);
-        setActiveFileId(created.id);
-        notifyToast(`File "${droppedOrSelectedFile.name}" selected for upload`);
-      } catch {
-        notifyToast('Could not store file in Course Drive history', 'error');
-      } finally {
-        setIsUploading(false);
-        setActiveFileId(null);
-        setUploadingFileName('');
-      }
+      await saveFileToCourseDrive(droppedOrSelectedFile);
+      notifyToast(`File "${droppedOrSelectedFile.name}" selected for upload`);
     }
   };
 
@@ -104,6 +102,7 @@ export const SelectFileStep = ({ hideRepository: _hideRepository = false }: Sele
           notifyToast(message, 'error');
           return;
         }
+        setFile(null);
         setPasteError(null);
         setActiveStep(1);
         return;
@@ -120,6 +119,7 @@ export const SelectFileStep = ({ hideRepository: _hideRepository = false }: Sele
           notifyToast(message, 'error');
           return;
         }
+        setFile(null);
         setPasteError(null);
         setActiveStep(1);
         return;
@@ -178,19 +178,7 @@ export const SelectFileStep = ({ hideRepository: _hideRepository = false }: Sele
               value="paste"
               icon={<ContentPasteIcon sx={{ fontSize: 20 }} />}
               iconPosition="start"
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <span>Paste Tabular Data</span>
-                  {hasPaste && (
-                    <Chip
-                      size="small"
-                      color="primary"
-                      label={`${detectedRowCount} rows`}
-                      sx={{ height: 20, fontSize: '0.72rem', fontWeight: 700 }}
-                    />
-                  )}
-                </Box>
-              }
+              label="Paste Tabular Data"
               sx={{ textTransform: 'none', fontWeight: 600, minHeight: 48 }}
             />
           </Tabs>
@@ -233,7 +221,7 @@ export const SelectFileStep = ({ hideRepository: _hideRepository = false }: Sele
             setPaste={setPaste}
             pasteError={pasteError}
             setPasteError={setPasteError}
-            onFileGenerated={handleUploadNewFile}
+            onFileGenerated={saveFileToCourseDrive}
             onClearOtherSources={() => {
               setFile(null);
             }}

@@ -25,16 +25,18 @@ const sheet = (name: string, body: string) =>
 
 const fileInput = () => document.getElementById('excel-upload-file') as HTMLInputElement;
 
-const renderStep = () => {
+const renderStep = (initialPaste = '') => {
   const setFile = vi.fn();
+  const setPaste = vi.fn();
 
   function Harness() {
     const [file, setFileState] = useState<File | null>(null);
+    const [paste, setPasteState] = useState(initialPaste);
     const value = {
       step: 0,
       file,
-      paste: '',
-      sourceLabel: file?.name ?? '',
+      paste,
+      sourceLabel: file?.name ?? (paste.trim() ? 'Pasted data' : ''),
       courseInfo: COURSE,
       nameSplitRule: 'Last, First',
       preview: [],
@@ -43,7 +45,11 @@ const renderStep = () => {
         setFile(next);
         setFileState(next);
       },
-      setPaste: vi.fn(),
+      setPaste: (next: string) => {
+        setPaste(next);
+        setPasteState(next);
+        setFileState(null);
+      },
       setCourseInfo: vi.fn(),
       setNameSplitRule: vi.fn(),
       setGridApi: vi.fn(),
@@ -61,7 +67,7 @@ const renderStep = () => {
     );
   }
 
-  return { ...render(<Harness />), setFile };
+  return { ...render(<Harness />), setFile, setPaste };
 };
 
 describe('SelectFileStep', () => {
@@ -116,5 +122,24 @@ describe('SelectFileStep', () => {
     expect(screen.queryByText(/Course Documents Repository/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /select for ingestion/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  });
+
+  it('does not display an identified rows counter badge when tabular data is pasted (#104088)', () => {
+    renderStep('Matrikelnr\tName\tNote\n1001001\tSchneider, Lena\t1.3\n1001002\tWeber, Max\t2.0');
+
+    expect(screen.queryByText(/rows detected/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\d+\s+rows?/i)).not.toBeInTheDocument();
+  });
+
+  it('dynamically synchronizes wizard state when pasted tabular data is modified in Step 1 (#104089)', () => {
+    const { setPaste, setFile } = renderStep('Matrikelnr\tName\tNote\n1001001\tSchneider, Lena\t1.3');
+    const pasteInput = screen.getByLabelText('Paste tabular grade data') as HTMLTextAreaElement;
+
+    const updatedPaste = 'Matrikelnr\tName\tNote\n1001001\tSchneider, Lena\t1.0\n1001002\tWeber, Max\t2.3';
+    fireEvent.change(pasteInput, { target: { value: updatedPaste } });
+
+    expect(setPaste).toHaveBeenCalledWith(updatedPaste);
+    expect(setFile).toHaveBeenCalledWith(null);
+    expect(pasteInput.value).toBe(updatedPaste);
   });
 });

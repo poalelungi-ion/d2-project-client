@@ -1,10 +1,8 @@
-import { useMemo } from 'react';
-import { Box, Typography, Button, TextField, Chip } from '@mui/material';
+import { Box, Typography, Button, TextField } from '@mui/material';
 import {
   ContentPaste as ContentPasteIcon,
   TableChartOutlined as TableChartOutlinedIcon,
   FileDownloadOutlined as FileDownloadOutlinedIcon,
-  CheckCircleOutline as CheckCircleOutlineIcon,
   Clear as ClearIcon,
 } from '@mui/icons-material';
 import { isTabularPaste } from '../../../utils/tabularPaste';
@@ -32,12 +30,6 @@ export const PasteTabularPanel = ({
   const notifyToast = useToastStore((s) => s.notify);
 
   const hasPaste = Boolean(paste.trim());
-
-  const detectedRowCount = useMemo(() => {
-    if (!paste.trim()) return 0;
-    const lines = paste.trim().split(/\r?\n/).filter((l) => l.trim().length > 0);
-    return lines.length > 1 ? lines.length - 1 : lines.length;
-  }, [paste]);
 
   const handleClearPaste = () => {
     setPaste('');
@@ -185,9 +177,7 @@ export const PasteTabularPanel = ({
         onChange={(e) => {
           setPasteError(null);
           setPaste(e.target.value);
-          if (e.target.value) {
-            onClearOtherSources();
-          }
+          onClearOtherSources();
         }}
         error={Boolean(pasteError)}
         helperText={pasteError}
@@ -203,13 +193,6 @@ export const PasteTabularPanel = ({
 
       {hasPaste && (
         <Box sx={{ mt: 2.5, display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Chip
-            icon={<CheckCircleOutlineIcon />}
-            label={`${detectedRowCount} ${detectedRowCount === 1 ? 'row' : 'rows'} detected`}
-            color="primary"
-            variant="outlined"
-            sx={{ fontWeight: 600 }}
-          />
           <Button
             variant="contained"
             color="primary"

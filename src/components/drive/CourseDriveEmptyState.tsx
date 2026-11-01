@@ -4,7 +4,7 @@ import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 import { radii } from '../../styles/tokens';
 
 interface CourseDriveEmptyStateProps {
-  onUploadClick: () => void;
+  onUploadClick?: () => void;
   onLaunchWizard?: () => void;
 }
 

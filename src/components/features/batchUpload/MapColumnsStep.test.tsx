@@ -46,10 +46,12 @@ const renderMap = (paste: string) => {
 };
 
 describe('MapColumnsStep', () => {
-  it('maps a pasted FlexNow header row and keeps Standardise enabled', () => {
+  it('maps a pasted FlexNow header row and keeps Standardise enabled without displaying a row counter (#104088)', () => {
     renderMap('Matrikelnr\tName\tNote\n101\tSchneider, Lena\t1.7\n');
     expect(screen.getByText('Matrikelnr')).toBeInTheDocument();
     expect(screen.getAllByText('Mapped').length).toBeGreaterThan(0);
+    expect(screen.getByText('3 columns in the file')).toBeInTheDocument();
+    expect(screen.queryByText(/\d+\s+rows/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /standardise & review/i })).toBeEnabled();
   });
 
