@@ -57,7 +57,7 @@ const INITIAL_LOGS: SystemLogItem[] = [
     level: 'error',
     category: 'incident',
     code: 'INCIDENT_GRADE_REJECTED',
-    message: 'Grade value 6.5 rejected by validation: Must be between 1.0 and 5.0 or NE/EX/AT.',
+    message: 'Grade value 6.5 rejected by validation: Must be between 1.0 and 5.0.',
     actor: 'Grade Validator',
     details: JSON.stringify({ input: '6.5', allowedGrades: ['1.0', '1.3', '1.7', '2.0', '2.3', '2.7', '3.0', '3.3', '3.7', '4.0', '5.0'], absenceCodes: ['NE', 'EX', 'AT'] }, null, 2),
     actionLabel: 'Incident Report',

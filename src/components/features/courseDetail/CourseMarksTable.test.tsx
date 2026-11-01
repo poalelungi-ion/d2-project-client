@@ -43,10 +43,13 @@ describe('individual marks columns', () => {
     expect(apply('Passed')).toBe(false);
     expect(data.grade).toBe(1.0);
 
-    expect(apply('NE')).toBe(true);
-    expect(data.grade).toBe(5);
-    expect(data.outcome).toBe('failed');
-    expect(data.absence_code).toBe('NE');
+    expect(apply('NE')).toBe(false);
+    expect(data.grade).toBe(1.0);
+
+    expect(apply('2.3')).toBe(true);
+    expect(data.grade).toBe(2.3);
+    expect(data.outcome).toBe('passed');
+    expect(data.absence_code).toBe(null);
     expect(data.student_name).toBe('Anna Early');
   });
 });

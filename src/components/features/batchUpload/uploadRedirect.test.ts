@@ -36,7 +36,6 @@ describe('resolveUploadRedirect', () => {
       courseId: null,
       courseNumber: '3545',
       courseName: 'SE Tools Lab',
-      ects: '6',
       attemptType: 'Exam 1',
       semester: 'WiSe 2024/25',
     };
@@ -57,7 +56,6 @@ describe('resolveUploadRedirect', () => {
       courseId: 101,
       courseNumber: '101',
       courseName: 'Algorithms',
-      ects: '6',
       attemptType: 'Exam 1',
       semester: 'SoSe 2024',
     };
@@ -77,7 +75,6 @@ describe('resolveUploadRedirect', () => {
       courseId: null,
       courseNumber: '999',
       courseName: 'Databases',
-      ects: '6',
       attemptType: 'Other',
       semester: 'WiSe 2023/24',
     };
@@ -97,7 +94,6 @@ describe('resolveUploadRedirect', () => {
       courseId: null,
       courseNumber: 'invalid-non-numeric',
       courseName: 'Unknown',
-      ects: '6',
       attemptType: 'Other',
       semester: 'WiSe 2023/24',
     };

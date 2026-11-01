@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Box, Typography, Grid, Card, Button, TextField, useTheme } from '@mui/material';
 import { CheckCircle as CheckCircleIcon } from '@mui/icons-material';
 import type { NameSplitRule } from '../../../types';
@@ -5,45 +6,31 @@ import { useUploadWizard } from './uploadWizardContext';
 import { semantic, tint } from '../../../styles/colors';
 import { borders, radii } from '../../../styles/tokens';
 import { monoChip, segmentedOption, segmentedTrack } from '../../../styles/mixins';
+import {
+  CANONICAL_HEADERS,
+  FIELD_LABEL,
+  classifyHeaders,
+  fieldForHeader,
+  headersAreImportable,
+  headersFromTabularText,
+  type ClassifiedHeader,
+} from '../../../utils/columnNames';
 
-/** The read-only mapping table: file column on the left, target on the right. */
-const COLUMN_MAPPINGS = [
-  {
-    source: 'Matrikelnr',
-    example: 'e.g. 1012345',
-    target: 'Matrikelnummer',
-    status: 'Mapped',
-    tone: semantic.success,
-  },
-  {
-    source: 'Name',
-    example: 'e.g. Schneider, Lena',
-    target: 'Full name (auto-split)',
-    status: 'Name → split',
-    tone: semantic.info,
-  },
-  {
-    source: 'Studiengang',
-    example: 'e.g. SE Master',
-    target: 'Study program',
-    status: 'Mapped',
-    tone: semantic.success,
-  },
-  {
-    source: 'Fachsemester',
-    example: 'e.g. 3',
-    target: 'Semester (Fachsemester count)',
-    status: 'Mapped',
-    tone: semantic.success,
-  },
-  {
-    source: 'Note',
-    example: 'e.g. 1.7, NE, EX, AT',
-    target: 'Grade',
-    status: 'Mapped',
-    tone: semantic.success,
-  },
-] as const;
+const EXAMPLES: Record<string, string> = {
+  Matrikelnr: 'e.g. 1012345',
+  Name: 'e.g. Schneider, Lena',
+  'First Name': 'e.g. Lena',
+  'Last Name': 'e.g. Schneider',
+  Studiengang: 'e.g. SE Master',
+  Fachsemester: 'e.g. 3',
+  Note: 'e.g. 1.7, NE, EX, AT',
+};
+
+const CONTRACT_ROWS: ClassifiedHeader[] = CANONICAL_HEADERS.map((name) => ({
+  source: name,
+  target: name,
+  status: 'Mapped',
+}));
 
 const TARGET_SCHEMA = [
   { name: 'Matrikelnummer', req: 'required' },
@@ -56,8 +43,17 @@ const TARGET_SCHEMA = [
 
 const NAME_SPLIT_RULES: readonly NameSplitRule[] = ['Last, First', 'First Last'];
 
+const statusColor = (status: ClassifiedHeader['status']): string => {
+  if (status === 'Mapped') return semantic.success;
+  if (status === 'Ignored') return semantic.info;
+  if (status === 'Duplicate') return semantic.warning;
+  return semantic.error;
+};
+
 export const MapColumnsStep = () => {
   const {
+    file,
+    paste,
     sourceLabel,
     nameSplitRule,
     setNameSplitRule,
@@ -66,13 +62,43 @@ export const MapColumnsStep = () => {
   } = useUploadWizard();
 
   const theme = useTheme();
+  const [fileHeaders, setFileHeaders] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    if (paste.trim()) {
+      setFileHeaders(headersFromTabularText(paste));
+      return;
+    }
+    if (file && /\.(csv|tsv)$/i.test(file.name)) {
+      let cancelled = false;
+      void file.text().then((text) => {
+        if (!cancelled) setFileHeaders(headersFromTabularText(text));
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+    setFileHeaders(null);
+  }, [file, paste]);
+
+  const rows = useMemo(
+    () => (fileHeaders && fileHeaders.length > 0 ? classifyHeaders(fileHeaders) : CONTRACT_ROWS),
+    [fileHeaders],
+  );
+  const checkingFile = fileHeaders != null && fileHeaders.length > 0;
+  const canContinue = !checkingFile || headersAreImportable(rows);
+  const hasCombinedName = rows.some(
+    (row) => row.status === 'Mapped' && fieldForHeader(row.source) === 'name',
+  );
 
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
         <Box sx={{ ...monoChip, mr: 2 }}>{sourceLabel}</Box>
         <Typography variant="body2" color="text.secondary">
-          5 columns &middot; 8 rows detected
+          {checkingFile
+            ? `${fileHeaders?.length ?? 0} column${fileHeaders?.length === 1 ? '' : 's'} in the file`
+            : 'Headers must match the standard names. Excel files are checked on the next step.'}
         </Typography>
       </Box>
 
@@ -108,18 +134,16 @@ export const MapColumnsStep = () => {
                 STATUS
               </Typography>
             </Box>
-            {COLUMN_MAPPINGS.map((mapping, index) => (
+            {rows.map((mapping, index) => (
               <Box
-                key={mapping.source}
+                key={`${mapping.source}-${index}`}
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
                   px: 3,
                   py: 2,
                   borderBottom:
-                    index === COLUMN_MAPPINGS.length - 1
-                      ? 'none'
-                      : (t) => `1px solid ${t.palette.divider}`,
+                    index === rows.length - 1 ? 'none' : (t) => `1px solid ${t.palette.divider}`,
                 }}
               >
                 <Box sx={{ width: '40%' }}>
@@ -127,7 +151,7 @@ export const MapColumnsStep = () => {
                     {mapping.source}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {mapping.example}
+                    {EXAMPLES[mapping.source] ?? EXAMPLES[FIELD_LABEL[fieldForHeader(mapping.source) ?? ''] ?? ''] ?? ''}
                   </Typography>
                 </Box>
                 <Box sx={{ width: '40%' }}>
@@ -140,7 +164,7 @@ export const MapColumnsStep = () => {
                   />
                 </Box>
                 <Box sx={{ width: '20%', textAlign: 'right' }}>
-                  <Typography variant="caption" sx={{ color: mapping.tone, fontWeight: 700 }}>
+                  <Typography variant="caption" sx={{ color: statusColor(mapping.status), fontWeight: 700 }}>
                     {mapping.status}
                   </Typography>
                 </Box>
@@ -148,48 +172,49 @@ export const MapColumnsStep = () => {
             ))}
           </Box>
 
-          {/* Name Split Helper */}
-          <Box
-            sx={{
-              bgcolor: tint(semantic.violet).bg,
-              border: borders.hairline(tint(semantic.violet).border),
-              borderRadius: radii.lg,
-              p: 3,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 2,
-            }}
-          >
-            <Typography variant="body2" sx={{ color: semantic.violetStrong, fontWeight: 600 }}>
-              A single name column was found. Split it as:
-            </Typography>
+          {hasCombinedName && (
             <Box
               sx={{
-                ...segmentedTrack,
-                bgcolor: 'background.paper',
-                border: borders.hairline(theme.app.surface.hairline),
+                bgcolor: tint(semantic.violet).bg,
+                border: borders.hairline(tint(semantic.violet).border),
+                borderRadius: radii.lg,
+                p: 3,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
               }}
             >
-              {NAME_SPLIT_RULES.map((rule) => (
-                <Button
-                  key={rule}
-                  variant="text"
-                  onClick={() => setNameSplitRule(rule)}
-                  sx={{
-                    ...segmentedOption(nameSplitRule === rule),
-                    px: 1,
-                    minWidth: 0,
-                    fontSize: '0.8rem',
-                  }}
-                >
-                  {rule}
-                </Button>
-              ))}
+              <Typography variant="body2" sx={{ color: semantic.violetStrong, fontWeight: 600 }}>
+                A single name column was found. Split it as:
+              </Typography>
+              <Box
+                sx={{
+                  ...segmentedTrack,
+                  bgcolor: 'background.paper',
+                  border: borders.hairline(theme.app.surface.hairline),
+                }}
+              >
+                {NAME_SPLIT_RULES.map((rule) => (
+                  <Button
+                    key={rule}
+                    variant="text"
+                    onClick={() => setNameSplitRule(rule)}
+                    sx={{
+                      ...segmentedOption(nameSplitRule === rule),
+                      px: 1,
+                      minWidth: 0,
+                      fontSize: '0.8rem',
+                    }}
+                  >
+                    {rule}
+                  </Button>
+                ))}
+              </Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                &mdash; Schneider, Lena
+              </Typography>
             </Box>
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              &mdash; Schneider, Lena
-            </Typography>
-          </Box>
+          )}
         </Grid>
 
         <Grid item xs={12} md={4}>
@@ -249,11 +274,11 @@ export const MapColumnsStep = () => {
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', lineHeight: 1.5 }}
             >
-              Grades are validated as German marks (1.0 &ndash; 5.0) or official
-              absence codes: NE (no show) and EX (disqualified) fail, AT (medical
-              note) is excused. Columns named Passed, Failed, Yes or No are ignored
+              Grades must be numeric German marks (1.0 &ndash; 5.0). Status codes
+              such as NE, EX, NA and TA are filtered out and those students are
+              not tracked. Columns named Passed, Failed, Yes or No are ignored
               &mdash; the system calculates the result. So are course, course number
-              and course id columns: the course, ECTS and the course semester were
+              and course id columns: the course and the course semester were
               already settled in the previous step and apply to every row.
               &quot;Semester&quot; below is the student&apos;s Fachsemester count.
             </Typography>
@@ -268,6 +293,7 @@ export const MapColumnsStep = () => {
         <Button
           variant="contained"
           size="large"
+          disabled={!canContinue}
           onClick={() => void runPreview()}
           sx={{ px: 4 }}
         >

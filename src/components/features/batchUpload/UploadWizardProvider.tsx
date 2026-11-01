@@ -16,7 +16,6 @@ import { UploadWizardContext } from './uploadWizardContext';
 import type { UploadWizardValue } from './uploadWizardContext';
 
 const UPLOAD_DEFAULTS = {
-  ects: '6',
   attemptType: 'Exam 1',
   semester: 'WiSe 2024/25',
 } as const;

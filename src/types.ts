@@ -67,7 +67,7 @@ export type RegisterFormErrors = Partial<Record<keyof RegisterFormValues, string
 /** Lifecycle states the backend stores on a student profile. */
 export type StudentStatus = 'active' | 'graduated' | 'dropped' | 'failed';
 
-/** Pass/fail derived by the system from the numeric grade or NE/EX/AT. */
+/** Pass/fail derived by the system from the numeric grade (1.0–5.0). */
 export type GradeOutcome = 'passed' | 'failed' | 'excused' | 'invalid';
 
 /** One student's result in a course, as embedded in the course list response. */
@@ -242,7 +242,6 @@ export interface UploadCourseInfo {
   courseId: number | null;
   courseNumber: string;
   courseName: string;
-  ects: string;
   attemptType: AttemptType;
   semester: string;
 }

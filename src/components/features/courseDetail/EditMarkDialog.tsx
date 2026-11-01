@@ -33,7 +33,6 @@ interface EditMarkDialogProps {
 }
 
 const COMMON_GRADES = ['1.0', '1.3', '1.7', '2.0', '2.3', '2.7', '3.0', '3.3', '3.7', '4.0', '5.0'];
-const ABSENCE_CODES = ['NE', 'EX', 'AT'];
 const ATTEMPT_TYPES: { value: AttemptType; label: string }[] = [
   { value: 'Exam 1', label: 'Exam 1 (1st Attempt / 1. Termin)' },
   { value: 'Exam 2', label: 'Exam 2 (2nd Attempt / 2. Termin)' },
@@ -56,9 +55,7 @@ export const EditMarkDialog = ({
 
   useEffect(() => {
     if (mark) {
-      if (mark.absence_code) {
-        setGradeInput(mark.absence_code);
-      } else if (mark.grade != null) {
+      if (mark.grade != null) {
         setGradeInput(String(mark.grade));
       } else {
         setGradeInput('');
@@ -217,7 +214,7 @@ export const EditMarkDialog = ({
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
             <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase' }}>
-              Grade or Absence Code
+              Grade
             </Typography>
             {parsed.ok && (
               <Chip
@@ -237,14 +234,14 @@ export const EditMarkDialog = ({
           <TextField
             fullWidth
             size="small"
-            placeholder="e.g. 1.7 or AT"
+            placeholder="e.g. 1.7"
             value={gradeInput}
             onChange={(e) => {
               setGradeInput(e.target.value);
               setError(null);
             }}
             error={Boolean(error)}
-            helperText={error || 'Standard grades (1.0–5.0) or absence code (NE/EX/AT)'}
+            helperText={error || 'Numeric German grades only (1.0–5.0)'}
           />
         </Box>
 
@@ -268,23 +265,6 @@ export const EditMarkDialog = ({
             ))}
           </Box>
 
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5, mb: 0.75, fontWeight: 600 }}>
-            Absence Codes:
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 0.75 }}>
-            {ABSENCE_CODES.map((code) => (
-              <Chip
-                key={code}
-                label={code}
-                size="small"
-                clickable
-                onClick={() => handleSelectPreset(code)}
-                color={gradeInput === code ? 'warning' : 'default'}
-                variant={gradeInput === code ? 'filled' : 'outlined'}
-                sx={{ fontWeight: 700, fontSize: '0.75rem' }}
-              />
-            ))}
-          </Box>
         </Box>
       </DialogContent>
 

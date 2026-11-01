@@ -560,7 +560,7 @@ export const CourseMarksTable = ({
           <Typography variant="body1" color="text.secondary">
             {viewMode === 'history'
               ? 'Per-Person History across exam attempts. Click "Edit" or action menu to modify marks or student profile.'
-              : 'Click a grade to edit inline (1.0–5.0 or NE/EX/AT), then save, or use the "Edit" button for the modal editor.'}
+              : 'Click a grade to edit inline (1.0–5.0), then save, or use the "Edit" button for the modal editor.'}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {activeFilter
@@ -687,7 +687,7 @@ export const CourseMarksTable = ({
           <ListItemIcon>
             <EditIcon fontSize="small" color="primary" />
           </ListItemIcon>
-          <ListItemText primary="Edit Grade &amp; Sitting" secondary="Modify numeric grade or NE/EX/AT" />
+          <ListItemText primary="Edit Grade &amp; Sitting" secondary="Modify the numeric grade (1.0–5.0)" />
         </MenuItem>
 
         <MenuItem

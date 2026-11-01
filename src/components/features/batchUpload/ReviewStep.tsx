@@ -130,7 +130,8 @@ export const ReviewStep = () => {
           Review Data &amp; Validation
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Pass, Fail and Excused are calculated from the grade or NE/EX/AT. File
+          Pass and Fail are calculated from numeric grades (1.0–5.0). Status
+          codes such as NE, EX, NA and TA are omitted from the import. File
           columns named Passed, Failed, Yes or No are ignored.
         </Typography>
       </Box>

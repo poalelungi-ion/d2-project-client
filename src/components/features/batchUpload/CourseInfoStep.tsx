@@ -120,35 +120,6 @@ export const CourseInfoStep = () => {
 
         <Box>
           <Typography variant="overline" sx={fieldLabel}>
-            ECTS (CREDITS FOR THIS COURSE)
-          </Typography>
-
-          <TextField
-            fullWidth
-            variant="outlined"
-            value={uploadCourseInfo.ects}
-            onChange={(e) =>
-              setUploadCourseInfo({
-                ects: e.target.value,
-              })
-            }
-          />
-
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{
-              mt: 0.5,
-              display: 'block',
-            }}
-          >
-            Recorded with the import. The course itself is fixed by the tab you
-            came from, so the credits here never split it into a second course.
-          </Typography>
-        </Box>
-
-        <Box>
-          <Typography variant="overline" sx={fieldLabel}>
             EXAM SITTING / ATTEMPT
           </Typography>
           <ExamAttemptSelector

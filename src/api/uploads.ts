@@ -7,7 +7,6 @@ export interface UploadConfirmPayload {
   courseId: number | null;
   course: string;
   courseName: string;
-  ects: string;
   semester: string;
   attemptType: AttemptType;
   records: PreviewRecord[];
