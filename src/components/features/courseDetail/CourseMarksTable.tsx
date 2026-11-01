@@ -219,12 +219,44 @@ export const historyColumnDefs = (
     editable: false,
     cellRenderer: (params: ICellRendererParams<CourseHistoryRow>) => {
       if (!params.data) return null;
-      const { best_grade, best_absence, best_outcome, best_attempt_label } = params.data;
+      const row = params.data;
+      const { best_grade, best_absence, best_outcome, best_attempt_label } = row;
       const text = formatGrade(best_grade, best_absence);
       if (!text || text === '—') return <span>—</span>;
       const isPass = best_outcome === 'passed' || (best_grade != null && best_grade <= 4.0);
       return (
-        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', gap: 1 }}>
+        <Box
+          data-testid="best-mark-entry"
+          role="button"
+          tabIndex={0}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRevealHistory(row);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onRevealHistory(row);
+            }
+          }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            height: '100%',
+            gap: 1,
+            cursor: 'pointer',
+            outline: 'none',
+            '&:hover span': {
+              filter: 'brightness(0.95)',
+              transform: 'scale(1.04)',
+            },
+            '&:focus-visible span': {
+              boxShadow: '0 0 0 2px rgba(25, 118, 210, 0.5)',
+            },
+          }}
+          title={`Click to view ${row.student_name}'s complete chronological mark history`}
+          aria-label={`View complete chronological mark history for ${row.student_name}`}
+        >
           <span
             style={{
               display: 'inline-flex',
@@ -241,6 +273,8 @@ export const historyColumnDefs = (
               border: `1px solid ${isPass ? chartColors.pass : chartColors.fail}`,
               boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
               boxSizing: 'border-box',
+              cursor: 'pointer',
+              transition: 'transform 0.15s ease, filter 0.15s ease',
             }}
           >
             {text}
@@ -660,8 +694,16 @@ export const CourseMarksTable = ({
             animateRows={true}
             pagination={true}
             paginationPageSize={20}
+            onCellClicked={(event) => {
+              if (event.colDef.colId === 'best_grade' && event.data) {
+                setRevealedStudentHistory(event.data);
+              }
+            }}
             onRowClicked={(e: RowClickedEvent<CourseHistoryRow>) => {
-              if (e.data && e.data.marks.length > 0) onSelectStudent(e.data.marks[0]);
+              if (e.data) {
+                setRevealedStudentHistory(e.data);
+                if (e.data.marks.length > 0) onSelectStudent(e.data.marks[0]);
+              }
             }}
             rowSelection="single"
           />

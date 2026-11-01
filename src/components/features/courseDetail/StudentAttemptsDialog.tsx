@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -22,6 +23,7 @@ import type { CourseMark } from '../../../types';
 import { radii } from '../../../styles/tokens';
 import { chart, gradeOutcomeColor } from '../../../styles/colors';
 import { formatGrade, outcomeLabel } from '../../../utils/gradeOutcome';
+import { compareSemesters } from '../../../utils/semester';
 
 interface StudentAttemptsDialogProps {
   open: boolean;
@@ -38,9 +40,18 @@ export const StudentAttemptsDialog = ({
   onClose,
   onEditAttempt,
 }: StudentAttemptsDialogProps) => {
-  if (!historyRow) return null;
+  const marks = useMemo(() => {
+    const raw = historyRow?.marks || [];
+    return [...raw].sort((a, b) => {
+      const semDiff = compareSemesters(a.semester, b.semester);
+      if (semDiff !== 0) return semDiff;
+      if (a.attempt_type === 'Exam 1' && b.attempt_type === 'Exam 2') return -1;
+      if (a.attempt_type === 'Exam 2' && b.attempt_type === 'Exam 1') return 1;
+      return (a.result_id || 0) - (b.result_id || 0);
+    });
+  }, [historyRow]);
 
-  const marks = historyRow.marks || [];
+  if (!historyRow) return null;
   const bestMarkText = formatGrade(historyRow.best_grade, historyRow.best_absence);
   const isPassed = historyRow.final_status === 'Passed';
 
