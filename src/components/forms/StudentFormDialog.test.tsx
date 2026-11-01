@@ -18,7 +18,6 @@ const sampleStudent: Student = {
   student_id: 12345,
   name: 'Ada Lovelace',
   program: 'SE Master',
-  status: 'active',
   total_exams: 5,
   passed_exams: 4,
   avg_grade: 1.5,
@@ -213,5 +212,14 @@ describe('StudentFormDialog (#97930 & #104082: Student Data Profile)', () => {
       expect(onSaved).toHaveBeenCalledWith(12345);
       expect(onClose).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('eliminates Graduate and Fail student lifecycle classifications and actions (#104083)', () => {
+    renderDialog(sampleStudent);
+
+    expect(screen.queryByText(/graduate/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/graduated/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /graduate/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /fail/i })).not.toBeInTheDocument();
   });
 });

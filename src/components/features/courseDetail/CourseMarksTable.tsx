@@ -525,7 +525,6 @@ export const CourseMarksTable = ({
         student_id: editingStudentMark.student_id ?? 0,
         name: editingStudentMark.student_name,
         program: editingStudentMark.program,
-        status: 'active',
         total_exams: 1,
         passed_exams: editingStudentMark.passed ? 1 : 0,
         avg_grade: editingStudentMark.grade ?? 0,
@@ -702,7 +701,7 @@ export const CourseMarksTable = ({
           <ListItemIcon>
             <PersonIcon fontSize="small" color="primary" />
           </ListItemIcon>
-          <ListItemText primary="Edit Student Profile" secondary="Change name, ID, program, status" />
+          <ListItemText primary="Edit Student Profile" secondary="Change name, ID, program" />
         </MenuItem>
 
         <MenuItem

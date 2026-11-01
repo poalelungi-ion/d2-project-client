@@ -1,5 +1,5 @@
 import { alpha } from '@mui/material/styles';
-import type { StudentStatus, ThemeMode } from '../types';
+import type { ThemeMode } from '../types';
 
 /** A token that resolves differently in light and dark mode. */
 export type ByMode<T> = Record<ThemeMode, T>;
@@ -100,17 +100,6 @@ export const PASS_RATE_THRESHOLD = 50;
 
 export const passRateColor = (passRate: number): string =>
   passRate > PASS_RATE_THRESHOLD ? semantic.success : semantic.error;
-
-export const studentStatusColor = (status: StudentStatus): string => {
-  switch (status) {
-    case 'active':
-      return semantic.info;
-    case 'graduated':
-      return semantic.success;
-    default:
-      return semantic.error;
-  }
-};
 
 /**
  * Recharts and ag-grid take literal color strings rather than `sx`, so they

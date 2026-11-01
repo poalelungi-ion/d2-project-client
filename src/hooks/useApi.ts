@@ -14,7 +14,6 @@ import {
   setCourseArchived,
   updateCourse,
   updateStudent,
-  updateStudentStatus,
 } from '../api/index';
 import type {
   AddGradePayload,
@@ -33,7 +32,6 @@ import type {
   Student,
   StudentDetails,
   StudentFormValues,
-  StudentStatus,
   TranscriptEntry,
   UploadConfirmResponse,
   UploadCourseInfo,
@@ -244,7 +242,6 @@ async function saveStudent(
         student_id: studentId,
         name,
         program: values.program,
-        ...(values.status ? { status: values.status } : {}),
       };
       res = await createStudent(payload);
     } else {
@@ -253,7 +250,6 @@ async function saveStudent(
         new_student_id: studentId,
         name,
         program: values.program,
-        ...(values.status ? { status: values.status } : {}),
         version,
       };
       res = await updateStudent(studentId, payload);
@@ -380,24 +376,6 @@ async function updateProgram(
   return false;
 }
 
-async function setStudentStatusById(
-  studentId: number,
-  status: StudentStatus,
-  version: number,
-): Promise<boolean> {
-  try {
-    const res = await updateStudentStatus(studentId, { status, version });
-    if (res.ok) {
-      notify(`Student marked as ${status}!`);
-      return true;
-    }
-    notify(`Error: ${await errorDetail(res)}`, 'error');
-  } catch {
-    notify('Network error', 'error');
-  }
-  return false;
-}
-
 /** File upload and spreadsheet paste share POST /upload/preview/. */
 export type PreviewSource = { file: File } | { paste: string };
 
@@ -483,7 +461,6 @@ const MUTATIONS = {
   loadTranscript,
   saveTranscript,
   updateProgram,
-  setStudentStatus: setStudentStatusById,
   previewImport,
   confirmImport,
 };

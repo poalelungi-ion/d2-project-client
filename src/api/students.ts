@@ -1,12 +1,11 @@
 import { get, post, put } from './client';
-import type { AttemptType, StudentStatus } from '../types';
+import type { AttemptType } from '../types';
 
 /** Payload for POST /students/ -- see the backend's schemas.StudentCreate. */
 export interface StudentCreatePayload {
   student_id: number;
   name: string;
   program: string;
-  status?: StudentStatus;
 }
 
 /** Payload for PUT /students/{id} -- StudentCreate plus lock fields. */
@@ -15,13 +14,6 @@ export interface StudentUpdatePayload {
   new_student_id?: number;
   name?: string;
   program: string;
-  status?: StudentStatus;
-  version: number;
-}
-
-export interface StudentStatusPayload {
-  status: StudentStatus;
-  /** Optimistic-lock guard; the backend rejects a stale version with a 409. */
   version: number;
 }
 
@@ -45,11 +37,6 @@ export const updateStudent = (
   studentId: number | string,
   student: StudentUpdatePayload,
 ): Promise<Response> => put(`/students/${studentId}`, student);
-
-export const updateStudentStatus = (
-  studentId: number,
-  body: StudentStatusPayload,
-): Promise<Response> => put(`/students/${studentId}/status`, body);
 
 export const addStudentGrade = (
   studentId: number,
