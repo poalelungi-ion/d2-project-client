@@ -74,7 +74,12 @@ export const PROGRAM_ALIASES: Record<string, string> = {
   'msc wiinf': 'Wirtschaftsinformatik Master',
   'wiinf master': 'Wirtschaftsinformatik Master',
   wiinf: 'Wirtschaftsinformatik Master',
+  'm.sc. winf': 'Wirtschaftsinformatik Master',
+  'msc winf': 'Wirtschaftsinformatik Master',
+  'winf master': 'Wirtschaftsinformatik Master',
+  winf: 'Wirtschaftsinformatik Master',
   wirtschaftsinformatik: 'Wirtschaftsinformatik Master',
+  'wirtschaftsinformatik master': 'Wirtschaftsinformatik Master',
 
   // Data Science
   'm.sc. data science': 'Data Science Master',
@@ -97,7 +102,7 @@ export const getEffectiveAliases = (): Record<string, string> => {
       if (raw) {
         const parsed = JSON.parse(raw) as unknown;
         if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
-          return parsed as Record<string, string>;
+          return { ...PROGRAM_ALIASES, ...(parsed as Record<string, string>) };
         }
       }
     }
@@ -139,7 +144,7 @@ export const suggestClosestStudyProgram = (
   if (lower.includes('imit') || lower.includes('informationsmanagement')) {
     return isBachelor ? 'IMIT Bachelor' : 'IMIT Master';
   }
-  if (lower.includes('wiinf') || lower.includes('wirtschaft')) {
+  if (lower.includes('wiinf') || lower.includes('winf') || lower.includes('wirtschaft')) {
     return 'Wirtschaftsinformatik Master';
   }
   if (lower.includes('ainf') || lower.includes('angewandte')) {

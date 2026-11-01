@@ -461,7 +461,12 @@ export const ReviewStep = () => {
         <Button
           variant="contained"
           size="large"
-          onClick={() => void confirmImport()}
+          onClick={() => {
+            if (unmappedPrograms.length > 0) {
+              handleApplyInlineMappings();
+            }
+            void confirmImport();
+          }}
           sx={{ px: 4 }}
         >
           Complete Import

@@ -41,6 +41,12 @@ import type {
 } from '../types';
 import { notify } from '../stores';
 import {
+  STUDY_PROGRAM_OPTIONS,
+  UNASSIGNED_PROGRAM,
+  normalizeStudyProgram,
+  suggestClosestStudyProgram,
+} from '../utils/studyProgram';
+import {
   GRADE_CONSTRAINT_MESSAGE,
   gradeSaveValue,
   parseGradeInput,
@@ -441,6 +447,25 @@ async function confirmImport(
   records: PreviewRecord[],
 ): Promise<ConfirmImportResult> {
   try {
+    const sanitizedRecords: PreviewRecord[] = records.map((rec) => {
+      const rawProg = String(rec.program ?? '').trim();
+      const normProg = normalizeStudyProgram(rawProg);
+      const safeProg = STUDY_PROGRAM_OPTIONS.includes(normProg)
+        ? normProg
+        : rawProg
+          ? suggestClosestStudyProgram(rawProg)
+          : UNASSIGNED_PROGRAM;
+      return {
+        ...rec,
+        student_id: String(rec.student_id ?? '').replace(/\.0$/, ''),
+        first_name: String(rec.first_name ?? ''),
+        last_name: String(rec.last_name ?? ''),
+        name: String(rec.name ?? ''),
+        program: safeProg,
+        semester: String(rec.semester || courseInfo.semester || ''),
+        grade: String(rec.grade ?? ''),
+      };
+    });
     const res = await confirmUpload({
       // Non-null when the upload started inside a course: the backend then
       // attaches the batch to that course instead of matching on the name.
@@ -449,7 +474,7 @@ async function confirmImport(
       courseName: courseInfo.courseName,
       semester: courseInfo.semester,
       attemptType: courseInfo.attemptType,
-      records,
+      records: sanitizedRecords,
     });
     const data = (await res.json()) as UploadConfirmResponse;
     if (res.ok) {
