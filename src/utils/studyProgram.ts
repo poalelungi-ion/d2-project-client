@@ -82,6 +82,10 @@ export const PROGRAM_ALIASES: Record<string, string> = {
   'data science': 'Data Science Master',
   'data analytics': 'Data Science Master',
   'm.sc. data analytics': 'Data Science Master',
+  'm.sc. ds': 'Data Science Master',
+  'msc ds': 'Data Science Master',
+  'ds master': 'Data Science Master',
+  ds: 'Data Science Master',
 };
 
 const STORAGE_KEY = 'spa_study_program_aliases';
@@ -109,9 +113,42 @@ export const normalizeStudyProgram = (value: string): string => {
   if (!clean || clean.toLowerCase() === 'nan') return UNASSIGNED_PROGRAM;
   if (STUDY_PROGRAM_OPTIONS.includes(clean)) return clean;
   const lower = clean.toLowerCase();
+  const canonicalMatch = STUDY_PROGRAM_OPTIONS.find((opt) => opt.toLowerCase() === lower);
+  if (canonicalMatch) return canonicalMatch;
   const aliases = getEffectiveAliases();
   if (aliases[lower]) return aliases[lower];
   return clean;
+};
+
+/**
+ * Heuristic suggestion for the study program mapping interface (#104102).
+ * Pre-selects the closest standardized program for unrecognized abbreviations.
+ */
+export const suggestClosestStudyProgram = (
+  raw: string,
+  options: readonly string[] = STUDY_PROGRAMS,
+): string => {
+  const norm = normalizeStudyProgram(raw);
+  if (options.includes(norm)) return norm;
+  const lower = raw.trim().toLowerCase();
+  const isBachelor = /\b(b\.?sc\.?|bachelor|ba)\b/i.test(lower);
+  if (lower.includes('se') || lower.includes('soft')) return 'SE Master';
+  if (lower.includes('data') || lower.includes('ds') || lower.includes('ai')) {
+    return 'Data Science Master';
+  }
+  if (lower.includes('imit') || lower.includes('informationsmanagement')) {
+    return isBachelor ? 'IMIT Bachelor' : 'IMIT Master';
+  }
+  if (lower.includes('wiinf') || lower.includes('wirtschaft')) {
+    return 'Wirtschaftsinformatik Master';
+  }
+  if (lower.includes('ainf') || lower.includes('angewandte')) {
+    return isBachelor ? 'Angewandte Informatik Bachelor' : 'Angewandte Informatik Master';
+  }
+  if (lower.includes('inf') || lower.includes('cs')) {
+    return 'Informatik';
+  }
+  return options[0] ?? 'SE Master';
 };
 
 export const isAllowedStudyProgram = (

@@ -9,15 +9,27 @@ import type {
   RowClassParams,
   RowDataUpdatedEvent,
 } from 'ag-grid-community';
-import { Box, Typography, Button } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  Paper,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Chip,
+} from '@mui/material';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import TuneIcon from '@mui/icons-material/Tune';
 
 import type { PreviewRecord } from '../../../types';
 import { useUploadWizard } from './uploadWizardContext';
 import { useToastStore, useStudyProgramStore } from '../../../stores';
 import { semantic, tint, gradeOutcomeColor } from '../../../styles/colors';
 import { errorCallout, gridFrame } from '../../../styles/mixins';
-import { layout } from '../../../styles/tokens';
+import { layout, radii } from '../../../styles/tokens';
 import {
   evaluateGradeCell,
   isOfficialAbsenceCell,
@@ -28,6 +40,7 @@ import {
   formatValidationIssues,
   isAllowedStudyProgram,
   normalizeStudyProgram,
+  suggestClosestStudyProgram,
 } from '../../../utils/studyProgram';
 import { StudyProgramResolverDialog } from './StudyProgramResolverDialog';
 
@@ -43,6 +56,11 @@ export const ReviewStep = () => {
 
   const [resolverOpen, setResolverOpen] = useState(false);
   const [dynamicPrograms, setDynamicPrograms] = useState<string[]>([]);
+  const [, setMappingRevision] = useState(0);
+
+  const availableProgramOptions = useMemo(() => {
+    return Array.from(new Set([...STUDY_PROGRAM_OPTIONS, ...dynamicPrograms]));
+  }, [dynamicPrograms]);
 
   // Automatically normalize aliases on initial load (e.g. M.Sc. SE -> SE Master)
   useEffect(() => {
@@ -53,40 +71,61 @@ export const ReviewStep = () => {
         row.program = normalized;
         modified = true;
       }
-      if (row.invalid_fields?.includes('Study Program') && isAllowedStudyProgram(row.program, dynamicPrograms)) {
+      if (
+        row.invalid_fields?.includes('Study Program') &&
+        isAllowedStudyProgram(row.program, dynamicPrograms)
+      ) {
         row.invalid_fields = row.invalid_fields.filter((f) => f !== 'Study Program');
-        row.is_valid = (row.missing_fields?.length ?? 0) === 0 && row.invalid_fields.length === 0;
+        row.is_valid =
+          (row.missing_fields?.length ?? 0) === 0 && row.invalid_fields.length === 0;
         modified = true;
       }
     }
-    if (modified && gridApi) {
-      gridApi.refreshCells({ force: true });
-      gridApi.redrawRows();
+    if (modified) {
+      setMappingRevision((r) => r + 1);
+      if (gridApi) {
+        gridApi.refreshCells({ force: true });
+        gridApi.redrawRows();
+      }
     }
   }, [previewData, dynamicPrograms, gridApi]);
 
-  const unmappedPrograms = useMemo(() => {
-    const set = new Set<string>();
+  const { unmappedPrograms, allDistinctPrograms, programCounts } = useMemo(() => {
+    const unmapped = new Set<string>();
+    const all = new Set<string>();
+    const counts: Record<string, number> = {};
     for (const r of previewData) {
-      if (r.invalid_fields?.includes('Study Program') && r.program) {
-        set.add(r.program);
+      const prog = r.program?.trim();
+      if (prog) {
+        all.add(prog);
+        counts[prog] = (counts[prog] ?? 0) + 1;
+      }
+      if (r.invalid_fields?.includes('Study Program') && prog) {
+        unmapped.add(prog);
       }
     }
-    return Array.from(set);
+    return {
+      unmappedPrograms: Array.from(unmapped),
+      allDistinctPrograms: Array.from(all),
+      programCounts: counts,
+    };
   }, [previewData]);
 
-  const availableProgramOptions = useMemo(() => {
-    return Array.from(new Set([...STUDY_PROGRAM_OPTIONS, ...dynamicPrograms]));
-  }, [dynamicPrograms]);
+  // Inline quick-mapping state for unrecognized study programs (#104102)
+  const [inlineTargets, setInlineTargets] = useState<Record<string, string>>({});
+
+  const getInlineTarget = (prog: string): string =>
+    inlineTargets[prog] ?? suggestClosestStudyProgram(prog, availableProgramOptions);
 
   const handleApplyMappings = (mappings: Record<string, string>, newPrograms: string[]) => {
     const updatedDynamics = Array.from(new Set([...dynamicPrograms, ...newPrograms]));
     setDynamicPrograms(updatedDynamics);
 
-    // Persist new mappings to store so SettingsDialog and future imports recognize them
     const { addAlias } = useStudyProgramStore.getState();
     for (const [source, target] of Object.entries(mappings)) {
-      addAlias(target, source);
+      if (source !== target) {
+        addAlias(target, source);
+      }
     }
 
     for (const row of previewData) {
@@ -95,9 +134,12 @@ export const ReviewStep = () => {
       }
       if (isAllowedStudyProgram(row.program, updatedDynamics)) {
         row.invalid_fields = (row.invalid_fields ?? []).filter((f) => f !== 'Study Program');
-        row.is_valid = (row.missing_fields?.length ?? 0) === 0 && row.invalid_fields.length === 0;
+        row.is_valid =
+          (row.missing_fields?.length ?? 0) === 0 && row.invalid_fields.length === 0;
       }
     }
+
+    setMappingRevision((r) => r + 1);
 
     if (gridApi) {
       gridApi.refreshCells({ force: true });
@@ -112,7 +154,17 @@ export const ReviewStep = () => {
     notify('Study programs successfully mapped and validated!');
   };
 
+  const handleApplyInlineMappings = () => {
+    const mappings: Record<string, string> = {};
+    for (const prog of unmappedPrograms) {
+      mappings[prog] = getInlineTarget(prog);
+    }
+    handleApplyMappings(mappings, []);
+  };
+
   const hasErrors = previewData.some((r) => !r.is_valid);
+  const dialogPrograms =
+    unmappedPrograms.length > 0 ? unmappedPrograms : allDistinctPrograms;
 
   return (
     <Box sx={{ py: 2 }}>
@@ -120,43 +172,157 @@ export const ReviewStep = () => {
         <StudyProgramResolverDialog
           open={resolverOpen}
           onClose={() => setResolverOpen(false)}
-          unmappedPrograms={unmappedPrograms}
+          unmappedPrograms={dialogPrograms}
           existingPrograms={availableProgramOptions}
+          programCounts={programCounts}
           onApply={handleApplyMappings}
         />
       )}
 
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight="700">
-          Review Data &amp; Validation
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Pass and Fail are calculated from numeric grades (1.0–5.0). Status
-          codes such as NE, EX, NA and TA are omitted from the import. File
-          columns named Passed, Failed, Yes or No are ignored.
-        </Typography>
+      <Box
+        sx={{
+          mb: 3,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="h5" fontWeight="700">
+            Review Data &amp; Validation
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Pass and Fail are calculated from numeric grades (1.0–5.0). Status
+            codes such as NE, EX, NA and TA are omitted from the import. File
+            columns named Passed, Failed, Yes or No are ignored.
+          </Typography>
+        </Box>
+        {allDistinctPrograms.length > 0 && (
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<TuneIcon />}
+            onClick={() => setResolverOpen(true)}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
+            Modify Study Program Mappings
+          </Button>
+        )}
       </Box>
 
       {unmappedPrograms.length > 0 && (
-        <Box sx={{ ...errorCallout, mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box>
-            <Typography variant="body1" color="error" fontWeight="bold">
-              Unmapped Study Programs Detected ({unmappedPrograms.length})
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              The following programs are not recognized: {unmappedPrograms.join(', ')}.
-            </Typography>
-          </Box>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AutoFixHighIcon />}
-            onClick={() => setResolverOpen(true)}
-            sx={{ textTransform: 'none', ml: 2 }}
+        <Paper
+          variant="outlined"
+          data-testid="inline-study-program-mapper"
+          sx={{
+            ...errorCallout,
+            mb: 3,
+            p: 2.5,
+            borderRadius: radii.lg,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 1.5,
+            }}
           >
-            Resolve &amp; Map Programs
-          </Button>
-        </Box>
+            <Box>
+              <Typography variant="body1" color="error" fontWeight="bold">
+                Unrecognized Study Programs ({unmappedPrograms.length})
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Map each unrecognized study program below to a standardized program or open the
+                full mapping dialog to create a new study program.
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1.5 }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<AutoFixHighIcon />}
+                onClick={() => setResolverOpen(true)}
+                sx={{ textTransform: 'none' }}
+              >
+                Resolve &amp; Map Programs
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleApplyInlineMappings}
+                sx={{ textTransform: 'none', fontWeight: 700 }}
+              >
+                Apply Quick Mappings
+              </Button>
+            </Box>
+          </Box>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {unmappedPrograms.map((prog) => (
+              <Paper
+                key={prog}
+                variant="outlined"
+                sx={{
+                  p: 1.5,
+                  borderRadius: radii.md,
+                  bgcolor: 'background.paper',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: 2,
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Chip
+                    label={prog}
+                    color="error"
+                    variant="outlined"
+                    size="small"
+                    sx={{ fontWeight: 700 }}
+                  />
+                  <Chip
+                    label={`${programCounts[prog] ?? 1} row${(programCounts[prog] ?? 1) === 1 ? '' : 's'}`}
+                    size="small"
+                    sx={{ height: 22, fontSize: '0.72rem' }}
+                  />
+                  <ArrowForwardIcon fontSize="small" color="action" />
+                </Box>
+
+                <FormControl size="small" sx={{ minWidth: 260, flex: 1, maxWidth: 380 }}>
+                  <InputLabel id={`inline-map-label-${prog}`}>
+                    Map &quot;{prog}&quot; to Standardized Program
+                  </InputLabel>
+                  <Select
+                    labelId={`inline-map-label-${prog}`}
+                    label={`Map "${prog}" to Standardized Program`}
+                    value={getInlineTarget(prog)}
+                    onChange={(e) =>
+                      setInlineTargets((prev) => ({
+                        ...prev,
+                        [prog]: e.target.value,
+                      }))
+                    }
+                  >
+                    {availableProgramOptions.map((opt) => (
+                      <MenuItem key={opt} value={opt}>
+                        {opt}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Paper>
+            ))}
+          </Box>
+        </Paper>
       )}
 
       {hasErrors && unmappedPrograms.length === 0 && (
@@ -197,6 +363,7 @@ export const ReviewStep = () => {
             event.data.is_valid =
               (event.data.missing_fields?.length ?? 0) === 0 &&
               event.data.invalid_fields.length === 0;
+            setMappingRevision((r) => r + 1);
             event.api.refreshCells({
               rowNodes: [event.node],
               columns: ['program', 'validationIssues'],
