@@ -274,10 +274,13 @@ export const MapColumnsStep = () => {
               variant="caption"
               sx={{ color: 'text.secondary', display: 'block', lineHeight: 1.5 }}
             >
-              Column titles must be these standard names (or the listed aliases).
-              Unknown headers are rejected so they cannot attach to the wrong field.
-              Grades are German marks (1.0 &ndash; 5.0) or NE / EX / AT.
-              Columns named Passed, Failed, Yes or No, and course identifiers, are ignored.
+              Grades must be numeric German marks (1.0 &ndash; 5.0). Status codes
+              such as NE, EX, NA and TA are filtered out and those students are
+              not tracked. Columns named Passed, Failed, Yes or No are ignored
+              &mdash; the system calculates the result. So are course, course number
+              and course id columns: the course, ECTS and the course semester were
+              already settled in the previous step and apply to every row.
+              &quot;Semester&quot; below is the student&apos;s Fachsemester count.
             </Typography>
           </Card>
         </Grid>

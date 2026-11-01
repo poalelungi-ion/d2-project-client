@@ -8,14 +8,12 @@
 
 import type { GradeOutcome } from '../types';
 
-const FAIL_ABSENCE = new Set(['NE', 'EX']);
-const EXCUSED_ABSENCE = new Set(['AT']);
 const IGNORED_LABELS = new Set(['PASSED', 'FAILED', 'YES', 'NO']);
-const JUNK_CELLS = new Set(['', 'NA', 'TA', 'NAN']);
+const FILTERED_STATUS_CODES = new Set(['NE', 'EX', 'AT', 'NA', 'TA']);
+const JUNK_CELLS = new Set(['', 'NAN']);
 
 /** Shown when a lecturer types a cell the upload parser would also reject. */
-export const GRADE_CONSTRAINT_MESSAGE =
-  'Grade must be between 1.0 and 5.0, or NE/EX/AT.';
+export const GRADE_CONSTRAINT_MESSAGE = 'Grade must be between 1.0 and 5.0.';
 
 export type ParsedGrade =
   | {
@@ -54,39 +52,14 @@ export function withoutIgnoredColumns(
 }
 
 /**
- * The same rules as spreadsheet upload: 1.0–5.0, NE/EX (fail), AT (excused).
- * Passed/Failed/Yes/No and anything else are rejected.
+ * The same rules as spreadsheet upload: numeric 1.0–5.0 only.
+ * Status codes (NE, EX, NA, TA, AT), Pass/Fail labels, and anything else are rejected.
  */
 export function parseGradeInput(raw: unknown): ParsedGrade {
   const text = String(raw ?? '').trim();
-  if (JUNK_CELLS.has(normalizeCode(text))) {
-    return { ok: false };
-  }
-
   const code = normalizeCode(text);
-
-  if (IGNORED_LABELS.has(code)) {
+  if (JUNK_CELLS.has(code) || FILTERED_STATUS_CODES.has(code) || IGNORED_LABELS.has(code)) {
     return { ok: false };
-  }
-
-  if (FAIL_ABSENCE.has(code)) {
-    return {
-      ok: true,
-      grade: 5.0,
-      passed: false,
-      outcome: 'failed',
-      absenceCode: code,
-    };
-  }
-
-  if (EXCUSED_ABSENCE.has(code)) {
-    return {
-      ok: true,
-      grade: null,
-      passed: false,
-      outcome: 'excused',
-      absenceCode: code,
-    };
   }
 
   const grade = Number(text.replace(',', '.'));
@@ -122,22 +95,16 @@ export function evaluateGradeCell(raw: unknown): {
   };
 }
 
-/** Value POST /grades/ expects: a number, or the NE/EX/AT cell itself. */
+/** Value POST /grades/ expects: a numeric 1.0–5.0 mark. */
 export function gradeSaveValue(mark: {
   grade: number | null;
   absence_code?: string | null;
 }): number | string | null {
-  const code = mark.absence_code?.trim();
-
-  if (code) return code;
-
   return mark.grade;
 }
 
-export function isOfficialAbsenceCell(raw: unknown): boolean {
-  const code = normalizeCode(String(raw ?? ''));
-
-  return FAIL_ABSENCE.has(code) || EXCUSED_ABSENCE.has(code);
+export function isOfficialAbsenceCell(_raw: unknown): boolean {
+  return false;
 }
 
 export function outcomeLabel(

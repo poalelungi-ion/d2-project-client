@@ -4,7 +4,7 @@ import { post } from './client';
 export interface GradeSaveRow {
   result_id: number;
   version: number;
-  /** Numeric 1.0–5.0, or the same NE/EX/AT cell the upload parser accepts. */
+  /** Numeric German grade 1.0–5.0. Status codes are rejected. */
   grade: number | string;
   attempt_type?: string;
   semester?: string;
