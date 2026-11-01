@@ -234,7 +234,7 @@ export interface AddGradeFormValues {
  * Which sitting an upload covers. Chosen once per import and stored on every
  * result in the batch, so first and second attempts stay comparable later.
  */
-export type AttemptType = 'Exam 1' | 'Exam 2' | 'Other';
+export type AttemptType = string;
 
 /** Course metadata that applies to every row of a batch upload. */
 export interface UploadCourseInfo {

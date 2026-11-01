@@ -15,7 +15,7 @@ import {
   Chip,
   FormLabel,
 } from '@mui/material';
-import type { AddGradeFormValues, AttemptType, StudentDetails } from '../../types';
+import type { AddGradeFormValues, StudentDetails } from '../../types';
 import { notify, useSystemLogStore } from '../../stores';
 import { useApiMutations, useCourses } from '../../hooks/useApi';
 import { GRADE_CONSTRAINT_MESSAGE, parseGradeInput } from '../../utils/gradeOutcome';
@@ -152,20 +152,14 @@ export function AddGradeDialog({ student, onClose, onSaved }: AddGradeDialogProp
           </Select>
         </FormControl>
 
-        <FormControl fullWidth variant="outlined">
-          <InputLabel id="add-grade-attempt-label">Exam Sitting / Attempt</InputLabel>
-          <Select
-            labelId="add-grade-attempt-label"
-            id="add-grade-attempt"
-            value={values.attempt_type ?? 'Exam 1'}
-            label="Exam Sitting / Attempt"
-            onChange={(e) => update({ attempt_type: e.target.value as AttemptType })}
-          >
-            <MenuItem value="Exam 1">Exam 1 (First Sitting / Main Exam)</MenuItem>
-            <MenuItem value="Exam 2">Exam 2 (Second Sitting / Retake Exam)</MenuItem>
-            <MenuItem value="Other">Other Sitting</MenuItem>
-          </Select>
-        </FormControl>
+        <TextField
+          fullWidth
+          id="add-grade-attempt"
+          label="Exam Sitting / Attempt"
+          placeholder="e.g. Exam 1, Exam 2, Oral Retake..."
+          value={values.attempt_type ?? 'Exam 1'}
+          onChange={(e) => update({ attempt_type: e.target.value })}
+        />
 
         <Box>
           <TextField
