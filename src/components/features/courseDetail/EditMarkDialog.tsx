@@ -33,11 +33,6 @@ interface EditMarkDialogProps {
 }
 
 const COMMON_GRADES = ['1.0', '1.3', '1.7', '2.0', '2.3', '2.7', '3.0', '3.3', '3.7', '4.0', '5.0'];
-const ATTEMPT_TYPES: { value: AttemptType; label: string }[] = [
-  { value: 'Exam 1', label: 'Exam 1 (1st Attempt / 1. Termin)' },
-  { value: 'Exam 2', label: 'Exam 2 (2nd Attempt / 2. Termin)' },
-  { value: 'Other', label: 'Other Sitting' },
-];
 
 export const EditMarkDialog = ({
   open,
@@ -95,13 +90,14 @@ export const EditMarkDialog = ({
     }
 
     setSaving(true);
+    const cleanedAttempt = attemptType.trim() || 'Other';
     const updated: CourseMark = {
       ...mark,
       grade: res.grade,
       absence_code: res.absenceCode,
       passed: res.passed,
       outcome: res.outcome,
-      attempt_type: attemptType,
+      attempt_type: cleanedAttempt,
       semester: semester || mark.semester,
     };
 
@@ -172,21 +168,15 @@ export const EditMarkDialog = ({
 
         {/* Sitting and Semester controls */}
         <Box sx={{ display: 'flex', gap: 1.5 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel id="sitting-type-label">Exam Attempt</InputLabel>
-            <Select
-              labelId="sitting-type-label"
-              value={attemptType}
-              label="Exam Attempt"
-              onChange={(e) => setAttemptType(e.target.value as AttemptType)}
-            >
-              {ATTEMPT_TYPES.map((type) => (
-                <MenuItem key={type.value} value={type.value}>
-                  {type.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <TextField
+            fullWidth
+            size="small"
+            id="exam-attempt-input"
+            label="Exam Attempt"
+            placeholder="e.g. Exam 1, Exam 2, Oral Retake..."
+            value={attemptType}
+            onChange={(e) => setAttemptType(e.target.value)}
+          />
 
           <FormControl fullWidth size="small">
             <InputLabel id="semester-select-label">Semester</InputLabel>
@@ -264,7 +254,6 @@ export const EditMarkDialog = ({
               />
             ))}
           </Box>
-
         </Box>
       </DialogContent>
 
