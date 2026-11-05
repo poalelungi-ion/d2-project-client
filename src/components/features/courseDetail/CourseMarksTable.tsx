@@ -555,11 +555,13 @@ export const CourseMarksTable = ({
   return (
     <Paper
       sx={{
-        flex: 1,
+        width: '100%',
+        flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
         borderRadius: radii.xxl,
         overflow: 'hidden',
+        mt: 3,
       }}
     >
       <Box
