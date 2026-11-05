@@ -256,21 +256,23 @@ describe('per-person history columns', () => {
       mark('SOSE_25', 'Exam 2', 'Bruno Retake', 1.7),
     ].map((m) => ({ ...m, student_id: 500 }));
 
-  it('shows a retake under Exam 2 when the grid is filtered to Exam 2', () => {
+  it('shows a retake under Best Mark when the grid is filtered to Exam 2 (#104098)', () => {
     renderDetail(bruno());
 
     choose(semesterSelect(), 'SOSE_25');
     choose(examSelect()!, 'Exam 2');
 
-    expect(cell('exam2_grade')).toBe('1.7');
-    expect(cell('exam1_grade')).toBe('—');
+    expect(cell('best_grade')).toContain('1.7');
+    expect(cell('exam1_grade')).toBe('');
+    expect(cell('exam2_grade')).toBe('');
   });
 
-  it('keeps both sittings in their own columns when unfiltered', () => {
+  it('consolidates sittings into a single Best Mark column when unfiltered (#104098)', () => {
     renderDetail(bruno());
 
-    expect(cell('exam1_grade')).toBe('5.0');
-    expect(cell('exam2_grade')).toBe('1.7');
+    expect(cell('best_grade')).toContain('1.7');
+    expect(cell('exam1_grade')).toBe('');
+    expect(cell('exam2_grade')).toBe('');
   });
 
   it('shows the semester the sittings took place in', () => {
@@ -508,7 +510,7 @@ describe('Course Document Repository tab (#104092)', () => {
 
     expect(screen.getByRole('heading', { name: /course document repository/i })).toBeInTheDocument();
     expect(screen.getByText(/No files in Course Drive yet/i)).toBeInTheDocument();
-    expect(screen.getByText(/Drag & drop exam spreadsheet here/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Drag & drop exam spreadsheet here/i)).not.toBeInTheDocument();
     expect(screen.queryByText('Detailed Course Marks')).not.toBeInTheDocument();
     expect(screen.queryByText(/Map columns/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Launch 5-Step Ingestion Wizard/i)).not.toBeInTheDocument();

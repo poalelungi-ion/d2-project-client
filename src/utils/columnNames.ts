@@ -129,6 +129,34 @@ export function isDroppedColumn(name: string): boolean {
   return COURSE_COLUMN_KEYS.has(alnum) || EXAM_EXTRA_COLUMN_KEYS.has(alnum);
 }
 
+function claimField(
+  source: string,
+  field: string,
+  claimed: Map<string, string>,
+): ClassifiedHeader {
+  const label = FIELD_LABEL[field] ?? field;
+  if (claimed.has(field)) {
+    return { source, target: label, status: 'Duplicate', field };
+  }
+  claimed.set(field, source);
+  return { source, target: label, status: 'Mapped', field };
+}
+
+function applyOverride(
+  trimmed: string,
+  explicit: string,
+  claimed: Map<string, string>,
+): ClassifiedHeader | null {
+  if (explicit === 'ignore' || explicit === 'Ignored') {
+    return { source: trimmed, target: 'Ignored', status: 'Ignored', field: 'ignore' };
+  }
+  if (explicit === '' || explicit === '—') {
+    return { source: trimmed, target: '—', status: 'Unrecognized', field: '' };
+  }
+  const resolvedField = FIELD_LABEL[explicit] ? explicit : fieldForHeader(explicit);
+  return resolvedField ? claimField(trimmed, resolvedField, claimed) : null;
+}
+
 export function classifyHeaders(
   headers: readonly string[],
   overrides?: Record<string, string>,
@@ -137,60 +165,21 @@ export function classifyHeaders(
   return headers.map((source) => {
     const trimmed = source.trim() || source;
     const explicit = overrides?.[trimmed] ?? overrides?.[source];
-
     if (explicit !== undefined) {
-      if (explicit === 'ignore' || explicit === 'Ignored') {
-        return { source: trimmed, target: 'Ignored', status: 'Ignored' as const, field: 'ignore' };
-      }
-      if (explicit === '' || explicit === '—') {
-        return { source: trimmed, target: '—', status: 'Unrecognized' as const, field: '' };
-      }
-      const resolvedField = FIELD_LABEL[explicit] ? explicit : fieldForHeader(explicit);
-      if (resolvedField) {
-        const label = FIELD_LABEL[resolvedField] ?? resolvedField;
-        if (claimed.has(resolvedField)) {
-          return {
-            source: trimmed,
-            target: label,
-            status: 'Duplicate' as const,
-            field: resolvedField,
-          };
-        }
-        claimed.set(resolvedField, trimmed);
-        return {
-          source: trimmed,
-          target: label,
-          status: 'Mapped' as const,
-          field: resolvedField,
-        };
-      }
+      const overridden = applyOverride(trimmed, explicit, claimed);
+      if (overridden) return overridden;
     }
 
-    if (!normalizeHeader(trimmed) || normalizeHeader(trimmed).startsWith('unnamed')) {
-      return { source: trimmed, target: '—', status: 'Ignored' as const, field: 'ignore' };
-    }
-    if (isDroppedColumn(trimmed)) {
-      return { source: trimmed, target: 'Ignored', status: 'Ignored' as const, field: 'ignore' };
+    const norm = normalizeHeader(trimmed);
+    if (!norm || norm.startsWith('unnamed') || isDroppedColumn(trimmed)) {
+      const target = !norm || norm.startsWith('unnamed') ? '—' : 'Ignored';
+      return { source: trimmed, target, status: 'Ignored', field: 'ignore' };
     }
     const field = fieldForHeader(trimmed);
     if (!field) {
-      return { source: trimmed, target: '—', status: 'Unrecognized' as const, field: '' };
+      return { source: trimmed, target: '—', status: 'Unrecognized', field: '' };
     }
-    if (claimed.has(field)) {
-      return {
-        source: trimmed,
-        target: FIELD_LABEL[field] ?? field,
-        status: 'Duplicate' as const,
-        field,
-      };
-    }
-    claimed.set(field, trimmed);
-    return {
-      source: trimmed,
-      target: FIELD_LABEL[field] ?? field,
-      status: 'Mapped' as const,
-      field,
-    };
+    return claimField(trimmed, field, claimed);
   });
 }
 
