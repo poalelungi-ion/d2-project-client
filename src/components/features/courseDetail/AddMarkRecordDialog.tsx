@@ -245,20 +245,16 @@ export function AddMarkRecordDialog({
           </Select>
         </FormControl>
 
-        {/* Attempt Type Selection */}
-        <FormControl fullWidth size="small">
-          <InputLabel id="mark-attempt-label">Exam Sitting / Attempt</InputLabel>
-          <Select
-            labelId="mark-attempt-label"
-            value={attemptType}
-            label="Exam Sitting / Attempt"
-            onChange={(e) => setAttemptType(e.target.value as AttemptType)}
-          >
-            <MenuItem value="Exam 1">Exam 1 (First Sitting / Main Exam)</MenuItem>
-            <MenuItem value="Exam 2">Exam 2 (Second Sitting / Retake Exam)</MenuItem>
-            <MenuItem value="Other">Other Sitting</MenuItem>
-          </Select>
-        </FormControl>
+        {/* Attempt Type Input */}
+        <TextField
+          fullWidth
+          size="small"
+          id="mark-attempt-input"
+          label="Exam Sitting / Attempt"
+          placeholder="e.g. Exam 1, Exam 2, Oral Retake..."
+          value={attemptType}
+          onChange={(e) => setAttemptType(e.target.value)}
+        />
 
         {existingAttemptNotice && (
           <Alert severity="info" sx={{ py: 0.5, fontSize: '0.85rem' }}>
