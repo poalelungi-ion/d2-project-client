@@ -1,4 +1,4 @@
-# Study Progress Analysis (SPA) – Frontend & Main Project Hub
+﻿# Study Progress Analysis (SPA) – Frontend & Main Project Hub
 
 [![Stage: Beta](https://img.shields.io/badge/Stage-Beta%20v0.4.0-blue.svg)](docs/wiki/Releases.md)
 [![License](https://img.shields.io/badge/Academic-SSE%20Uni--Hildesheim-green.svg)](https://www.uni-hildesheim.de/sse/)
@@ -8,7 +8,7 @@ Welcome to the **Study Progress Analysis (SPA)** system, developed for **Stiftun
 
 The SPA platform enables university lecturers and academic staff to ingest heterogeneous exam spreadsheets (`.xlsx`, `.csv`, `.tsv`, `.ods`), review and validate student marks with zero data corruption, track longitudinal student trajectories across semesters, manage course files via the Course Drive, and compare exam sittings side-by-side.
 
-This repository (`d2-project-client`) serves as the **primary user-facing application and central documentation hub** for the entire SPA project. The backend API service is hosted in the sibling repository [`d2-project-backend`](https://gitlab.gwdg.de/sudarshan.bashyal/d2-project-backend).
+This repository (`d2-project-client`) serves as the **primary user-facing application and central documentation hub** for the entire SPA project. The backend API service is hosted in the sibling repository [`d2-project-backend`](https://github.com/poalelungi-ion/d2-project-backend).
 
 ---
 
@@ -18,11 +18,11 @@ Following [Semantic Versioning 2.0.0](https://semver.org/), project iterations a
 
 | Milestone | Official Kanban Board | Git Release Branch | Git Release Commit | Git Tags | Status |
 | :--- | :--- | :--- | :--- | :--- | :---: |
-| **Release v0.4.0-beta** | `D2-Project: Sprint 4`<br>*(Created 09/30/2026)* | [`release/sprint-4-v0.4.0-beta`](https://gitlab.gwdg.de/sudarshan.bashyal/d2-project-client/-/tree/release/sprint-4-v0.4.0-beta) | `release(sprint-4): D2-Project Sprint 4 - v0.4.0-beta - Production Data Ingestion & Course Marks Milestone` | [`v0.4.0-beta`](https://gitlab.gwdg.de/sudarshan.bashyal/d2-project-client/-/tags/v0.4.0-beta)<br>`release-sprint-4-v0.4.0-beta` | **Delivered (Beta Stage - Latest)** |
-| **Release v0.3.0-beta** | `D2-Project: Sprint 3`<br>*(Created 09/18/2026)* | [`release/sprint-3-v0.3.0-beta`](https://gitlab.gwdg.de/sudarshan.bashyal/d2-project-client/-/tree/release/sprint-3-v0.3.0-beta) | `release(sprint-3): D2-Project Sprint 3 - v0.3.0-beta - Course Drive, Exam Analytics & Hardening` | [`v0.3.0-beta`](https://gitlab.gwdg.de/sudarshan.bashyal/d2-project-client/-/tags/v0.3.0-beta)<br>`release-sprint-3-v0.3.0-beta` | Delivered (Beta 1) |
-| **Release v0.2.0-alpha** | `D2-Project: Sprint 2`<br>*(Created 09/03/2026)* | [`release/sprint-2-v0.2.0-alpha`](https://gitlab.gwdg.de/sudarshan.bashyal/d2-project-client/-/tree/release/sprint-2-v0.2.0-alpha) | `release(sprint-2): D2-Project Sprint 2 - v0.2.0-alpha - Core Analytics, Attempts & Absence Normalization` | [`v0.2.0-alpha`](https://gitlab.gwdg.de/sudarshan.bashyal/d2-project-client/-/tags/v0.2.0-alpha)<br>`release-sprint-2-v0.2.0-alpha` | Delivered (Alpha 2) |
-| **Release v0.1.0-alpha** | `D2-Project: Sprint 1`<br>*(Created 08/14/2026)* | [`release/sprint-1-v0.1.0-alpha`](https://gitlab.gwdg.de/sudarshan.bashyal/d2-project-client/-/tree/release/sprint-1-v0.1.0-alpha) | `release(sprint-1): D2-Project Sprint 1 - v0.1.0-alpha - Ingestion & Validation Foundations` | [`v0.1.0-alpha`](https://gitlab.gwdg.de/sudarshan.bashyal/d2-project-client/-/tags/v0.1.0-alpha)<br>`release-sprint-1-v0.1.0-alpha` | Delivered (Alpha 1) |
-| **Release v0.0.1-alpha** | `D2-Project: Ignition`<br>*(Created 08/03/2026)* | [`release/sprint-0-ignition`](https://gitlab.gwdg.de/sudarshan.bashyal/d2-project-client/-/tree/release/sprint-0-ignition) | `release(sprint-0): D2-Project Ignition - v0.0.1-alpha - Project Setup & Architecture` | [`release-ignition-sprint-0`](https://gitlab.gwdg.de/sudarshan.bashyal/d2-project-client/-/tags/release-ignition-sprint-0)<br>`v0.0.1-alpha` | Completed (Inception) |
+| **Release v0.4.0-beta** | `D2-Project: Sprint 4`<br>*(Created 09/30/2026)* | [`release/sprint-4-v0.4.0-beta`](https://github.com/poalelungi-ion/d2-project-client/-/tree/release/sprint-4-v0.4.0-beta) | `release(sprint-4): D2-Project Sprint 4 - v0.4.0-beta - Production Data Ingestion & Course Marks Milestone` | [`v0.4.0-beta`](https://github.com/poalelungi-ion/d2-project-client/-/tags/v0.4.0-beta)<br>`release-sprint-4-v0.4.0-beta` | **Delivered (Beta Stage - Latest)** |
+| **Release v0.3.0-beta** | `D2-Project: Sprint 3`<br>*(Created 09/18/2026)* | [`release/sprint-3-v0.3.0-beta`](https://github.com/poalelungi-ion/d2-project-client/-/tree/release/sprint-3-v0.3.0-beta) | `release(sprint-3): D2-Project Sprint 3 - v0.3.0-beta - Course Drive, Exam Analytics & Hardening` | [`v0.3.0-beta`](https://github.com/poalelungi-ion/d2-project-client/-/tags/v0.3.0-beta)<br>`release-sprint-3-v0.3.0-beta` | Delivered (Beta 1) |
+| **Release v0.2.0-alpha** | `D2-Project: Sprint 2`<br>*(Created 09/03/2026)* | [`release/sprint-2-v0.2.0-alpha`](https://github.com/poalelungi-ion/d2-project-client/-/tree/release/sprint-2-v0.2.0-alpha) | `release(sprint-2): D2-Project Sprint 2 - v0.2.0-alpha - Core Analytics, Attempts & Absence Normalization` | [`v0.2.0-alpha`](https://github.com/poalelungi-ion/d2-project-client/-/tags/v0.2.0-alpha)<br>`release-sprint-2-v0.2.0-alpha` | Delivered (Alpha 2) |
+| **Release v0.1.0-alpha** | `D2-Project: Sprint 1`<br>*(Created 08/14/2026)* | [`release/sprint-1-v0.1.0-alpha`](https://github.com/poalelungi-ion/d2-project-client/-/tree/release/sprint-1-v0.1.0-alpha) | `release(sprint-1): D2-Project Sprint 1 - v0.1.0-alpha - Ingestion & Validation Foundations` | [`v0.1.0-alpha`](https://github.com/poalelungi-ion/d2-project-client/-/tags/v0.1.0-alpha)<br>`release-sprint-1-v0.1.0-alpha` | Delivered (Alpha 1) |
+| **Release v0.0.1-alpha** | `D2-Project: Ignition`<br>*(Created 08/03/2026)* | [`release/sprint-0-ignition`](https://github.com/poalelungi-ion/d2-project-client/-/tree/release/sprint-0-ignition) | `release(sprint-0): D2-Project Ignition - v0.0.1-alpha - Project Setup & Architecture` | [`release-ignition-sprint-0`](https://github.com/poalelungi-ion/d2-project-client/-/tags/release-ignition-sprint-0)<br>`v0.0.1-alpha` | Completed (Inception) |
 
 ---
 
@@ -180,14 +180,9 @@ npm run lint
 
 ---
 
-## 👥 Core Project Team (Group D2)
+## 👥 Core Project Team
 
 | Name | Role | Email |
 | :--- | :--- | :--- |
-| **Ion Poalelungi** | Architecture & Frontend Lead | `poalelungi@uni-hildesheim.de` |
-| **Anna Chiriciuc** | Frontend & Quality Assurance | `chiriciuc@uni-hildesheim.de` |
-| **Sudarshan Bashyal** | Backend Lead & Security | `sudarshan.bashyal@uni-hildesheim.de` |
-| **Yazan Al Rifaee** | Full-Stack Developer | `alrifaee@uni-hildesheim.de` |
-| **Marvin Wucher** | Full-Stack Developer | `wucher@uni-hildesheim.de` |
-| **Amara Aslam** | Frontend Developer | `aslam@uni-hildesheim.de` |
-| **Aditi Joshi** | QA & Frontend Developer | `joshi@uni-hildesheim.de` |
+| **Ion Poalelungi** | Architecture & Lead Developer | poalelungi@uni-hildesheim.de |
+| **Anna Chiriciuc** | Frontend & Quality Assurance | chiriciuc@uni-hildesheim.de |
